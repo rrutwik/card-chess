@@ -8,6 +8,7 @@ type StoredGameState = {
   currentPlayer: 'white' | 'black';
   checkAttempts: number;
   currentCard: PlayingCard | null;
+  moveHistory: string[];
 };
 
 export const saveGameState = (
@@ -15,14 +16,16 @@ export const saveGameState = (
   deck: PlayingCard[],
   currentPlayer: 'white' | 'black',
   currentCard: PlayingCard | null,
-  checkAttempts: number
+  checkAttempts: number,
+  moveHistory: string[]
 ) => {
   const gameState: StoredGameState = {
     fen,
     deck: deck,
     currentPlayer,
     currentCard,
-    checkAttempts
+    checkAttempts,
+    moveHistory
   };
   localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));};
 

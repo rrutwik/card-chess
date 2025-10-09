@@ -50,7 +50,7 @@ export default function App() {
       <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200/50 flex-none relative z-20">
         <button
           onClick={() => setShowRules(true)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 hover:from-indigo-700 hover:to-purple-700"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl hover:brightness-110 transition-all duration-200"
         >
           <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           <span className="hidden sm:inline">Rules</span>
@@ -79,9 +79,9 @@ export default function App() {
         <div className="w-12 sm:w-24" />
       </header>
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex">
 
-        <div className="flex-1 flex items-center justify-center overflow-hidden p-2 sm:p-4 lg:p-6">
+        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -103,7 +103,7 @@ export default function App() {
         </div>
 
 
-        <aside className="sm:w-80 lg:w-96 flex items-center justify-center overflow-hidden p-2 sm:p-4 lg:p-6 border-l border-gray-200/50 bg-white/40 backdrop-blur-sm"
+        <aside className="sm:w-80 lg:w-96 flex items-center justify-center p-2 sm:p-4 lg:p-6 border-l border-gray-200/50 bg-white/40 backdrop-blur-sm"
         style={{ width: "40%" }}
         >
           <motion.div

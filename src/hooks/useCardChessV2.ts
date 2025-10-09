@@ -86,7 +86,6 @@ export function useCardChessV2() {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<"white" | "black" | null>(null);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
-
   
   useEffect(() => {
     const saved = loadGameState();
@@ -97,6 +96,7 @@ export function useCardChessV2() {
         if (saved.currentCard) setCurrentCard(saved.currentCard);
         setCurrentPlayer(gameRef.current.turn() === "w" ? "white" : "black");
         setCheckAttempts(saved.checkAttempts || 0);
+        setMoveHistory(saved.moveHistory || []);
       } catch (e) {
         console.error("Failed to load saved state:", e);
         clearGameState();
@@ -106,19 +106,14 @@ export function useCardChessV2() {
 
   useEffect(() => {
     try {
-      saveGameState(gameRef.current.fen(), deck, currentPlayer, currentCard, checkAttempts);
+      saveGameState(gameRef.current.fen(), deck, currentPlayer, currentCard, checkAttempts, moveHistory);
     } catch (e) {
       console.warn("Auto-save failed:", e);
     }
-  }, [deck, currentPlayer, checkAttempts, currentCard]);
+  }, [deck, currentPlayer, checkAttempts, currentCard, moveHistory]);
 
   useEffect(() => {
     if (gameRef.current.isCheck()) {
-      console.log({
-        checkAttempts,
-        MAX_CHECK_ATTEMPTS,
-        currentPlayer
-      })
       if (checkAttempts >= MAX_CHECK_ATTEMPTS) {
         setGameOver(true);
         setWinner(currentPlayer === "white" ? "black" : "white");
@@ -150,6 +145,13 @@ export function useCardChessV2() {
   }, [deck, currentPlayer]);
 
   useEffect(() => {
+    if (deck.length == 0) {
+      const shuffled = shuffleDeck(createDeck());
+      setDeck(shuffled);
+    }
+  }, [deck]);
+
+  useEffect(() => {
     if (!currentCard) return;
     const moves = checkIfAnyValidMoveForSelectedCard(gameRef.current, currentCard);
     setValidMoves(moves);
@@ -173,7 +175,7 @@ export function useCardChessV2() {
       }
 
       
-      const notation = `${currentPlayer}: ${playedCard.value} ${playedCard.suit !== "joker" ? playedCard.suit[0].toUpperCase() : ""} - ${move.piece.toUpperCase()} to ${move.to}`;
+      const notation = `${currentPlayer}: ${playedCard.value} ${playedCard.suit !== "joker" ? playedCard.suit[0].toUpperCase() : ""} - ${move.piece.toUpperCase()}${move.from}${move.to}`;
       setMoveHistory((prev) => [...prev, notation]);
 
       
@@ -187,7 +189,6 @@ export function useCardChessV2() {
 
       
       if (gameRef.current.isCheckmate()) {
-        
         setGameOver(true);
         setWinner(currentPlayer);
       } else if (
@@ -200,13 +201,29 @@ export function useCardChessV2() {
       }
 
       try {
-        saveGameState(gameRef.current.fen(), deck, nextPlayer, currentCard, checkAttempts);
+        saveGameState(gameRef.current.fen(), deck, nextPlayer, currentCard, checkAttempts, moveHistory);
       } catch (e) {
         console.warn("Save after move failed:", e);
       }
     },
     [currentPlayer, deck, checkAttempts, currentCard]
   );
+
+  const chessMakeMove = useCallback((fromSquare: Square, toSquare: Square, promotion: string) => {
+    try {
+      setCheckAttempts(0);
+      const mv = gameRef.current.move({ from: fromSquare, to: toSquare, promotion });
+      if (!currentCard) {
+        console.error("Current Card is not selected");
+        return false;
+      }
+      if (mv) updateMove(currentCard, mv);
+      return true;
+    } catch (e) {
+      console.error("Invalid move attempt:", e);
+      return false;
+    }
+  }, [currentCard, updateMove, setCheckAttempts]);
 
   const handleSquareClick = useCallback(
     (square: Square, piece: any | null) => {
@@ -223,12 +240,7 @@ export function useCardChessV2() {
 
         const found = validMovesForSelection.some((m) => m.from === fromMoveSelected && m.to === square);
         if (found) {
-          try {
-            const mv = gameRef.current.move({ from: fromMoveSelected, to: square, promotion: "q" });
-            if (mv) updateMove(currentCard, mv);
-          } catch (err) {
-            console.error("Invalid move attempt:", err);
-          }
+          chessMakeMove(fromMoveSelected, square, "q");
           return;
         }
 
@@ -275,13 +287,7 @@ export function useCardChessV2() {
         );
         const found = validMovesForSelection.some((m) => m.from === fromSquare && m.to === toSquare);
         if (found) {
-          try {
-            const mv = gameRef.current.move({ from: fromSquare, to: toSquare, promotion: "q" });
-            if (mv) updateMove(currentCard, mv);
-            return true;
-          } catch (err) {
-            console.error("Invalid move attempt:", err);
-          }
+          return chessMakeMove(fromSquare, toSquare, "q");
         }
         return false;
       } catch (err) {

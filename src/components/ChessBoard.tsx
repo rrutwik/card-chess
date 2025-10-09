@@ -56,14 +56,14 @@ export function ChessBoard({
 
   const customSquareStyles = React.useMemo(() => {
     const styles: { [square: string]: React.CSSProperties } = {};
-    
+    console.log({
+      validMoves,
+      fromMoveSelected
+    })
+  
     if (!showMoves) return styles;
-
-    if (fromMoveSelected) {
-      styles[fromMoveSelected] = {
-        backgroundColor: "rgba(59, 130, 246, 0.4)",
-      };
-    }
+    
+    if (!fromMoveSelected) return styles;
 
     validMoves.forEach((move) => {
       const dest = move.to;
@@ -87,10 +87,15 @@ export function ChessBoard({
           "radial-gradient(circle, rgba(34,197,94,0.8) 25%, transparent 26%)";
       }
     });
+    console.log({
+      styles
+    })
     return styles;
   }, [fromMoveSelected, validMoves, showMoves]);
 
   const arrows = React.useMemo(() => {
+    if (!showMoves) return [];
+    if (fromMoveSelected) return [];
     const colors = [
       "rgba(59,130,246,0.75)", 
       "rgba(34,197,94,0.75)", 
@@ -108,7 +113,7 @@ export function ChessBoard({
       return moves.map((m) => ({ startSquare: m.from, endSquare: m.to, color }));
     });
     return arrows;
-  }, [fromMoveSelected, validMoves, currentPlayer]);
+  }, [fromMoveSelected, showMoves, validMoves, currentPlayer]);
 
   return (
     <div className="w-full h-full min-h-0 flex items-center justify-center p-2">
@@ -129,6 +134,7 @@ export function ChessBoard({
             darkSquareStyle: { backgroundColor: "#769656" },
             lightSquareStyle: { backgroundColor: "#eeeed2" },
             squareStyles: customSquareStyles,
+            arrows: arrows
             
           }}
         />

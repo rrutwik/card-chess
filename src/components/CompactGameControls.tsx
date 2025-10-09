@@ -1,6 +1,14 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Trophy, RotateCcw, Shuffle, Play, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import {
+  Trophy,
+  RotateCcw,
+  Shuffle,
+  Play,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { PlayingCard, PieceColor } from "../types/game";
 import { SUIT_SYMBOLS, CARD_MEANINGS } from "../constants/chess";
 import { MAX_CHECK_ATTEMPTS } from "../hooks/useCardChessV2";
@@ -28,12 +36,10 @@ function getCardMeaning(card: PlayingCard): string {
 
 export function CompactGameControls({
   currentCard,
-  cardsRemaining,
   isInCheck,
   checkAttempts,
   onDrawCard,
   noValidCard,
-  onReshuffle,
   canDrawCard,
   currentPlayer,
   gameOver,
@@ -44,42 +50,53 @@ export function CompactGameControls({
 }: CompactGameControlsProps) {
   const attemptsRemaining = MAX_CHECK_ATTEMPTS - checkAttempts;
   return (
-    <div className="min-h-0 flex flex-row gap-4">
+    <div className="relative flex flex-row gap-4" style={{ height: "600px" }}>
+      {/* Game Over Overlay */}
       <AnimatePresence>
         {gameOver && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-2xl p-5 text-white shadow-2xl border-2 border-yellow-300"
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm rounded-2xl"
           >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <motion.div
-                animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
-                transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
-              >
-                <Trophy className="w-8 h-8" />
-              </motion.div>
-              <h2 className="text-2xl font-black">Victory!</h2>
-            </div>
-            <p className="text-center mb-3 font-bold capitalize">
-              {winner} Player Wins! 🎉
-            </p>
-            <button
-              onClick={onNewGame}
-              className="w-full py-3 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:scale-105 active:scale-95"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-2xl border-2 border-yellow-300 mx-4"
             >
-              <RotateCcw className="w-5 h-5" />
-              New Game
-            </button>
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <motion.div
+                  animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    repeatDelay: 2,
+                  }}
+                >
+                  <Trophy className="w-8 h-8" />
+                </motion.div>
+                <h2 className="text-2xl font-black">Victory!</h2>
+              </div>
+              <p className="text-center mb-4 font-bold capitalize text-lg">
+                {winner} Player Wins! 🎉
+              </p>
+              <button
+                onClick={onNewGame}
+                className="w-full py-3 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-2xl hover:brightness-110"
+              >
+                <RotateCcw className="w-5 h-5" />
+                New Game
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="min-h-0 flex flex-col gap-4" style={{ width: "75%" }}>
-
+      <div className="flex flex-col gap-4 flex-1 min-w-0">
         <div
-          className={`rounded-2xl p-4 border-2 shadow-xl transition-all duration-300 ${
+          className={`rounded-1xl p-4 border-2 shadow-xl transition-all duration-300 ${
             currentPlayer === "white"
               ? "bg-white border-gray-800"
               : "bg-gray-900 border-white"
@@ -87,22 +104,22 @@ export function CompactGameControls({
         >
           <div className="flex items-center justify-between">
             <div>
-              <p
+              <span
                 className={`text-xs ${
                   currentPlayer === "white" ? "text-gray-600" : "text-gray-400"
                 }`}
               >
-                Current Turn
-              </p>
-              <p
-                className={`text-2xl font-black capitalize ${
+                Current Turn :
+              </span>
+              <span
+                className={`text-xs font-black capitalize ${
                   currentPlayer === "white" ? "text-gray-900" : "text-white"
                 }`}
               >
-                {currentPlayer}
-              </p>
+                {" " + currentPlayer}
+              </span>
             </div>
-            <motion.div
+            {/* <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
               className={`
@@ -113,16 +130,17 @@ export function CompactGameControls({
                   : "bg-gray-900 border-4 border-white"
               }
             `}
-            />
+            /> */}
           </div>
         </div>
 
-        <AnimatePresence>
+        {/* Check Warning Section */}
+        <AnimatePresence mode="wait">
           {isInCheck && checkAttempts >= 0 && !gameOver && (
             <motion.div
-              initial={{ opacity: 0, height: 0, scale: 0.9 }}
+              initial={{ opacity: 0, height: 0, scale: 0.95 }}
               animate={{ opacity: 1, height: "auto", scale: 1 }}
-              exit={{ opacity: 0, height: 0, scale: 0.9 }}
+              exit={{ opacity: 0, height: 0, scale: 0.95 }}
               className="overflow-hidden"
             >
               <motion.div
@@ -134,7 +152,7 @@ export function CompactGameControls({
                   ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className={`rounded-2xl p-4 border-2 shadow-xl ${
+                className={`rounded-xl p-4 border-2 shadow-xl ${
                   attemptsRemaining <= 2
                     ? "bg-gradient-to-br from-red-50 to-orange-50 border-red-500"
                     : "bg-gradient-to-br from-yellow-50 to-orange-50 border-orange-500"
@@ -240,13 +258,18 @@ export function CompactGameControls({
           )}
         </AnimatePresence>
 
-
-        <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-3">
-            <p className="font-bold text-white">Current Card</p>
+        {/* Card Section */}
+        <div
+          className="bg-white rounded-2xl shadow-xl border-2 border-gray-100 overflow-hidden"
+          style={{ height: "360px" }}
+        >
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-4 py-3 justify-between flex flex-shrink-0">
+            <span className="font-bold text-xs text-white">Current Card</span>
           </div>
-
-          <div className="p-4">
+          <div
+            className="p-4 flex items-center justify-center"
+            style={{ height: "calc(100% - 48px)" }}
+          >
             <AnimatePresence mode="wait">
               {currentCard ? (
                 <motion.div
@@ -255,15 +278,21 @@ export function CompactGameControls({
                   animate={{ rotateY: 0, opacity: 1 }}
                   exit={{ rotateY: -90, opacity: 0 }}
                   transition={{ duration: 0.28 }}
-                  className="space-y-3"
+                  className="flex flex-row items-center justify-between w-full gap-4"
+                  style={{ width: "100%", maxWidth: "400px" }} // increased maxWidth to give space
                 >
+                  {/* Card */}
                   <div
                     className={`relative bg-white rounded-xl shadow-lg p-4 border-3 ${
                       currentCard.color === "red"
                         ? "border-red-500"
                         : "border-gray-900"
                     }`}
-                    style={{ aspectRatio: "2.5/3.5", maxHeight: 180 }}
+                    style={{
+                      width: "140px",
+                      height: "196px",
+                      aspectRatio: "2.5/3.5",
+                    }}
                   >
                     <div
                       className={`absolute top-2 left-2 flex flex-col items-center leading-none ${
@@ -308,26 +337,29 @@ export function CompactGameControls({
                     </div>
                   </div>
 
-                  <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl">
-                    <p className="text-xs text-blue-900 font-bold text-center">
-                      {getCardMeaning(currentCard)}
-                    </p>
-                  </div>
+                  {/* Meaning & Warning */}
+                  <div className="flex flex-col justify-between items-center flex-1 gap-3">
+                    <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl">
+                      <p className="text-xs text-blue-900 font-bold text-center">
+                        {getCardMeaning(currentCard)}
+                      </p>
+                    </div>
 
-                  <AnimatePresence>
                     {noValidCard && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="text-center overflow-hidden"
-                      >
-                        <p className="inline-block text-xs text-red-600 font-bold bg-red-50 border-2 border-red-200 rounded-full px-4 py-2">
-                          ⚠️ No valid moves
-                        </p>
-                      </motion.div>
+                      <AnimatePresence>
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.8 }}
+                          className="text-center"
+                        >
+                          <p className="inline-block text-xs text-red-600 font-bold bg-red-50 border-2 border-red-200 rounded-full px-4 py-2">
+                            ⚠️ No valid moves
+                          </p>
+                        </motion.div>
+                      </AnimatePresence>
                     )}
-                  </AnimatePresence>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
@@ -335,49 +367,37 @@ export function CompactGameControls({
                   initial={{ rotateY: 90, opacity: 0 }}
                   animate={{ rotateY: 0, opacity: 1 }}
                   transition={{ duration: 0.28 }}
-                  className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl shadow-lg p-4 overflow-hidden"
-                  style={{ aspectRatio: "2.5/3.5", maxHeight: 180 }}
+                  className="flex flex-col items-center gap-3"
+                  style={{ width: "100%", maxWidth: "200px" }}
                 >
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 20,
-                      repeat: Infinity,
-                      ease: "linear",
+                  <div
+                    className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl shadow-lg p-4 overflow-hidden"
+                    style={{
+                      width: "140px",
+                      height: "196px",
+                      aspectRatio: "2.5/3.5",
                     }}
-                    className="absolute inset-0 flex flex-col items-center justify-center text-white"
                   >
-                    <div className="text-5xl mb-2">🎴</div>
-                    <p className="font-bold text-lg">Ready</p>
-                  </motion.div>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 20,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="absolute inset-0 flex flex-col items-center justify-center text-white"
+                    >
+                      <div className="text-5xl mb-2">🎴</div>
+                      <p className="font-bold text-lg">Ready</p>
+                    </motion.div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
-      </div>
-      <div className="min-h-0 flex flex-col gap-4" style={{ width: "25%" }}>
 
-        <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-gray-700">Deck</span>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-black bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                {cardsRemaining}
-              </span>
-              <span className="text-gray-500">/54</span>
-            </div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-            <motion.div
-              animate={{ width: `${(cardsRemaining / 54) * 100}%` }}
-              className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-        </div>
-
-
+        {/* Action Buttons */}
         <div className="flex flex-col gap-3">
           <button
             onClick={onDrawCard}
@@ -385,7 +405,7 @@ export function CompactGameControls({
             className={`w-full py-3 rounded-xl font-bold transition-all duration-200 shadow-lg
             ${
               canDrawCard
-                ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:scale-105 active:scale-95 hover:shadow-2xl"
+                ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-2xl hover:brightness-110 active:scale-95"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-70"
             }`}
           >
@@ -402,18 +422,15 @@ export function CompactGameControls({
 
           <motion.button
             onClick={onNewGame}
-            className="w-full py-2.5 bg-gray-700 hover:bg-gray-800 text-black rounded-xl font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+            className="w-full py-2.5 bg-gray-700 hover:bg-gray-800 text-black rounded-xl font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-2xl hover:brightness-110"
           >
             <RotateCcw className="w-4 h-4" />
             Restart
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             onClick={() => handleShowMoveButton(!showMoves)}
-            className="w-full py-2.5 bg-gray-700 hover:bg-gray-800 text-black rounded-xl font-semibold shadow-lg 
-             transition-all duration-200 flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-gray-700 hover:bg-gray-800 text-black rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-2xl hover:brightness-110"
           >
             {showMoves ? (
               <>
