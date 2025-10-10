@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, Move, Square } from "chess.js";
 import { PlayingCard } from "../types/game";
-import { createDeck, shuffleDeck } from "../utils/deckUtils";
+import { MoveHistory, createDeck, shuffleDeck } from "../utils/deckUtils";
 import { CardChessMap } from "../constants/chess";
 import { saveGameState, loadGameState, clearGameState } from "../utils/storage";
 
@@ -85,7 +85,7 @@ export function useCardChess() {
   const [validMoves, setValidMoves] = useState<Move[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState<"white" | "black" | null>(null);
-  const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [moveHistory, setMoveHistory] = useState<MoveHistory[]>([]);
   
   useEffect(() => {
     const saved = loadGameState();
@@ -175,8 +175,7 @@ export function useCardChess() {
       }
 
       
-      const notation = `${currentPlayer}: ${playedCard.value} ${playedCard.suit !== "joker" ? playedCard.suit[0].toUpperCase() : ""} - ${move.piece.toUpperCase()}${move.from}${move.to}`;
-      setMoveHistory((prev) => [...prev, notation]);
+      setMoveHistory((prev) => [...prev, { card: playedCard, move }]);
 
       
       const nextPlayer = gameRef.current.turn() === "w" ? "white" : "black";

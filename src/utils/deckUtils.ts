@@ -3,6 +3,15 @@ import { PlayingCard, Suit } from '../types/game';
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
+export interface MoveHistory {
+  card: PlayingCard;
+  move: {
+    from: string;
+    to: string;
+    piece: string;
+  }
+}
+
 export function createDeck(): PlayingCard[] {
   const cards: PlayingCard[] = [];
 
@@ -33,12 +42,11 @@ export function createDeck(): PlayingCard[] {
 
 export function shuffleDeck(deck: PlayingCard[]): PlayingCard[] {
   const shuffled = [...deck];
-
-  
+  const randomBuffer = new Uint32Array(1);
   for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    window.crypto.getRandomValues(randomBuffer);
+    const j = randomBuffer[0] % (i + 1);
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
   return shuffled;
 }

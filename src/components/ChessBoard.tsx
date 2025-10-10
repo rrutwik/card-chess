@@ -6,7 +6,7 @@ import {
   PieceDataType,
 } from "react-chessboard";
 import { Chess, Move, Square } from "chess.js";
-import { PieceColor } from "../types/game";
+import { PieceColor, BoardOrientation } from "../types/game";
 import React from "react";
 
 interface ChessBoardProps {
@@ -18,6 +18,7 @@ interface ChessBoardProps {
   onDrop: (fromSquare: Square, toSquare: Square) => boolean;
   currentPlayer: PieceColor;
   canMove: boolean;
+  orientation: BoardOrientation;
 }
 
 export function ChessBoard({
@@ -29,7 +30,9 @@ export function ChessBoard({
   onDrop,
   currentPlayer,
   canMove,
+  orientation,
 }: ChessBoardProps) {
+
   const handleSquareClick = ({
     square,
     piece,
@@ -119,7 +122,7 @@ export function ChessBoard({
             position: game.fen(),
             onSquareClick: handleSquareClick,
             onPieceDrop: handleDrop,
-            boardOrientation: currentPlayer === "white" ? "white" : "black",
+            boardOrientation: orientation === 'auto' ? (currentPlayer === "white" ? "white" : "black") : orientation,
             boardStyle: {
               width: "100%",
               height: "100%",
@@ -131,7 +134,6 @@ export function ChessBoard({
             lightSquareStyle: { backgroundColor: "#eeeed2" },
             squareStyles: customSquareStyles,
             arrows: arrows
-            
           }}
         />
       </div>

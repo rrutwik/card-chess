@@ -6,10 +6,29 @@ import { CompactGameControls } from "./components/CompactGameControls";
 import { CollapsibleRulesSidebar } from "./components/CollapsibleRulesSidebar";
 import { useCardChess } from "./hooks/useCardChess";
 import { MoveHistoryFooter } from "./components/MoveHistoryFooter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
+import { BoardOrientation } from "./types/game";
 
 export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [showMoves, setShowMoves] = useState(true);
+
+  // Persistent orientation state
+  const [orientation, setOrientation] = useState<BoardOrientation>(() => {
+    const saved = localStorage.getItem('chessboard-orientation');
+    return (saved as BoardOrientation) || 'auto';
+  });
+
+  // Save orientation to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('chessboard-orientation', orientation);
+  }, [orientation]);
 
   useEffect(() => {
   }, [showMoves]);
@@ -75,6 +94,40 @@ export default function App() {
         </div>
 
         <div className="w-12 sm:w-24" />
+
+        {/* Orientation Selector */}
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-white/20">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 shadow-sm"></div>
+            <span className="text-xs font-medium text-gray-700 tracking-wide">View</span>
+          </div>
+
+          <Select value={orientation} onValueChange={(value: BoardOrientation) => setOrientation(value)}>
+            <SelectTrigger className="w-32 bg-white/70 border border-white/30 text-gray-700 hover:bg-white hover:border-white/50 focus:ring-1 focus:ring-indigo-400 shadow-sm transition-all duration-200 text-sm font-medium">
+              <SelectValue placeholder="View" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg">
+              <SelectItem value="auto" className="text-gray-700 hover:bg-blue-50 hover:text-blue-900 focus:bg-blue-50 py-2 px-3 text-sm transition-all duration-150">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 border border-white/30"></div>
+                  <span className="font-medium">Auto</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="white" className="text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:bg-gray-50 py-2 px-3 text-sm transition-all duration-150">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
+                  <span className="font-medium">White</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="black" className="text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus:bg-gray-50 py-2 px-3 text-sm transition-all duration-150">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-gray-800 border border-gray-400"></div>
+                  <span className="font-medium">Black</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </header>
 
       <main className="flex-1 flex">
@@ -96,6 +149,7 @@ export default function App() {
               onSquareClick={handleSquareClick}
               currentPlayer={currentPlayer}
               canMove={!!currentCard && !gameOver}
+              orientation={orientation}
             />
           </motion.div>
         </div>
