@@ -4,12 +4,15 @@ import { BookOpen } from "lucide-react";
 import { ChessBoard } from "./components/ChessBoard";
 import { CompactGameControls } from "./components/CompactGameControls";
 import { CollapsibleRulesSidebar } from "./components/CollapsibleRulesSidebar";
-import { useCardChessV2 } from "./hooks/useCardChessV2";
+import { useCardChess } from "./hooks/useCardChess";
 import { MoveHistoryFooter } from "./components/MoveHistoryFooter";
 
 export default function App() {
   const [showRules, setShowRules] = useState(false);
-  const [showMoves, setShowMoves] = useState(false);
+  const [showMoves, setShowMoves] = useState(true);
+
+  useEffect(() => {
+  }, [showMoves]);
 
   const {
     game,
@@ -30,13 +33,8 @@ export default function App() {
     isInCheck,
     checkAttempts,
     moveHistory,
-  } = useCardChessV2();
+  } = useCardChess();
 
-  useEffect(() => {
-    console.log({
-      showMoves
-    })
-  }, [showMoves]);
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">

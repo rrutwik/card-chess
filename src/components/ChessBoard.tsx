@@ -56,10 +56,6 @@ export function ChessBoard({
 
   const customSquareStyles = React.useMemo(() => {
     const styles: { [square: string]: React.CSSProperties } = {};
-    console.log({
-      validMoves,
-      fromMoveSelected
-    })
   
     if (!showMoves) return styles;
     

@@ -72,7 +72,7 @@ function checkIfAnyValidMoveForSelectedCard(game: Chess, card: PlayingCard) {
   });
 }
 
-export function useCardChessV2() {
+export function useCardChess() {
   const gameRef = useRef(new Chess());
 
   const [deck, setDeck] = useState(() => createDeck());

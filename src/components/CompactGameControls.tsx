@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { PlayingCard, PieceColor } from "../types/game";
 import { SUIT_SYMBOLS, CARD_MEANINGS } from "../constants/chess";
-import { MAX_CHECK_ATTEMPTS } from "../hooks/useCardChessV2";
+import { MAX_CHECK_ATTEMPTS } from "../hooks/useCardChess";
 
 interface CompactGameControlsProps {
   currentCard: PlayingCard | null;
