@@ -1,6 +1,9 @@
 import axios, { AxiosResponse, AxiosError } from 'axios';
 import type { User } from '../contexts/AuthContext';
 import { useAppStore } from '../stores/appStore';
+import { PlayingCard } from '../types/game';
+import { Move } from 'chess.js';
+import { MoveHistory } from '../utils/deckUtils';
 
 export interface LoginResponse {
   sessionToken: string;
@@ -30,9 +33,9 @@ export interface ChessGame {
     turn: 'white' | 'black';
     status: 'active' | 'completed' | 'abandoned';
     winner?: 'white' | 'black' | 'draw';
-    moves?: string[];
+    moves?: MoveHistory[];
     current_card?: string;
-    cards_remaining?: string[];
+    cards_deck?: PlayingCard[];
   };
   created_at?: string;
   updated_at?: string;
@@ -49,9 +52,10 @@ export interface UpdateGameStateRequest {
   turn?: 'white' | 'black';
   status?: 'active' | 'completed' | 'abandoned';
   winner?: 'white' | 'black' | 'draw';
-  moves?: string[];
-  current_card?: string;
-  cards_remaining?: string[];
+  moves?: MoveHistory[];
+  current_card?: string | null;
+  cards_deck?: PlayingCard[];
+  player_black?: string;
 }
 
 export interface EndGameRequest {
@@ -191,8 +195,8 @@ export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<AxiosRe
 
 export const getUserDetails = async (includeProfile: boolean = false): Promise<User> => {
   try {
-    const response = await api.get<User>(`/auth/me${includeProfile ? '?includeProfile=true' : ''}`);
-    return response.data;
+    const response = await api.get<{data: User}>(`/auth/me${includeProfile ? '?includeProfile=true' : ''}`);
+    return response.data.data;
   } catch (error) {
     console.error('Failed to get user details:', error);
     throw error;
@@ -202,12 +206,12 @@ export const getUserDetails = async (includeProfile: boolean = false): Promise<U
 // Chess API functions with enhanced error handling and loading states
 export class ChessAPI {
   // Create a new chess game
-  static async createGame(opponentId: string, opponentColor: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+  static async createGame(color: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
       const appStore = useAppStore.getState();
       appStore.setLoading(true, 'Creating game...');
 
-      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { opponentId, opponentColor });
+      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { color });
 
       appStore.setLoading(false);
       appStore.addNotification({
@@ -289,7 +293,32 @@ export class ChessAPI {
     }
   }
 
-  // Update game state (move, card draw, etc.)
+  static async joinGame(gameId: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+    try {
+      const appStore = useAppStore.getState();
+      appStore.setLoading(true, 'Joining game...');
+
+      const response = await api.put<ApiResponse<ChessGame>>(`/chess/game/${gameId}/join`);
+
+      appStore.setLoading(false);
+      return response;
+    } catch (error) {
+      const appStore = useAppStore.getState();
+      appStore.setLoading(false);
+
+      if (error instanceof ApiError) {
+        appStore.addNotification({
+          type: 'error',
+          title: 'Failed to join game',
+          message: error.message,
+          duration: 5000,
+        });
+      }
+
+      throw error;
+    }
+  }
+
   static async updateGameState(gameId: string, gameState: UpdateGameStateRequest): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
       const response = await api.put<ApiResponse<ChessGame>>(`/chess/game/${gameId}/state`, gameState);

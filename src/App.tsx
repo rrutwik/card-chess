@@ -5,6 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
+import { PlayPage } from './pages/PlayPage';
 import { GamePage } from './pages/GamePage';
 import { GamesListPage } from './pages/GamesListPage';
 import { HistoryPage } from './pages/HistoryPage';
@@ -25,7 +26,7 @@ const AppContent: React.FC = () => {
               path="/play"
               element={
                 <ProtectedRoute>
-                  <GamePage />
+                  <PlayPage />
                 </ProtectedRoute>
               }
             />

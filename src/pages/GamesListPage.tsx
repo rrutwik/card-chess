@@ -108,7 +108,7 @@ export const GamesListPage: React.FC = () => {
               className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
-              <span>New Game</span>
+              <span>Find Opponent</span>
             </button>
           </div>
 
@@ -132,7 +132,7 @@ export const GamesListPage: React.FC = () => {
                 onClick={() => navigate("/play")}
                 className="bg-primary text-primary-foreground px-10 py-5 rounded-2xl hover:bg-primary/90 transition-all text-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
               >
-                Start New Game
+                Find Opponent
               </button>
             </motion.div>
           ) : (

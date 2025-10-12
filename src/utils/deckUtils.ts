@@ -9,7 +9,8 @@ export interface MoveHistory {
     from: string;
     to: string;
     piece: string;
-  }
+  },
+  player: "white" | "black"
 }
 
 export function createDeck(): PlayingCard[] {

@@ -26,7 +26,7 @@ interface CompactGameControlsProps {
   gameOver: boolean;
   handleShowMoveButton: (show: boolean) => void;
   showMoves: boolean;
-  winner: PieceColor | null;
+  winner: PieceColor | "draw" | null;
   onNewGame: () => void;
 }
 

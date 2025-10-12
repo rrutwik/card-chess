@@ -45,10 +45,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('🔍 AuthContext: Found existing token, validating...');
         try {
           // Validate the token by making an API call
-          const userData = await getUserDetails(true);
-          setUser(userData);
+          const data = await getUserDetails(true);
+          setUser(data);
           setUpdateTrigger(prev => prev + 1); // Force re-render
-          console.log('✅ AuthContext: Token validated, user set:', userData);
+          console.log('✅ AuthContext: Token validated, user set:', data);
         } catch (error) {
           // Token is invalid or expired, clear it
           console.warn('❌ AuthContext: Token validation failed, clearing stored auth data');

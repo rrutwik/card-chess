@@ -4,21 +4,26 @@ import { PlayingCard } from "../types/game";
 import { MoveHistory, createDeck, shuffleDeck } from "../utils/deckUtils";
 import { CardChessMap } from "../constants/chess";
 import { saveGameState, loadGameState, clearGameState } from "../utils/storage";
+import { ChessAPI } from "../services/api";
 
 export const MAX_CHECK_ATTEMPTS = 5;
 
+interface UseCardChessOptions {
+  gameId?: string;
+  userId?: string;
+  onGameUpdate?: (fen: string, currentPlayer: string, currentCard: PlayingCard | null) => void;
+}
+
 function checkMove(move: Move, card: PlayingCard) {
-  
   if (!card) return false;
   if (card.suit === "joker") return true;
 
   const cardValue = String(card.value);
 
-  
   const pawnCards = ["2", "3", "4", "5", "6", "7", "8", "9"];
   if (pawnCards.includes(cardValue)) {
     if (move.piece !== "p") return false;
-    
+
     const fromSquare = move.from;
     if (!fromSquare) return false;
     const file = fromSquare[0];
@@ -28,7 +33,6 @@ function checkMove(move: Move, card: PlayingCard) {
     return true;
   }
 
-  
   const mapping: Record<string, string> = {
     A: "r", 
     "10": "n",
@@ -44,149 +48,91 @@ function checkMove(move: Move, card: PlayingCard) {
   return false;
 }
 
-function getValidMovesForCard(
-  game: Chess,
-  fromMoveSelected: Square,
-  card: PlayingCard,
-  player: "white" | "black"
-): Move[] {
-  if (!fromMoveSelected || !card) return [];
-  const piece = game.get(fromMoveSelected);
-  if (!piece) return [];
-  const piecePlayerColor = piece.color === "w" ? "white" : "black";
-  if (piecePlayerColor !== player) return [];
-
-  const allMoves = game.moves({ square: fromMoveSelected, verbose: true }) as Move[];
-  return allMoves.filter((m) => checkMove(m, card));
-}
-
-function checkIfAnyValidMoveForSelectedCard(game: Chess, card: PlayingCard) {
-  if (!card) return [] as Move[];
-  const allMoves = game.moves({ verbose: true }) as Move[];
-  
-  return allMoves.filter((move) => {
-    if (!move) return false;
-    const sideToMove = game.turn(); 
-    if (move.color !== sideToMove) return false;
-    return checkMove(move, card);
-  });
-}
-
-export function useCardChess(fen: string | null) {
-  const gameRef = useRef(fen ? new Chess(fen) : new Chess());
-
-  const [deck, setDeck] = useState(() => createDeck());
+export function useCardChess(
+  initialFen: string | null,
+  options: UseCardChessOptions = {}
+) {
+  const { gameId, userId, onGameUpdate } = options;
+  const gameRef = useRef(new Chess(initialFen || undefined));
+  const [deck, setDeck] = useState<PlayingCard[]>(() => createDeck());
   const [currentCard, setCurrentCard] = useState<PlayingCard | null>(null);
-  const [noValidCard, setNoValidCard] = useState<boolean>(false);
   const [currentPlayer, setCurrentPlayer] = useState<"white" | "black">("white");
-  const [checkAttempts, setCheckAttempts] = useState<number>(0);
-
+  const [checkAttempts, setCheckAttempts] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [winner, setWinner] = useState<"white" | "black" | "draw" | null>(null);
   const [fromMoveSelected, setFromMoveSelected] = useState<Square | null>(null);
   const [validMoves, setValidMoves] = useState<Move[]>([]);
-  const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState<"white" | "black" | null>(null);
   const [moveHistory, setMoveHistory] = useState<MoveHistory[]>([]);
-  
-  useEffect(() => {
-    const saved = loadGameState();
-    if (saved) {
-      try {
-        gameRef.current.load(saved.fen);
-        setDeck(saved.deck || createDeck());
-        if (saved.currentCard) setCurrentCard(saved.currentCard);
-        setCurrentPlayer(gameRef.current.turn() === "w" ? "white" : "black");
-        setCheckAttempts(saved.checkAttempts || 0);
-        setMoveHistory(saved.moveHistory || []);
-      } catch (e) {
-        console.error("Failed to load saved state:", e);
-        clearGameState();
-      }
-    }
-  }, []);
+  const [noValidCard, setNoValidCard] = useState(false);
 
-  useEffect(() => {
+  // Sync game state with backend
+  const syncWithBackend = useCallback(async (fen: string, newCurrentPlayer: string, newCurrentCard: PlayingCard | null) => {
+    if (!gameId || !userId) return;
+
     try {
-      saveGameState(gameRef.current.fen(), deck, currentPlayer, currentCard, checkAttempts, moveHistory);
-    } catch (e) {
-      console.warn("Auto-save failed:", e);
-    }
-  }, [deck, currentPlayer, checkAttempts, currentCard, moveHistory]);
+      await ChessAPI.updateGameState(gameId, {
+        fen,
+        turn: newCurrentPlayer as 'white' | 'black',
+        current_card: newCurrentCard ? `${newCurrentCard.value}${newCurrentCard.suit}` : null,
+        cards_deck: deck,
+        moves: moveHistory
+      });
 
-  useEffect(() => {
-    if (gameRef.current.isCheck()) {
-      if (checkAttempts >= MAX_CHECK_ATTEMPTS) {
-        setGameOver(true);
-        setWinner(currentPlayer === "white" ? "black" : "white");
-        clearGameState();
-      }
+      onGameUpdate?.(fen, newCurrentPlayer, newCurrentCard);
+    } catch (error) {
+      console.error("Failed to sync with backend:", error);
     }
-  }, [gameRef.current, checkAttempts, currentPlayer]);
+  }, [gameId, userId, deck.length, moveHistory, onGameUpdate]);
 
   const drawCard = useCallback(() => {
-    if (deck.length === 0) return;
-    const newCard = deck[0];
-    setDeck((d) => d.slice(1));
-    setCurrentCard(newCard);
-    setFromMoveSelected(null);
+    if (deck.length === 0 || gameOver) return;
 
-    if (gameRef.current.isCheck()) {
-      setCheckAttempts((prev) => {
-        const next = prev + 1;
-        if (next >= MAX_CHECK_ATTEMPTS) {
-          setGameOver(true);
-          setWinner(currentPlayer === "white" ? "black" : "white");
-          clearGameState();
-        }
-        return next;
-      });
-    } else {
-      setCheckAttempts(0);
+    const newDeck = [...deck];
+    const card = newDeck.pop();
+    if (card) {
+      setDeck(newDeck);
+      setCurrentCard(card);
+      setNoValidCard(false);
+
+      // Sync with backend
+      syncWithBackend(gameRef.current.fen(), currentPlayer, card);
     }
-  }, [deck, currentPlayer]);
-
-  useEffect(() => {
-    if (deck.length == 0) {
-      const shuffled = shuffleDeck(createDeck());
-      setDeck(shuffled);
-    }
-  }, [deck]);
-
-  useEffect(() => {
-    if (!currentCard) return;
-    const moves = checkIfAnyValidMoveForSelectedCard(gameRef.current, currentCard);
-    setValidMoves(moves);
-    setNoValidCard(moves.length === 0);
-  }, [currentCard]);
+  }, [deck, gameOver, currentPlayer, syncWithBackend]);
 
   const reshuffleDeck = useCallback(() => {
-    const shuffled = shuffleDeck(createDeck());
-    setDeck(shuffled);
+    const newDeck = shuffleDeck(createDeck());
+    setDeck(newDeck);
     setCurrentCard(null);
-    setFromMoveSelected(null);
-    setValidMoves([]);
     setNoValidCard(false);
+    setCheckAttempts(0);
   }, []);
 
   const updateMove = useCallback(
-    (playedCard: PlayingCard, move: Move) => {
-      if (!move) {
-        console.error("updateMove called without a move");
-        return;
-      }
+    (card: PlayingCard, move: Move) => {
+      if (gameOver) return;
 
-      
-      setMoveHistory((prev) => [...prev, { card: playedCard, move }]);
-
-      
       const nextPlayer = gameRef.current.turn() === "w" ? "white" : "black";
 
-      
       setCurrentPlayer(nextPlayer);
       setCurrentCard(null);
       setFromMoveSelected(null);
       setValidMoves([]);
 
-      
+      // Update move history
+      const newMoveHistory = [
+        ...moveHistory,
+        {
+          move: {
+            from: move.from,
+            to: move.to,
+            piece: move.piece,
+          },
+          card: card,
+          player: currentPlayer,
+        },
+      ];
+      setMoveHistory(newMoveHistory);
+
       if (gameRef.current.isCheckmate()) {
         setGameOver(true);
         setWinner(currentPlayer);
@@ -199,36 +145,48 @@ export function useCardChess(fen: string | null) {
         setWinner(null);
       }
 
+      // Sync with backend
+      syncWithBackend(gameRef.current.fen(), nextPlayer, null);
+
       try {
-        saveGameState(gameRef.current.fen(), deck, nextPlayer, currentCard, checkAttempts, moveHistory);
+        saveGameState(
+          gameRef.current.fen(),
+          deck,
+          nextPlayer,
+          null,
+          checkAttempts,
+          newMoveHistory
+        );
       } catch (e) {
         console.warn("Save after move failed:", e);
       }
     },
-    [currentPlayer, deck, checkAttempts, currentCard]
+    [currentPlayer, deck, checkAttempts, gameOver, moveHistory, syncWithBackend]
   );
 
-  const chessMakeMove = useCallback((fromSquare: Square, toSquare: Square, promotion: string) => {
-    try {
-      setCheckAttempts(0);
-      const mv = gameRef.current.move({ from: fromSquare, to: toSquare, promotion });
-      if (!currentCard) {
-        console.error("Current Card is not selected");
+  const chessMakeMove = useCallback(
+    (fromSquare: Square, toSquare: Square, promotion: string) => {
+      try {
+        setCheckAttempts(0);
+        const mv = gameRef.current.move({ from: fromSquare, to: toSquare, promotion });
+        if (!currentCard) {
+          console.error("Current Card is not selected");
+          return false;
+        }
+        if (mv) updateMove(currentCard, mv);
+        return true;
+      } catch (e) {
+        console.error("Invalid move attempt:", e);
         return false;
       }
-      if (mv) updateMove(currentCard, mv);
-      return true;
-    } catch (e) {
-      console.error("Invalid move attempt:", e);
-      return false;
-    }
-  }, [currentCard, updateMove, setCheckAttempts]);
+    },
+    [currentCard, updateMove, setCheckAttempts]
+  );
 
   const handleSquareClick = useCallback(
     (square: Square, piece: any | null) => {
       if (gameOver || !currentCard) return;
 
-      
       if (fromMoveSelected) {
         const validMovesForSelection = getValidMovesForCard(
           gameRef.current,
@@ -237,21 +195,30 @@ export function useCardChess(fen: string | null) {
           currentPlayer
         );
 
-        const found = validMovesForSelection.some((m) => m.from === fromMoveSelected && m.to === square);
+        const found = validMovesForSelection.some(
+          (m) => m.from === fromMoveSelected && m.to === square
+        );
         if (found) {
           chessMakeMove(fromMoveSelected, square, "q");
           return;
         }
 
-        
         const clickedPiece = gameRef.current.get(square);
-        const clickedColor = clickedPiece ? (clickedPiece.color === "w" ? "white" : "black") : null;
+        const clickedColor = clickedPiece
+          ? clickedPiece.color === "w"
+            ? "white"
+            : "black"
+          : null;
         if (clickedPiece && clickedColor === currentPlayer) {
           setFromMoveSelected(square);
-          const moves = getValidMovesForCard(gameRef.current, square, currentCard, currentPlayer);
+          const moves = getValidMovesForCard(
+            gameRef.current,
+            square,
+            currentCard,
+            currentPlayer
+          );
           setValidMoves(moves);
         } else {
-          
           setFromMoveSelected(null);
           setValidMoves([]);
         }
@@ -259,19 +226,27 @@ export function useCardChess(fen: string | null) {
         return;
       }
 
-      
       const clickedPiece = gameRef.current.get(square);
-      const clickedColor = clickedPiece ? (clickedPiece.color === "w" ? "white" : "black") : null;
+      const clickedColor = clickedPiece
+        ? clickedPiece.color === "w"
+          ? "white"
+          : "black"
+        : null;
       if (clickedPiece && clickedColor === currentPlayer) {
         setFromMoveSelected(square);
-        const moves = getValidMovesForCard(gameRef.current, square, currentCard, currentPlayer);
+        const moves = getValidMovesForCard(
+          gameRef.current,
+          square,
+          currentCard,
+          currentPlayer
+        );
         setValidMoves(moves);
       } else {
         setFromMoveSelected(null);
         setValidMoves([]);
       }
     },
-    [fromMoveSelected, currentCard, currentPlayer, gameOver, updateMove]
+    [fromMoveSelected, currentCard, currentPlayer, gameOver, chessMakeMove]
   );
 
   const onDrop = useCallback(
@@ -284,7 +259,9 @@ export function useCardChess(fen: string | null) {
           currentCard,
           currentPlayer
         );
-        const found = validMovesForSelection.some((m) => m.from === fromSquare && m.to === toSquare);
+        const found = validMovesForSelection.some(
+          (m) => m.from === fromSquare && m.to === toSquare
+        );
         if (found) {
           return chessMakeMove(fromSquare, toSquare, "q");
         }
@@ -294,7 +271,7 @@ export function useCardChess(fen: string | null) {
         return false;
       }
     },
-    [currentCard, gameOver, updateMove]
+    [currentCard, gameOver, chessMakeMove, currentPlayer]
   );
 
   const resetGame = useCallback(() => {
@@ -313,8 +290,36 @@ export function useCardChess(fen: string | null) {
     clearGameState();
   }, []);
 
+  // Poll for updates from other players
+  useEffect(() => {
+    if (!gameId) return;
+
+    const pollForUpdates = async () => {
+      try {
+        const response = await ChessAPI.getGame(gameId);
+        const latestGame = response.data.data;
+
+        // If the backend has a different FEN, update local state
+        if (latestGame.game_state.fen !== gameRef.current.fen()) {
+          gameRef.current.load(latestGame.game_state.fen);
+          setCurrentPlayer(latestGame.game_state.turn);
+          setCurrentCard(null); // card would not be selected if fen changes
+          setDeck(latestGame.game_state.cards_deck || []);
+          setMoveHistory(latestGame.game_state.moves || []);
+          setGameOver(latestGame.game_state.status === 'completed');
+          setWinner(latestGame.game_state.winner || null);
+        }
+      } catch (err) {
+        console.error("Error polling for game updates:", err);
+      }
+    };
+
+    // Poll for updates every 3 seconds
+    const intervalId = setInterval(pollForUpdates, 3000);
+    return () => clearInterval(intervalId);
+  }, [gameId]);
+
   return {
-    
     game: gameRef.current,
     deck,
     drawCard,
@@ -332,8 +337,28 @@ export function useCardChess(fen: string | null) {
     validMoves,
     moveHistory,
     isInCheck: gameRef.current.isCheck(),
-    
     cardsRemaining: deck.length,
     canDrawCard: (!currentCard || noValidCard) && !gameOver,
   } as const;
+}
+
+function getValidMovesForCard(
+  game: Chess,
+  fromSquare: Square,
+  card: PlayingCard,
+  currentPlayer: "white" | "black"
+) {
+  const moves: Move[] = [];
+  const possibleMoves = game.moves({
+    square: fromSquare,
+    verbose: true,
+  });
+
+  for (const move of possibleMoves) {
+    if (checkMove(move, card)) {
+      moves.push(move);
+    }
+  }
+
+  return moves;
 }

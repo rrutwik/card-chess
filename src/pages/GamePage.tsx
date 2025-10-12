@@ -13,12 +13,14 @@ import { useGameStore } from "../stores/gameStore";
 import { useAppStore } from "../stores/appStore";
 import { BoardOrientation } from "../types/game";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { addNotification } = useAppStore();
   const { theme } = useTheme();
+  const { user } = useAuth();
   const {
     currentGame,
     showRules,
@@ -31,15 +33,29 @@ export const GamePage: React.FC = () => {
     setLoading,
     setError,
   } = useGameStore();
-  const [orientation, setOrientation] = useState<BoardOrientation>(() => {
-    const saved = localStorage.getItem('chessboard-orientation');
-    return (saved as BoardOrientation) || 'auto';
-  });
+
+  // Check if current user can join this game
+  const canJoinGame = currentGame && user && (
+    (!currentGame.player_black && currentGame.player_white !== user._id) ||
+    (!currentGame.player_white && currentGame.player_black !== user._id)
+  );
+
+  // Check if current user is already playing in this game
+  const isPlayerInGame = currentGame && user && (
+    currentGame.player_white === user._id || currentGame.player_black === user._id
+  ) ? true : false;
+
   // Load game data from backend if gameId is provided
   useEffect(() => {
     const loadGame = async () => {
       if (!gameId) {
-        setLoading(false);
+        addNotification({
+          type: "info",
+          title: "No Game Found",
+          message: "Please create a game first to get a shareable link",
+          duration: 5000,
+        });
+        navigate("/play");
         return;
       }
 
@@ -65,7 +81,35 @@ export const GamePage: React.FC = () => {
     };
 
     loadGame();
-  }, [gameId, setCurrentGame, setLoading, setError, addNotification]);
+  }, [gameId, setCurrentGame, setLoading, setError, addNotification, navigate]);
+
+  // Handle opponent registration when joining a game
+  const handleJoinGameAsOpponent = async () => {
+    if (!gameId || !currentGame || !user) return;
+
+    try {
+      await ChessAPI.joinGame(gameId);
+
+      // Reload the game to get updated state
+      const response = await ChessAPI.getGame(gameId);
+      setCurrentGame(response.data.data);
+
+      addNotification({
+        type: "success",
+        title: "Joined Game",
+        message: "You have successfully joined the game!",
+        duration: 3000,
+      });
+    } catch (err) {
+      console.error("Error joining game:", err);
+      addNotification({
+        type: "error",
+        title: "Failed to join game",
+        message: "Could not join the game. It may be full or no longer available.",
+        duration: 5000,
+      });
+    }
+  };
 
   const {
     game: chessGame,
@@ -86,53 +130,14 @@ export const GamePage: React.FC = () => {
     isInCheck,
     checkAttempts,
     moveHistory,
-  } = useCardChess(currentGame?.game_state.fen || null);
-
-  const handleShareGame = async () => {
-    const gameUrl = `${window.location.origin}/game/${gameId}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Card Chess Game",
-          text: "Join me in this Card Chess game!",
-          url: gameUrl,
-        });
-        addNotification({
-          type: "success",
-          title: "Game shared",
-          message: "Game link shared successfully",
-          duration: 3000,
-        });
-      } catch (err) {
-        // User cancelled sharing or sharing failed
-        copyToClipboard(gameUrl);
-      }
-    } else {
-      copyToClipboard(gameUrl);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        addNotification({
-          type: "success",
-          title: "Link copied",
-          message: "Game link copied to clipboard!",
-          duration: 3000,
-        });
-      })
-      .catch(() => {
-        addNotification({
-          type: "error",
-          title: "Failed to copy",
-          message: "Could not copy link to clipboard",
-          duration: 3000,
-        });
-      });
-  };
+  } = useCardChess(currentGame?.game_state.fen || null, {
+    gameId,
+    userId: user?._id,
+    onGameUpdate: (fen, currentPlayer, currentCard) => {
+      // Handle game updates from other players
+      console.log("Game updated from backend:", { fen, currentPlayer, currentCard });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -185,6 +190,26 @@ export const GamePage: React.FC = () => {
       {/* Header */}
       <Header showBackButton={true} backTo="/" />
 
+      {/* Join Game Prompt - Show if user can join but hasn't yet */}
+      {canJoinGame && !isPlayerInGame && (
+        <div className="flex items-center justify-center p-4 bg-primary/10 border-b border-primary/20">
+          <div className="text-center max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-primary mb-2">
+              Join This Game?
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              This game is waiting for a second player. Click below to join!
+            </p>
+            <button
+              onClick={handleJoinGameAsOpponent}
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl hover:bg-primary/90 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+            >
+              Join Game
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Game Layout */}
       <main className="flex-1 flex">
         <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6">
@@ -203,8 +228,8 @@ export const GamePage: React.FC = () => {
               onDrop={onDrop}
               onSquareClick={handleSquareClick}
               currentPlayer={currentPlayer}
-              canMove={!!currentCard && !gameOver}
-              orientation={orientation}
+              canMove={currentCard !== null && gameOver == false && isPlayerInGame == true}
+              orientation={currentGame?.player_white?.toString() === user?._id.toString() ? "white" : "black"}
             />
           </motion.div>
         </div>
@@ -230,7 +255,7 @@ export const GamePage: React.FC = () => {
                 onDrawCard={drawCard}
                 noValidCard={noValidCard}
                 onReshuffle={reshuffleDeck}
-                canDrawCard={canDrawCard}
+                canDrawCard={canDrawCard && isPlayerInGame}
                 currentPlayer={currentPlayer}
                 gameOver={gameOver}
                 winner={winner}
