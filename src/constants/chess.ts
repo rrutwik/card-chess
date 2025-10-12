@@ -44,3 +44,15 @@ export const CardChessMap = {
   g: "8",
   h: "9"
 };
+
+export const PieceCardMap: Record<string, string> = {
+  rook: 'A',
+  knight: '10',
+  bishop: 'J',
+  queen: 'Q',
+  king: 'K',
+  any: 'JOKER',
+  ...Object.fromEntries(Object.entries({
+    a: '2', b: '3', c: '4', d: '5', e: '6', f: '7', g: '8', h: '9'
+  }).map(([file, card]) => [`pawn_${file}`, card]))
+};

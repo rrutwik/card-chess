@@ -1,5 +1,6 @@
 export type PieceType = 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
 export type PieceColor = 'white' | 'black';
+export type BoardOrientation = 'white' | 'black' | 'auto';
 export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades' | 'joker';
 
 export interface Piece {

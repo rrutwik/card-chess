@@ -1,4 +1,5 @@
 import { PlayingCard } from "../types/game";
+import { MoveHistory } from "./deckUtils";
 
 export const GAME_STATE_KEY = 'card_chess_game_state';
 
@@ -8,7 +9,7 @@ type StoredGameState = {
   currentPlayer: 'white' | 'black';
   checkAttempts: number;
   currentCard: PlayingCard | null;
-  moveHistory: string[];
+  moveHistory: MoveHistory[];
 };
 
 export const saveGameState = (
@@ -17,7 +18,7 @@ export const saveGameState = (
   currentPlayer: 'white' | 'black',
   currentCard: PlayingCard | null,
   checkAttempts: number,
-  moveHistory: string[]
+  moveHistory: MoveHistory[]
 ) => {
   const gameState: StoredGameState = {
     fen,
@@ -27,7 +28,8 @@ export const saveGameState = (
     checkAttempts,
     moveHistory
   };
-  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));};
+  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+};
 
 export const loadGameState = (): StoredGameState | null => {
   const saved = localStorage.getItem(GAME_STATE_KEY);

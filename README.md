@@ -1,5 +1,5 @@
 
-  # Card Chess Game UI/UX
+  # Card Chess Game
 
   This is a code bundle for Card Chess Game UI/UX. The original project is available at https://www.figma.com/design/tfDyqUGJEbeY7FvSANL1hU/Card-Chess-Game-UI-UX.
 

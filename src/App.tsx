@@ -1,137 +1,76 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "motion/react";
-import { BookOpen } from "lucide-react";
-import { ChessBoard } from "./components/ChessBoard";
-import { CompactGameControls } from "./components/CompactGameControls";
-import { CollapsibleRulesSidebar } from "./components/CollapsibleRulesSidebar";
-import { useCardChess } from "./hooks/useCardChess";
-import { MoveHistoryFooter } from "./components/MoveHistoryFooter";
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { LoginPage } from './pages/LoginPage';
+import { HomePage } from './pages/HomePage';
+import { GamePage } from './pages/GamePage';
+import { GamesListPage } from './pages/GamesListPage';
+import { HistoryPage } from './pages/HistoryPage';
+import { NotificationProvider } from './components/NotificationProvider';
+import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+const AppContent: React.FC = () => {
+  // AuthContext now handles initialization automatically
+  return (
+    <ErrorBoundary>
+      <NotificationProvider>
+        <div className="min-h-screen bg-background text-foreground">
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/play"
+              element={
+                <ProtectedRoute>
+                  <GamePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/games"
+              element={
+                <ProtectedRoute>
+                  <GamesListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <HistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/game/:gameId"
+              element={
+                <ProtectedRoute>
+                  <GamePage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Redirect any unknown routes to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <NetworkStatusIndicator />
+        </div>
+      </NotificationProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default function App() {
-  const [showRules, setShowRules] = useState(false);
-  const [showMoves, setShowMoves] = useState(true);
-
-  useEffect(() => {
-  }, [showMoves]);
-
-  const {
-    game,
-    currentCard,
-    currentPlayer,
-    fromMoveSelected,
-    onDrop,
-    validMoves,
-    gameOver,
-    winner,
-    noValidCard,
-    drawCard,
-    reshuffleDeck,
-    handleSquareClick,
-    resetGame,
-    cardsRemaining,
-    canDrawCard,
-    isInCheck,
-    checkAttempts,
-    moveHistory,
-  } = useCardChess();
-
-
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
-
-      <CollapsibleRulesSidebar
-        isOpen={showRules}
-        onClose={() => setShowRules(false)}
-      />
-
-
-      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200/50 flex-none relative z-20">
-        <button
-          onClick={() => setShowRules(true)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl hover:brightness-110 transition-all duration-200"
-        >
-          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span className="hidden sm:inline">Rules</span>
-        </button>
-
-        <div className="flex items-center gap-2 sm:gap-3">
-          <motion.span 
-            className="text-2xl sm:text-3xl"
-            animate={{ rotate: [0, -10, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          >
-            ♔
-          </motion.span>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Card Chess
-          </h1>
-          <motion.span 
-            className="text-2xl sm:text-3xl"
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, delay: 1 }}
-          >
-            🎴
-          </motion.span>
-        </div>
-
-        <div className="w-12 sm:w-24" />
-      </header>
-
-      <main className="flex-1 flex">
-
-        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full h-full"
-            style={{ width: "70%", height: "70%" }}
-          >
-            <ChessBoard
-              game={game}
-              fromMoveSelected={fromMoveSelected}
-              validMoves={validMoves}
-              showMoves={showMoves}
-              onDrop={onDrop}
-              onSquareClick={handleSquareClick}
-              currentPlayer={currentPlayer}
-              canMove={!!currentCard && !gameOver}
-            />
-          </motion.div>
-        </div>
-
-
-        <aside className="sm:w-80 lg:w-96 flex items-center justify-center p-2 sm:p-4 lg:p-6 border-l border-gray-200/50 bg-white/40 backdrop-blur-sm"
-        style={{ width: "40%" }}
-        >
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-            className="w-full h-full overflow-y-auto"
-          >
-            <CompactGameControls
-              currentCard={currentCard}
-              cardsRemaining={cardsRemaining}
-              isInCheck={isInCheck}
-              checkAttempts={checkAttempts}
-              onDrawCard={drawCard}
-              noValidCard={noValidCard}
-              onReshuffle={reshuffleDeck}
-              canDrawCard={canDrawCard}
-              currentPlayer={currentPlayer}
-              gameOver={gameOver}
-              winner={winner}
-              onNewGame={resetGame}
-              showMoves={showMoves}
-              handleShowMoveButton={setShowMoves}
-            />
-          </motion.div>
-        </aside>
-      </main>
-      {gameOver && 
-        <MoveHistoryFooter moveHistory={moveHistory} />
-      }
-    </div>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

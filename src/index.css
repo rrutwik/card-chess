@@ -1800,7 +1800,7 @@ html {
 
 @property --tw-gradient-position {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-gradient-from {
@@ -1823,12 +1823,12 @@ html {
 
 @property --tw-gradient-stops {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-gradient-via-stops {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-gradient-from-position {
@@ -1849,25 +1849,9 @@ html {
   initial-value: 100%;
 }
 
-@property --tw-leading {
-  syntax: "*";
-  inherits: false
-}
-
-@property --tw-font-weight {
-  syntax: "*";
-  inherits: false
-}
-
-@property --tw-shadow {
-  syntax: "*";
-  inherits: false;
-  initial-value: 0 0 #0000;
-}
-
 @property --tw-shadow-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-shadow-alpha {
@@ -1884,7 +1868,7 @@ html {
 
 @property --tw-inset-shadow-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-inset-shadow-alpha {
@@ -1906,7 +1890,7 @@ html {
 
 @property --tw-inset-ring-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-inset-ring-shadow {
@@ -1917,7 +1901,7 @@ html {
 
 @property --tw-ring-inset {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-ring-offset-width {
@@ -1940,57 +1924,57 @@ html {
 
 @property --tw-blur {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-brightness {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-contrast {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-grayscale {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-hue-rotate {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-invert {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-opacity {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-saturate {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-sepia {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-drop-shadow {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-drop-shadow-color {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-drop-shadow-alpha {
@@ -2001,10 +1985,225 @@ html {
 
 @property --tw-drop-shadow-size {
   syntax: "*";
-  inherits: false
+  inherits: false;
 }
 
 @property --tw-duration {
   syntax: "*";
-  inherits: false
+  inherits: false;
+}
+
+/* Custom animations and utilities for Card Chess */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Enhanced glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom focus styles */
+.focus-ring {
+  transition: all 0.2s ease;
+}
+
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  transform: scale(1.02);
+}
+
+/* Improved button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-secondary:hover::before {
+  left: 100%;
+}
+
+/* Chess board specific styles */
+.chess-square {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.chess-square:hover {
+  transform: scale(1.05);
+  z-index: 60;
+}
+
+.chess-square.selected {
+  box-shadow: inset 0 0 0 3px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.5);
+}
+
+.chess-square.highlight {
+  background: rgba(251, 191, 36, 0.2);
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+/* Card styling */
+.game-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.game-card:hover::before {
+  opacity: 1;
+}
+
+.game-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Status indicators */
+.status-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Responsive text utilities */
+@media (max-width: 640px) {
+  .text-responsive-sm { font-size: 0.875rem; }
+  .text-responsive-base { font-size: 1rem; }
+  .text-responsive-lg { font-size: 1.125rem; }
+  .text-responsive-xl { font-size: 1.25rem; }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .text-responsive-sm { font-size: 1rem; }
+  .text-responsive-base { font-size: 1.125rem; }
+  .text-responsive-lg { font-size: 1.25rem; }
+  .text-responsive-xl { font-size: 1.5rem; }
+}
+
+@media (min-width: 769px) {
+  .text-responsive-sm { font-size: 1.125rem; }
+  .text-responsive-base { font-size: 1.25rem; }
+  .text-responsive-lg { font-size: 1.5rem; }
+  .text-responsive-xl { font-size: 1.875rem; }
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+  .print-break-inside-avoid { break-inside: avoid; }
+  .print-text-black { color: black !important; }
 }

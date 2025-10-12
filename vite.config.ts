@@ -5,6 +5,9 @@
 
   export default defineConfig({
     plugins: [react()],
+    define: {
+      'process.env': {},
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
@@ -54,7 +57,7 @@
       outDir: 'build',
     },
     server: {
-      port: 3000,
+      port: 3001,
       open: true,
     },
   });

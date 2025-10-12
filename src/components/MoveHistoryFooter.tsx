@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { History, ChevronUp, X } from 'lucide-react';
+import { PlayingCard } from '../types/game';
 
 interface MoveHistoryFooterProps {
-  moveHistory: string[];
+  moveHistory: {
+    card: PlayingCard;
+    move: {
+      from: string;
+      to: string;
+      piece: string;
+    };
+  }[];
 }
 
 export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
@@ -68,7 +76,7 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                       className="text-sm p-2.5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200"
                     >
                       <span className="font-bold text-indigo-600">#{moveHistory.length - index}</span>{' '}
-                      <span className="text-gray-900 text-xs">{move}</span>
+                      <span className="text-gray-900 text-xs">{move.card.value} {move.card.suit[0].toUpperCase()} - {move.move.piece.toUpperCase()} {move.move.from} {move.move.to}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -102,7 +110,7 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                   <div className="hidden sm:block text-right">
                     <p className="text-xs text-gray-500">Last move:</p>
                     <p className="text-sm font-bold text-gray-900 max-w-xs truncate">
-                      {moveHistory[moveHistory.length - 1]}
+                      {moveHistory[moveHistory.length - 1].card.value} {moveHistory[moveHistory.length - 1].card.suit[0].toUpperCase()} - {moveHistory[moveHistory.length - 1].move.piece.toUpperCase()} {moveHistory[moveHistory.length - 1].move.from} {moveHistory[moveHistory.length - 1].move.to}
                     </p>
                   </div>
                 )}
