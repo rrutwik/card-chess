@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { LogOut, User, Sun, Moon, Monitor } from 'lucide-react';
@@ -19,6 +19,10 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, setTheme, actualTheme } = useTheme();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log('theme', theme);
+  }, [theme]);
 
   const handleLogout = () => {
     logout();

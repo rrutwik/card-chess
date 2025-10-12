@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Share2, BookOpen } from "lucide-react";
@@ -11,11 +11,14 @@ import { useCardChess } from "../hooks/useCardChess";
 import { ChessAPI, ApiError } from "../services/api";
 import { useGameStore } from "../stores/gameStore";
 import { useAppStore } from "../stores/appStore";
+import { BoardOrientation } from "../types/game";
+import { useTheme } from "../contexts/ThemeContext";
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { addNotification } = useAppStore();
+  const { theme } = useTheme();
   const {
     currentGame,
     showRules,
@@ -28,7 +31,10 @@ export const GamePage: React.FC = () => {
     setLoading,
     setError,
   } = useGameStore();
-
+  const [orientation, setOrientation] = useState<BoardOrientation>(() => {
+    const saved = localStorage.getItem('chessboard-orientation');
+    return (saved as BoardOrientation) || 'auto';
+  });
   // Load game data from backend if gameId is provided
   useEffect(() => {
     const loadGame = async () => {
@@ -166,7 +172,11 @@ export const GamePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className={`h-screen w-screen flex flex-col overflow-hidden ${
+      theme === 'dark'
+        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
+        : 'bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50'
+    }`}>
       <CollapsibleRulesSidebar
         isOpen={showRules}
         onClose={() => setShowRules(false)}
@@ -176,61 +186,60 @@ export const GamePage: React.FC = () => {
       <Header showBackButton={true} backTo="/" />
 
       {/* Main Game Layout */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-8rem)] flex flex-col justify-center">
-        <div className="flex flex-row items-center justify-center gap-6 w-full h-full max-h-[80vh]">
-          {/* Chess Board Area */}
-          <div className="flex-1 flex items-center justify-center max-w-[480px] aspect-square">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="w-full aspect-square"
-            >
-              <div className="bg-card rounded-3xl shadow-2xl p-4 border border-border h-full">
-                <ChessBoard
-                  game={chessGame}
-                  fromMoveSelected={fromMoveSelected}
-                  validMoves={validMoves}
-                  showMoves={showMoves}
-                  onDrop={onDrop}
-                  onSquareClick={handleSquareClick}
-                  currentPlayer={currentPlayer}
-                  canMove={!!currentCard && !gameOver}
-                  orientation="auto"
-                />
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Game Controls Sidebar */}
-          <div className="w-[340px] flex-shrink-0 h-full">
+      <main className="flex-1 flex">
+        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full h-full"
+            style={{ width: "70%", height: "70%" }}
+          >
+            <ChessBoard
+              game={chessGame}
+              fromMoveSelected={fromMoveSelected}
+              validMoves={validMoves}
+              showMoves={showMoves}
+              onDrop={onDrop}
+              onSquareClick={handleSquareClick}
+              currentPlayer={currentPlayer}
+              canMove={!!currentCard && !gameOver}
+              orientation={orientation}
+            />
+          </motion.div>
+        </div>
+          <aside
+            className={`sm:w-80 lg:w-96 flex items-center justify-center p-2 sm:p-4 lg:p-6 border-l ${
+              theme === 'dark'
+                ? 'border-slate-700 bg-slate-800/40 backdrop-blur-sm'
+                : 'border-gray-200/50 bg-white/40 backdrop-blur-sm'
+            }`}
+            style={{ width: "40%" }}
+          >
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-              className="bg-card rounded-3xl shadow-2xl h-full overflow-hidden border border-border flex flex-col"
+              className="w-full h-full overflow-y-auto"
             >
-              <div className="p-6 h-full overflow-y-auto custom-scrollbar">
-                <CompactGameControls
-                  currentCard={currentCard}
-                  currentPlayer={currentPlayer}
-                  gameOver={gameOver}
-                  winner={winner}
-                  noValidCard={noValidCard}
-                  onReshuffle={reshuffleDeck}
-                  cardsRemaining={cardsRemaining}
-                  canDrawCard={canDrawCard}
-                  isInCheck={isInCheck}
-                  checkAttempts={checkAttempts}
-                  handleShowMoveButton={setShowMoves}
-                  showMoves={showMoves}
-                  onNewGame={resetGame}
-                  onDrawCard={drawCard}
-                />
-              </div>
+              <CompactGameControls
+                currentCard={currentCard}
+                cardsRemaining={cardsRemaining}
+                isInCheck={isInCheck}
+                checkAttempts={checkAttempts}
+                onDrawCard={drawCard}
+                noValidCard={noValidCard}
+                onReshuffle={reshuffleDeck}
+                canDrawCard={canDrawCard}
+                currentPlayer={currentPlayer}
+                gameOver={gameOver}
+                winner={winner}
+                onNewGame={resetGame}
+                showMoves={showMoves}
+                handleShowMoveButton={setShowMoves}
+              />
             </motion.div>
-          </div>
-        </div>
+          </aside>
       </main>
 
       {/* Move History Footer */}

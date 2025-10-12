@@ -202,12 +202,12 @@ export const getUserDetails = async (includeProfile: boolean = false): Promise<U
 // Chess API functions with enhanced error handling and loading states
 export class ChessAPI {
   // Create a new chess game
-  static async createGame(opponentId: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+  static async createGame(opponentId: string, opponentColor: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
       const appStore = useAppStore.getState();
       appStore.setLoading(true, 'Creating game...');
 
-      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { opponentId });
+      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { opponentId, opponentColor });
 
       appStore.setLoading(false);
       appStore.addNotification({

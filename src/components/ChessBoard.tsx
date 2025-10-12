@@ -114,7 +114,7 @@ export function ChessBoard({
 
   return (
     <div className="w-full h-full min-h-0 flex items-center justify-center p-2">
-      <div className="relative bg-gray-800 rounded-2xl shadow-2xl p-3 sm:p-4 w-full h-full max-w-[400px] max-h-[400px]">
+      <div className="relative bg-gray-800 rounded-2xl shadow-2xl p-3 sm:p-4">
         <Chessboard
           options={{
             position: game.fen(),
@@ -122,8 +122,6 @@ export function ChessBoard({
             onPieceDrop: handleDrop,
             boardOrientation: orientation === 'auto' ? (currentPlayer === "white" ? "white" : "black") : orientation,
             boardStyle: {
-              width: "100%",
-              height: "100%",
               cursor: "default",
               borderRadius: "2px",
               boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
