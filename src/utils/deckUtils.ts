@@ -3,6 +3,15 @@ import { PlayingCard, Suit } from '../types/game';
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
+export interface MoveHistory {
+  card: PlayingCard;
+  move: {
+    from: string;
+    to: string;
+    piece: string;
+  }
+}
+
 export function createDeck(): PlayingCard[] {
   const cards: PlayingCard[] = [];
 
