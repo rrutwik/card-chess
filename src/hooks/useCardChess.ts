@@ -607,7 +607,7 @@ export function useCardChess(
       gameState.userColor === gameState.currentPlayer &&
       (!gameState.currentCard ||
         gameState.noValidCard) &&
-      !gameState.gameOver;
+      (!gameState.gameOver) && (game?.game_state.status == "active");
     setGameState((prev) => ({ ...prev, canDrawCard: canDraw }));
   }, [
     gameState.currentPlayer,
@@ -616,6 +616,7 @@ export function useCardChess(
     gameState.noValidCard,
     gameState.isInCheck,
     gameState.gameOver,
+    game?.game_state.status
   ]);
 
   const newGame = () => {

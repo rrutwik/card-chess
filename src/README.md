@@ -103,6 +103,5 @@ The codebase follows React best practices:
 ## 📝 Notes
 
 - The game uses standard chess movement rules
-- Kings can move into check (special rule for this variant)
 - Capturing the king ends the game (not checkmate)
 - Deck automatically reshuffles when empty

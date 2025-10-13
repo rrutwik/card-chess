@@ -186,7 +186,7 @@ export const GamePage: React.FC = () => {
       />
 
       {/* Header */}
-      <Header showBackButton={true} backTo="/" />
+      <Header showBackButton={true} backTo="/" onToggleRules={() => setShowRules(!showRules)} />
 
       {/* Join Game Prompt - Show if user can join but hasn't yet */}
       {canJoinGame && !isPlayerInGame && (

@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { getUserDetails } from '../services/api';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from "react";
+import { getUserDetails } from "../services/api";
 
 export interface User {
   _id: string;
@@ -21,7 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -38,50 +45,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check for existing auth token on app start and validate it
     const initializeAuth = async () => {
-      console.log('🚀 AuthContext: Initializing authentication...');
-      const token = localStorage.getItem('authToken');
+      console.log("🚀 AuthContext: Initializing authentication...");
 
-      if (token) {
-        console.log('🔍 AuthContext: Found existing token, validating...');
-        try {
-          // Validate the token by making an API call
-          const data = await getUserDetails(true);
-          setUser(data);
-          setUpdateTrigger(prev => prev + 1); // Force re-render
-          console.log('✅ AuthContext: Token validated, user set:', data);
-        } catch (error) {
-          // Token is invalid or expired, clear it
-          console.warn('❌ AuthContext: Token validation failed, clearing stored auth data');
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
-        }
-      } else {
-        console.log('ℹ️ AuthContext: No existing token found');
+      console.log("🔍 AuthContext: Found existing token, validating...");
+      try {
+        // Validate the token by making an API call
+        const data = await getUserDetails(true);
+        setUser(data);
+        setUpdateTrigger((prev) => prev + 1); // Force re-render
+        console.log("✅ AuthContext: Token validated, user set:", data);
+      } catch (error) {
+        // Token is invalid or expired, clear it
+        console.warn(
+          "❌ AuthContext: Token validation failed, clearing stored auth data"
+        );
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userData");
       }
 
       setIsLoading(false);
-      console.log('✅ AuthContext: Initialization complete');
+      console.log("✅ AuthContext: Initialization complete");
     };
 
     initializeAuth();
   }, []);
 
   const login = (user: User) => {
-    console.log('🔑 AuthContext: Login called with user:', user);
+    console.log("🔑 AuthContext: Login called with user:", user);
     // Token is already stored in localStorage by the API service
-    localStorage.setItem('userData', JSON.stringify(user));
+    localStorage.setItem("userData", JSON.stringify(user));
     setUser(user);
-    setUpdateTrigger(prev => prev + 1); // Force re-render
-    console.log('✅ AuthContext: User state updated');
+    setUpdateTrigger((prev) => prev + 1); // Force re-render
+    console.log("✅ AuthContext: User state updated");
   };
 
   const logout = () => {
-    console.log('🔓 AuthContext: Logout called');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
+    console.log("🔓 AuthContext: Logout called");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userData");
     setUser(null);
-    setUpdateTrigger(prev => prev + 1); // Force re-render
-    console.log('✅ AuthContext: User logged out');
+    setUpdateTrigger((prev) => prev + 1); // Force re-render
+    console.log("✅ AuthContext: User logged out");
   };
 
   const value: AuthContextType = useMemo(() => {
@@ -92,7 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isAuthenticated: !!user,
       isLoading,
     };
-    console.log('🔄 AuthContext: Context value computed:', computedValue);
+    console.log("🔄 AuthContext: Context value computed:", computedValue);
     return computedValue;
   }, [user, isLoading]);
 

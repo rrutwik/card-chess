@@ -152,7 +152,7 @@ export const GamesListPage: React.FC = () => {
                           Game {game.game_id.slice(0, 8)}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          Created {formatDate(game.created_at || "")}
+                          Created {formatDate(game.createdAt || "")}
                         </p>
                       </div>
                       <div

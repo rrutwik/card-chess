@@ -36,8 +36,8 @@ export interface ChessGame {
     current_card?: PlayingCard;
     cards_deck?: PlayingCard[];
   };
-  created_at?: string;
-  updated_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
   completed_at?: string;
 }
 
@@ -87,11 +87,11 @@ declare module 'axios' {
 const RETRY_CONFIG = {
   maxRetries: 3,
   retryDelay: 1000,
-  retryableStatuses: [408, 429, 500, 502, 503, 504],
+  retryableStatuses: [408, 429, 500, 502, 503, 504]
 };
 
 // API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_BASE_URL = 'https://backend-api.techkarmic.com';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -142,6 +142,12 @@ api.interceptors.response.use(
 
     // Handle unauthorized access - redirect to login or clear token
     if (status === 401) {
+
+      if (!config.url?.includes('/auth/refresh_token')) {
+        await refreshToken();
+        return api(config);
+      }
+
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
 
@@ -174,6 +180,20 @@ const withRetryConfig = (config: any) => ({
   ...config,
   retryCount: 0,
 });
+
+export const refreshToken = async () => {
+  try {
+    const response = await api.post<{ data: { sessionToken: string, refreshToken: string } }>('/auth/refresh_token', {
+      refresh_token: localStorage.getItem('refreshToken')
+    });
+    localStorage.setItem('authToken', response.data.data.sessionToken);
+    localStorage.setItem('refreshToken', response.data.data.refreshToken);
+    return response;
+  } catch (error) {
+    console.error('Refresh token failed:', error);
+    throw error;
+  }
+}
 
 // Authentication API functions with enhanced error handling
 export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<AxiosResponse<{ data: LoginResponse }>> => {

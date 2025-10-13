@@ -259,7 +259,7 @@ export const PlayPage: React.FC = () => {
                               Created by {game.player_white}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              Created {new Date(game.created_at || "").toLocaleDateString()}
+                              Created {new Date(game.createdAt || "").toLocaleDateString()}
                             </div>
                           </div>
                         ))}

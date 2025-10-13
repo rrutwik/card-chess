@@ -183,9 +183,9 @@ export const HistoryPage: React.FC = () => {
                           {game.game_state.moves?.length || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                          {game.created_at && game.completed_at ? (
+                          {game.createdAt && game.completed_at ? (
                             (() => {
-                              const duration = new Date(game.completed_at).getTime() - new Date(game.created_at).getTime();
+                              const duration = new Date(game.completed_at).getTime() - new Date(game.createdAt).getTime();
                               const minutes = Math.floor(duration / 60000);
                               return `${minutes}m`;
                             })()
