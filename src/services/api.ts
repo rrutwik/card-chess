@@ -1,9 +1,7 @@
 import axios, { AxiosResponse, AxiosError } from 'axios';
 import type { User } from '../contexts/AuthContext';
 import { useAppStore } from '../stores/appStore';
-import { PlayingCard } from '../types/game';
-import { Move } from 'chess.js';
-import { MoveHistory } from '../utils/deckUtils';
+import { MoveHistory, PlayingCard } from '../types/game';
 
 export interface LoginResponse {
   sessionToken: string;
@@ -33,8 +31,9 @@ export interface ChessGame {
     turn: 'white' | 'black';
     status: 'active' | 'completed' | 'abandoned';
     winner?: 'white' | 'black' | 'draw';
-    moves?: MoveHistory[];
-    current_card?: string;
+    moves: MoveHistory[];
+    check_attempts?: number;
+    current_card?: PlayingCard;
     cards_deck?: PlayingCard[];
   };
   created_at?: string;
@@ -53,8 +52,10 @@ export interface UpdateGameStateRequest {
   status?: 'active' | 'completed' | 'abandoned';
   winner?: 'white' | 'black' | 'draw';
   moves?: MoveHistory[];
-  current_card?: string | null;
+  current_card: PlayingCard | null;
   cards_deck?: PlayingCard[];
+  check_attempts?: number;
+  is_in_check?: boolean;
   player_black?: string;
 }
 
@@ -95,7 +96,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // Increased timeout
+  timeout: 2000,
   headers: {
     'Content-Type': 'application/json',
   },

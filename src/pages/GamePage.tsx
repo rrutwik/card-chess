@@ -111,32 +111,30 @@ export const GamePage: React.FC = () => {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-6"></div>
+            <p className="text-muted-foreground text-lg">Loading game...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const {
     game: chessGame,
-    currentCard,
-    currentPlayer,
-    fromMoveSelected,
-    onDrop,
-    validMoves,
-    gameOver,
-    winner,
-    noValidCard,
+    gameState,
     drawCard,
     reshuffleDeck,
+    onDrop,
+    // newGame,
     handleSquareClick,
-    resetGame,
-    cardsRemaining,
-    canDrawCard,
-    isInCheck,
-    checkAttempts,
-    moveHistory,
-  } = useCardChess(currentGame?.game_state.fen || null, {
-    gameId,
-    userId: user?._id,
-    onGameUpdate: (fen, currentPlayer, currentCard) => {
-      // Handle game updates from other players
-      console.log("Game updated from backend:", { fen, currentPlayer, currentCard });
-    },
+  } = useCardChess(currentGame, {
+    userId: user?._id
   });
 
   if (isLoading) {
@@ -222,13 +220,13 @@ export const GamePage: React.FC = () => {
           >
             <ChessBoard
               game={chessGame}
-              fromMoveSelected={fromMoveSelected}
-              validMoves={validMoves}
+              fromMoveSelected={gameState.fromMoveSelected}
+              validMoves={gameState.validMoves}
               showMoves={showMoves}
               onDrop={onDrop}
               onSquareClick={handleSquareClick}
-              currentPlayer={currentPlayer}
-              canMove={currentCard !== null && gameOver == false && isPlayerInGame == true}
+              currentPlayer={gameState.currentPlayer}
+              canMove={gameState.currentCard !== null && gameState.gameOver === false && isPlayerInGame === true}
               orientation={currentGame?.player_white?.toString() === user?._id.toString() ? "white" : "black"}
             />
           </motion.div>
@@ -248,18 +246,19 @@ export const GamePage: React.FC = () => {
               className="w-full h-full overflow-y-auto"
             >
               <CompactGameControls
-                currentCard={currentCard}
-                cardsRemaining={cardsRemaining}
-                isInCheck={isInCheck}
-                checkAttempts={checkAttempts}
+                currentCard={gameState.currentCard}
+                cardsRemaining={gameState.cardsRemaining}
+                isInCheck={gameState.isInCheck}
+                checkAttempts={gameState.checkAttempts}
                 onDrawCard={drawCard}
-                noValidCard={noValidCard}
+                noValidCard={gameState.noValidCard}
                 onReshuffle={reshuffleDeck}
-                canDrawCard={canDrawCard && isPlayerInGame}
-                currentPlayer={currentPlayer}
-                gameOver={gameOver}
-                winner={winner}
-                onNewGame={resetGame}
+                canDrawCard={gameState.canDrawCard}
+                currentPlayer={gameState.currentPlayer}
+                userColor={gameState.userColor}
+                gameOver={gameState.gameOver}
+                winner={gameState.winner}
+                // onNewGame={newGame}
                 showMoves={showMoves}
                 handleShowMoveButton={setShowMoves}
               />
@@ -268,7 +267,7 @@ export const GamePage: React.FC = () => {
       </main>
 
       {/* Move History Footer */}
-      {gameOver && <MoveHistoryFooter moveHistory={moveHistory} />}
+      {gameState.gameOver && <MoveHistoryFooter moveHistory={gameState.moveHistory} />}
     </div>
   );
 };

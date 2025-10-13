@@ -23,11 +23,12 @@ interface CompactGameControlsProps {
   onReshuffle: () => void;
   canDrawCard: boolean;
   currentPlayer: PieceColor;
+  userColor: PieceColor;
   gameOver: boolean;
   handleShowMoveButton: (show: boolean) => void;
   showMoves: boolean;
   winner: PieceColor | "draw" | null;
-  onNewGame: () => void;
+  // onNewGame: () => void;
 }
 
 function getCardMeaning(card: PlayingCard): string {
@@ -40,13 +41,14 @@ export function CompactGameControls({
   checkAttempts,
   onDrawCard,
   noValidCard,
+  userColor,
   canDrawCard,
   currentPlayer,
   gameOver,
   winner,
   handleShowMoveButton,
   showMoves,
-  onNewGame,
+  // onNewGame,
 }: CompactGameControlsProps) {
   const attemptsRemaining = MAX_CHECK_ATTEMPTS - checkAttempts;
   return (
@@ -82,13 +84,13 @@ export function CompactGameControls({
               <p className="text-center mb-4 font-bold capitalize text-lg">
                 {winner} Player Wins! 🎉
               </p>
-              <button
+              {/* <button
                 onClick={onNewGame}
                 className="w-full py-3 bg-white text-gray-900 rounded-xl font-bold hover:bg-gray-100 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-2xl hover:brightness-110"
               >
                 <RotateCcw className="w-5 h-5" />
                 New Game
-              </button>
+              </button> */}
             </motion.div>
           </motion.div>
         )}
@@ -410,23 +412,26 @@ export function CompactGameControls({
             }`}
           >
             <div className="flex items-center justify-center gap-2">
-              {canDrawCard ? (
+              {userColor === currentPlayer ?
+               canDrawCard ? (
                 <>
                   <Play className="w-5 h-5" /> Draw Card
                 </>
               ) : (
                 "Make Your Move"
+              ) : (
+                "Opponent's Turn"
               )}
             </div>
           </button>
 
-          <motion.button
+          {/* <motion.button
             onClick={onNewGame}
             className="w-full py-2.5 bg-gray-700 hover:bg-gray-800 text-black rounded-xl font-bold shadow-lg transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-2xl hover:brightness-110"
           >
             <RotateCcw className="w-4 h-4" />
             Restart
-          </motion.button>
+          </motion.button> */}
 
           <motion.button
             onClick={() => handleShowMoveButton(!showMoves)}
