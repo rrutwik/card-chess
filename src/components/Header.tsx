@@ -278,7 +278,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {user?.picture && (
                     <img
                       src={user.picture}
-                      alt={user.name || user.email || "User"}
+                      alt={user.first_name || user.email || "User"}
                       style={{
                         width: '32px',
                         height: '32px',
@@ -297,7 +297,7 @@ export const Header: React.FC<HeaderProps> = ({
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
                   }}>
-                    {user?.name || user?.email?.split('@')[0] || 'User'}
+                    {user?.first_name || user?.email?.split('@')[0] || 'User'}
                   </span>
                 </div>
 
@@ -306,7 +306,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {user?.picture ? (
                     <img
                       src={user.picture}
-                      alt={user.name || user.email || "User"}
+                      alt={user.first_name || user.email || "User"}
                       style={{
                         width: '32px',
                         height: '32px',

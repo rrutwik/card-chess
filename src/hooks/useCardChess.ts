@@ -25,6 +25,7 @@ export interface GameState {
   isInCheck: boolean;
   canDrawCard: boolean;
   cardsRemaining: number;
+  gameStatus?: "active" | "completed" | "abandoned";
 }
 
 interface UseCardChessOptions {
@@ -125,7 +126,8 @@ export function useCardChess(
     moveHistory: [],
     noValidCard: false,
     isInCheck: false,
-    canDrawCard: true,
+    canDrawCard: game?.game_state?.status === 'active',
+    gameStatus: game?.game_state?.status || 'active',
     cardsRemaining: (game?.game_state?.cards_deck || createDeck()).length,
   }));
 
@@ -143,10 +145,10 @@ export function useCardChess(
           gameOver: game.game_state.status === "completed",
           winner: game.game_state.winner || null,
           checkAttempts: game.game_state.check_attempts || 0,
-          canDrawCard: true,
           fromMoveSelected: null,
           validMoves: [],
           isInCheck: isInCheck,
+          gameStatus: game.game_state.status,
         }));
       }
 
@@ -584,6 +586,15 @@ export function useCardChess(
             checkAttempts: latestGame.game_state.check_attempts || 0,
           }));
         }
+
+        // Update game status if changed
+        if (latestGame.game_state.status !== gameState.gameStatus) {
+          setGameState((prev) => ({
+            ...prev,
+            gameStatus: latestGame.game_state.status,
+            gameOver: latestGame.game_state.status === "completed",
+          }));
+        }
       } catch (err) {
         console.error("Error polling for game updates:", err);
       }
@@ -600,6 +611,7 @@ export function useCardChess(
     gameState.gameOver,
     gameState.winner,
     gameState.checkAttempts,
+    gameState.gameStatus
   ]);
 
   useEffect(() => {
@@ -607,16 +619,16 @@ export function useCardChess(
       gameState.userColor === gameState.currentPlayer &&
       (!gameState.currentCard ||
         gameState.noValidCard) &&
-      (!gameState.gameOver) && (game?.game_state.status == "active");
+      (!gameState.gameOver) &&
+      gameState.gameStatus === "active";
     setGameState((prev) => ({ ...prev, canDrawCard: canDraw }));
   }, [
     gameState.currentPlayer,
     gameState.userColor,
     gameState.currentCard,
     gameState.noValidCard,
-    gameState.isInCheck,
     gameState.gameOver,
-    game?.game_state.status
+    gameState.gameStatus
   ]);
 
   const newGame = () => {
@@ -636,6 +648,7 @@ export function useCardChess(
       noValidCard: false,
       isInCheck: false,
       canDrawCard: true,
+      gameStatus: 'active',
       cardsRemaining: shuffledDeck.length,
     });
   };

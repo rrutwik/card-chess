@@ -6,12 +6,12 @@ import React, {
   ReactNode,
   useMemo,
 } from "react";
-import { getUserDetails } from "../services/api";
+import { api, getUserDetails } from "../services/api";
 
 export interface User {
   _id: string;
   email: string;
-  name?: string;
+  first_name?: string;
   picture?: string;
 }
 
@@ -72,7 +72,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = (user: User) => {
     console.log("🔑 AuthContext: Login called with user:", user);
-    // Token is already stored in localStorage by the API service
     localStorage.setItem("userData", JSON.stringify(user));
     setUser(user);
     setUpdateTrigger((prev) => prev + 1); // Force re-render
@@ -82,6 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     console.log("🔓 AuthContext: Logout called");
     localStorage.removeItem("authToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("userData");
     setUser(null);
     setUpdateTrigger((prev) => prev + 1); // Force re-render
