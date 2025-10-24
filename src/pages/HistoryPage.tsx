@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Trophy, Clock, Eye, RotateCcw } from 'lucide-react';
+import { Trophy, Clock, Eye, RotateCcw, Calendar } from 'lucide-react';
 import { ChessAPI, ChessGame } from '../services/api';
 import { Header } from '../components/Header';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const { actualTheme } = useTheme();
+  const isDark = actualTheme === 'dark';
   const [games, setGames] = useState<ChessGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +21,7 @@ export const HistoryPage: React.FC = () => {
   const loadGameHistory = async () => {
     try {
       setLoading(true);
-      const response = await ChessAPI.getGameHistory(50); // Load last 50 games
+      const response = await ChessAPI.getGameHistory();
       setGames(response.data.data);
       setError(null);
     } catch (err: any) {
@@ -45,22 +48,50 @@ export const HistoryPage: React.FC = () => {
 
   const getResultColor = (game: ChessGame) => {
     if (game.game_state.status === 'abandoned') {
-      return 'text-muted-foreground';
+      return isDark ? '#9ca3af' : '#6b7280';
     }
     if (game.game_state.winner === 'draw') {
-      return 'text-yellow-600 dark:text-yellow-500';
+      return isDark ? '#fbbf24' : '#d97706';
     }
-    return 'text-green-600 dark:text-green-500';
+    return isDark ? '#34d399' : '#059669';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading game history...</p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              border: `4px solid ${isDark ? '#667eea' : '#667eea'}`,
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              margin: '0 auto 24px',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              fontSize: '18px'
+            }}>Loading game history...</p>
           </div>
         </div>
       </div>
@@ -69,15 +100,87 @@ export const HistoryPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center bg-card p-8 rounded-xl shadow-lg max-w-md mx-auto border border-border">
-            <h2 className="text-2xl font-bold text-destructive mb-4">Error</h2>
-            <p className="text-muted-foreground mb-6">{error}</p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)',
+          padding: '16px'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            background: isDark 
+              ? 'rgba(255, 255, 255, 0.05)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            padding: '40px',
+            borderRadius: '24px',
+            boxShadow: isDark 
+              ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+              : '0 8px 32px rgba(0, 0, 0, 0.1)',
+            maxWidth: '448px',
+            width: '100%',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px'
+            }}>
+              <Clock style={{ width: '40px', height: '40px', color: '#ef4444' }} />
+            </div>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              color: '#ef4444',
+              marginBottom: '16px'
+            }}>Error</h2>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              marginBottom: '32px',
+              fontSize: '16px',
+              lineHeight: '1.5'
+            }}>{error}</p>
             <button
               onClick={loadGameHistory}
-              className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                padding: '16px 32px',
+                borderRadius: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                margin: '0 auto'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+              }}
             >
               Try Again
             </button>
@@ -88,27 +191,124 @@ export const HistoryPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div style={{
+      minHeight: '100vh',
+      background: isDark 
+        ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+        : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+      color: isDark ? '#f9fafb' : '#1f2937',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
       <Header showBackButton={true} backTo="/" />
 
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="container mx-auto px-4 py-8 w-full max-w-7xl">
+      {/* Background decorative elements */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 0
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '15%',
+          right: '5%',
+          width: '400px',
+          height: '400px',
+          background: isDark 
+            ? 'radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+          filter: 'blur(40px)'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          bottom: '15%',
+          left: '5%',
+          width: '350px',
+          height: '350px',
+          background: isDark 
+            ? 'radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(234, 179, 8, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+          filter: 'blur(40px)'
+        }}></div>
+      </div>
+
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 64px)',
+        padding: '32px 16px'
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: '1280px'
+        }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-8"
+            style={{ marginBottom: '32px' }}
           >
-            <div className="flex items-center justify-between">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+              marginBottom: '24px'
+            }}>
               <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">Game History</h1>
-                <p className="text-muted-foreground">Review your past games and track your progress</p>
+                <h1 style={{
+                  fontSize: 'clamp(28px, 6vw, 40px)',
+                  fontWeight: '800',
+                  color: isDark ? '#f9fafb' : '#1f2937',
+                  marginBottom: '12px',
+                  letterSpacing: '-0.5px'
+                }}>
+                  Game History
+                </h1>
+                <p style={{
+                  color: isDark ? '#d1d5db' : '#6b7280',
+                  fontSize: '16px'
+                }}>
+                  Review your past games and track your progress
+                </p>
               </div>
               <button
                 onClick={() => navigate('/games')}
-                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors flex items-center space-x-2"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  padding: '16px 32px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                }}
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw style={{ width: '20px', height: '20px' }} />
                 <span>Active Games</span>
               </button>
             </div>
@@ -119,89 +319,244 @@ export const HistoryPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-center py-12"
+              style={{
+                textAlign: 'center',
+                padding: '80px 16px',
+                background: isDark 
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '24px',
+                boxShadow: isDark 
+                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 32px rgba(102, 126, 234, 0.1)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`
+              }}
             >
-              <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">No Games Yet</h3>
-              <p className="text-muted-foreground mb-6">Start playing to build your game history!</p>
+              <div style={{
+                width: '128px',
+                height: '128px',
+                background: isDark 
+                  ? 'rgba(234, 179, 8, 0.1)'
+                  : 'rgba(234, 179, 8, 0.1)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 32px'
+              }}>
+                <Trophy style={{ 
+                  width: '64px', 
+                  height: '64px', 
+                  color: isDark ? '#fbbf24' : '#d97706' 
+                }} />
+              </div>
+              <h3 style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                color: isDark ? '#f9fafb' : '#1f2937',
+                marginBottom: '16px'
+              }}>
+                No Games Yet
+              </h3>
+              <p style={{
+                color: isDark ? '#9ca3af' : '#6b7280',
+                marginBottom: '40px',
+                fontSize: '18px'
+              }}>
+                Start playing to build your game history!
+              </p>
               <button
                 onClick={() => navigate('/play')}
-                className="bg-primary text-primary-foreground px-8 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  padding: '20px 40px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                }}
               >
                 Play Your First Game
               </button>
             </motion.div>
           ) : (
-            <div className="bg-card rounded-xl shadow-lg overflow-hidden border border-border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Game
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Result
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Moves
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Duration
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Played
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Actions
-                      </th>
+            <div style={{
+              background: isDark 
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '24px',
+              boxShadow: isDark 
+                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(102, 126, 234, 0.1)',
+              overflow: 'hidden',
+              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`
+            }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse'
+                }}>
+                  <thead>
+                    <tr style={{
+                      background: isDark 
+                        ? 'rgba(255, 255, 255, 0.03)'
+                        : 'rgba(102, 126, 234, 0.05)'
+                    }}>
+                      <th style={{
+                        padding: '16px 24px',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>Game</th>
+                      <th style={{
+                        padding: '16px 24px',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>Result</th>
+                      <th style={{
+                        padding: '16px 24px',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>Moves</th>
+                      <th style={{
+                        padding: '16px 24px',
+                        textAlign: 'left',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>Played</th>
+                      <th style={{
+                        padding: '16px 24px',
+                        textAlign: 'right',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: isDark ? '#9ca3af' : '#6b7280',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-card divide-y divide-border">
+                  <tbody>
                     {games.map((game, index) => (
                       <motion.tr
                         key={game._id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="hover:bg-muted/50"
+                        style={{
+                          borderTop: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`,
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = isDark 
+                            ? 'rgba(255, 255, 255, 0.03)' 
+                            : 'rgba(102, 126, 234, 0.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-card-foreground">
+                        <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
+                          <div style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: isDark ? '#f9fafb' : '#1f2937',
+                            marginBottom: '4px'
+                          }}>
                             Game {game.game_id.slice(0, 8)}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div style={{
+                            fontSize: '12px',
+                            color: isDark ? '#9ca3af' : '#6b7280'
+                          }}>
                             {game.game_state.status}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm font-medium ${getResultColor(game)}`}>
+                        <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: getResultColor(game)
+                          }}>
                             {getGameResult(game)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
+                        <td style={{
+                          padding: '16px 24px',
+                          whiteSpace: 'nowrap',
+                          fontSize: '14px',
+                          color: isDark ? '#f9fafb' : '#1f2937'
+                        }}>
                           {game.game_state.moves?.length || 0}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                          {game.createdAt && game.completed_at ? (
-                            (() => {
-                              const duration = new Date(game.completed_at).getTime() - new Date(game.createdAt).getTime();
-                              const minutes = Math.floor(duration / 60000);
-                              return `${minutes}m`;
-                            })()
-                          ) : (
-                            'N/A'
-                          )}
+                        <td style={{
+                          padding: '16px 24px',
+                          whiteSpace: 'nowrap',
+                          fontSize: '14px',
+                          color: isDark ? '#9ca3af' : '#6b7280'
+                        }}>
+                          {game.createdAt ? formatDate(game.createdAt) : 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                          {game.completed_at ? formatDate(game.completed_at) : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td style={{
+                          padding: '16px 24px',
+                          whiteSpace: 'nowrap',
+                          textAlign: 'right',
+                          fontSize: '14px',
+                          fontWeight: '600'
+                        }}>
                           <button
                             onClick={() => navigate(`/game/${game.game_id}`)}
-                            className="text-primary hover:text-primary/80 flex items-center space-x-1"
+                            style={{
+                              color: '#667eea',
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = isDark 
+                                ? 'rgba(102, 126, 234, 0.1)' 
+                                : 'rgba(102, 126, 234, 0.1)';
+                              e.currentTarget.style.color = '#764ba2';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = '#667eea';
+                            }}
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye style={{ width: '16px', height: '16px' }} />
                             <span>View</span>
                           </button>
                         </td>

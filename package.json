@@ -47,7 +47,7 @@
             "motion": "*",
             "next-themes": "0.4.6",
             "react": "19.2.0",
-            "react-chessboard": "5.6.2",
+            "react-chessboard": "5.7.1",
             "react-day-picker": "9.11.0",
             "react-dom": "19.2.0",
             "react-hook-form": "7.55.0",

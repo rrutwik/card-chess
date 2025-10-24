@@ -5,11 +5,14 @@ import { Users, Plus, Crown, Swords, Clock, Search, GamepadIcon, Share2 } from "
 import { ChessAPI, ChessGame } from "../services/api";
 import { Header } from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 import type { User } from "../contexts/AuthContext";
 
 export const PlayPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { actualTheme } = useTheme();
+  const isDark = actualTheme === 'dark';
   const [games, setGames] = useState<ChessGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,12 +89,40 @@ export const PlayPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-6"></div>
-            <p className="text-muted-foreground text-lg">Loading...</p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              border: `4px solid ${isDark ? '#667eea' : '#667eea'}`,
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              margin: '0 auto 24px',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              fontSize: '18px'
+            }}>Loading...</p>
           </div>
         </div>
       </div>
@@ -100,18 +131,89 @@ export const PlayPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center bg-card p-10 rounded-3xl shadow-lg max-w-md mx-auto border border-border">
-            <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">⚠️</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)',
+          padding: '16px'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            background: isDark 
+              ? 'rgba(255, 255, 255, 0.05)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            padding: '40px',
+            borderRadius: '24px',
+            boxShadow: isDark 
+              ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+              : '0 8px 32px rgba(0, 0, 0, 0.1)',
+            maxWidth: '448px',
+            width: '100%',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px'
+            }}>
+              <span style={{ fontSize: '40px' }}>⚠️</span>
             </div>
-            <h2 className="text-3xl font-bold text-destructive mb-4">Error</h2>
-            <p className="text-muted-foreground mb-8 text-lg">{error}</p>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              color: '#ef4444',
+              marginBottom: '16px'
+            }}>Error</h2>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              marginBottom: '32px',
+              fontSize: '16px',
+              lineHeight: '1.5'
+            }}>{error}</p>
             <button
               onClick={loadGames}
-              className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                padding: '16px 32px',
+                borderRadius: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(0.95)';
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+              }}
             >
               Try Again
             </button>
@@ -122,71 +224,296 @@ export const PlayPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div style={{
+      minHeight: '100vh',
+      background: isDark 
+        ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+        : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+      color: isDark ? '#f9fafb' : '#1f2937',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
       <Header showBackButton={true} backTo="/" />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+      {/* Background decorative elements */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 0
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '15%',
+          right: '5%',
+          width: '350px',
+          height: '350px',
+          background: isDark 
+            ? 'radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+          filter: 'blur(40px)'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          bottom: '15%',
+          left: '5%',
+          width: '300px',
+          height: '300px',
+          background: isDark 
+            ? 'radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+          filter: 'blur(40px)'
+        }}></div>
+      </div>
+
+      <main style={{
+        position: 'relative',
+        zIndex: 1,
+        maxWidth: '1280px',
+        margin: '0 auto',
+        padding: '32px 16px'
+      }}>
+        <div style={{ marginBottom: '32px' }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            style={{
+              textAlign: 'center',
+              marginBottom: '48px'
+            }}
           >
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <Crown className="w-12 h-12 text-primary" />
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
-                Create a game and share the link with a friend to start playing
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '16px',
+              marginBottom: '24px',
+              flexWrap: 'wrap'
+            }}>
+              <motion.div
+                animate={{ 
+                  rotate: [0, -10, 10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  repeatDelay: 2,
+                  ease: "easeInOut"
+                }}
+              >
+                <Crown style={{ 
+                  width: '48px', 
+                  height: '48px', 
+                  color: '#667eea',
+                  filter: 'drop-shadow(0 4px 8px rgba(102, 126, 234, 0.4))'
+                }} />
+              </motion.div>
+              <h1 style={{
+                fontSize: 'clamp(24px, 6vw, 48px)',
+                fontWeight: '800',
+                color: isDark ? '#f9fafb' : '#1f2937',
+                margin: 0,
+                letterSpacing: '-0.5px'
+              }}>
+                Start Playing
               </h1>
-              <Swords className="w-12 h-12 text-primary" />
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  repeatDelay: 2,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                <Swords style={{ 
+                  width: '48px', 
+                  height: '48px', 
+                  color: '#a855f7',
+                  filter: 'drop-shadow(0 4px 8px rgba(168, 85, 247, 0.4))'
+                }} />
+              </motion.div>
             </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p style={{
+              fontSize: '18px',
+              color: isDark ? '#d1d5db' : '#6b7280',
+              maxWidth: '640px',
+              margin: '0 auto',
+              lineHeight: '1.6'
+            }}>
               Create a game and share the link with a friend to start playing
             </p>
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '32px'
+          }}>
             {/* Game Creation */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-card rounded-3xl shadow-lg border border-border p-8"
+              style={{
+                background: isDark 
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '24px',
+                boxShadow: isDark 
+                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 32px rgba(102, 126, 234, 0.15)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
+                padding: '32px'
+              }}
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Plus className="w-8 h-8 text-primary" />
-                <h2 className="text-2xl font-bold text-card-foreground">Create New Game</h2>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '24px'
+              }}>
+                <Plus style={{ width: '32px', height: '32px', color: '#667eea' }} />
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: isDark ? '#f9fafb' : '#1f2937',
+                  margin: 0
+                }}>Create New Game</h2>
               </div>
 
               {/* Color Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-card-foreground mb-3">
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: isDark ? '#f9fafb' : '#1f2937',
+                  marginBottom: '12px'
+                }}>
                   Choose Your Color
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px'
+                }}>
                   <button
                     onClick={() => setSelectedColor('white')}
-                    className={`p-4 rounded-2xl border-2 transition-all duration-200 ${
-                      selectedColor === 'white'
-                        ? 'border-primary bg-primary/10 text-primary shadow-lg scale-105'
-                        : 'border-border hover:border-primary/70 hover:bg-primary/5 hover:scale-102'
-                    }`}
+                    style={{
+                      padding: '16px',
+                      borderRadius: '16px',
+                      border: selectedColor === 'white'
+                        ? '2px solid #667eea'
+                        : `2px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'}`,
+                      background: selectedColor === 'white'
+                        ? isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)'
+                        : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      transform: selectedColor === 'white' ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: selectedColor === 'white' ? '0 4px 16px rgba(102, 126, 234, 0.3)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedColor !== 'white') {
+                        e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                        e.currentTarget.style.background = isDark ? 'rgba(102, 126, 234, 0.05)' : 'rgba(102, 126, 234, 0.05)';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedColor !== 'white') {
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
-                    <div className="w-8 h-8 bg-white rounded-full mx-auto mb-2 border-2 border-gray-300 shadow-sm"></div>
-                    <span className="text-sm font-medium">White</span>
-                    <p className="text-xs text-muted-foreground mt-1">Moves first</p>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      background: 'white',
+                      borderRadius: '50%',
+                      margin: '0 auto 8px',
+                      border: '2px solid #d1d5db',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                    }}></div>
+                    <span style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: selectedColor === 'white' ? '#667eea' : (isDark ? '#f9fafb' : '#1f2937'),
+                      display: 'block',
+                      marginBottom: '4px'
+                    }}>White</span>
+                    <p style={{
+                      fontSize: '12px',
+                      color: isDark ? '#9ca3af' : '#6b7280',
+                      margin: 0
+                    }}>Moves first</p>
                   </button>
                   <button
                     onClick={() => setSelectedColor('black')}
-                    className={`p-4 rounded-2xl border-2 transition-all duration-200 ${
-                      selectedColor === 'black'
-                        ? 'border-primary bg-primary/10 text-primary shadow-lg scale-105'
-                        : 'border-border hover:border-primary/70 hover:bg-primary/5 hover:scale-102'
-                    }`}
+                    style={{
+                      padding: '16px',
+                      borderRadius: '16px',
+                      border: selectedColor === 'black'
+                        ? '2px solid #667eea'
+                        : `2px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'}`,
+                      background: selectedColor === 'black'
+                        ? isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)'
+                        : 'transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      transform: selectedColor === 'black' ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: selectedColor === 'black' ? '0 4px 16px rgba(102, 126, 234, 0.3)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedColor !== 'black') {
+                        e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                        e.currentTarget.style.background = isDark ? 'rgba(102, 126, 234, 0.05)' : 'rgba(102, 126, 234, 0.05)';
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedColor !== 'black') {
+                        e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }
+                    }}
                   >
-                    <div className="w-8 h-8 bg-gray-800 rounded-full mx-auto mb-2 shadow-sm"></div>
-                    <span className="text-sm font-medium">Black</span>
-                    <p className="text-xs text-muted-foreground mt-1">Moves second</p>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      background: '#1f2937',
+                      borderRadius: '50%',
+                      margin: '0 auto 8px',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                    }}></div>
+                    <span style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: selectedColor === 'black' ? '#667eea' : (isDark ? '#f9fafb' : '#1f2937'),
+                      display: 'block',
+                      marginBottom: '4px'
+                    }}>Black</span>
+                    <p style={{
+                      fontSize: '12px',
+                      color: isDark ? '#9ca3af' : '#6b7280',
+                      margin: 0
+                    }}>Moves second</p>
                   </button>
                 </div>
               </div>
@@ -194,24 +521,83 @@ export const PlayPage: React.FC = () => {
               <button
                 onClick={handleCreateGame}
                 disabled={creatingGame}
-                className="w-full bg-primary text-primary-foreground px-8 py-4 rounded-2xl hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                style={{
+                  width: '100%',
+                  background: creatingGame 
+                    ? isDark ? 'rgba(102, 126, 234, 0.5)' : 'rgba(102, 126, 234, 0.7)'
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  padding: '16px 32px',
+                  borderRadius: '16px',
+                  border: 'none',
+                  cursor: creatingGame ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                  transition: 'all 0.3s ease',
+                  opacity: creatingGame ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!creatingGame) {
+                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!creatingGame) {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (!creatingGame) {
+                    e.currentTarget.style.transform = 'translateY(0) scale(0.98)';
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (!creatingGame) {
+                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                  }
+                }}
               >
                 {creatingGame ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent" />
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '2px solid white',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
                     <span>Creating Game...</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-5 h-5" />
+                    <Plus style={{ width: '20px', height: '20px' }} />
                     <span>Create Game & Share Link</span>
                   </>
                 )}
               </button>
 
-              <div className="mt-4 p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Share2 className="w-4 h-4" />
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(102, 126, 234, 0.08)',
+                borderRadius: '12px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '14px',
+                  color: isDark ? '#9ca3af' : '#6b7280'
+                }}>
+                  <Share2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
                   <span>Share the game link with a friend to start playing!</span>
                 </div>
               </div>
@@ -222,43 +608,129 @@ export const PlayPage: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-card rounded-3xl shadow-lg border border-border p-8"
+              style={{
+                background: isDark 
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '24px',
+                boxShadow: isDark 
+                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 32px rgba(168, 85, 247, 0.15)',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(168, 85, 247, 0.2)'}`,
+                padding: '32px'
+              }}
             >
-              <div className="flex items-center gap-3 mb-6">
-                <Users className="w-8 h-8 text-primary" />
-                <h2 className="text-2xl font-bold text-card-foreground">Join Game</h2>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '24px'
+              }}>
+                <Users style={{ width: '32px', height: '32px', color: '#a855f7' }} />
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: isDark ? '#f9fafb' : '#1f2937',
+                  margin: 0
+                }}>Join Game</h2>
               </div>
 
-              <div className="space-y-4">
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}>
                 {waitingGames.length === 0 && activeGames.length === 0 ? (
-                  <div className="text-center py-8">
-                    <GamepadIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No games available to join</p>
-                    <p className="text-sm text-muted-foreground mt-2">Create a game above and share the link!</p>
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '32px 0'
+                  }}>
+                    <GamepadIcon style={{ 
+                      width: '64px', 
+                      height: '64px', 
+                      color: isDark ? '#4b5563' : '#9ca3af',
+                      margin: '0 auto 16px'
+                    }} />
+                    <p style={{
+                      color: isDark ? '#9ca3af' : '#6b7280',
+                      marginBottom: '8px'
+                    }}>No games available to join</p>
+                    <p style={{
+                      fontSize: '14px',
+                      color: isDark ? '#6b7280' : '#9ca3af',
+                      margin: 0
+                    }}>Create a game above and share the link!</p>
                   </div>
                 ) : (
                   <>
                     {waitingGames.length > 0 && (
                       <>
-                        <h3 className="font-semibold text-card-foreground mb-3">Waiting for Players</h3>
+                        <h3 style={{
+                          fontWeight: '600',
+                          color: isDark ? '#f9fafb' : '#1f2937',
+                          marginBottom: '12px',
+                          fontSize: '16px'
+                        }}>Waiting for Players</h3>
                         {waitingGames.slice(0, 3).map((game) => (
                           <div
                             key={game._id}
-                            className="p-4 rounded-2xl border border-border hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer"
                             onClick={() => handleJoinGame(game.game_id)}
+                            style={{
+                              padding: '16px',
+                              borderRadius: '16px',
+                              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'}`,
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)';
+                              e.currentTarget.style.background = isDark ? 'rgba(102, 126, 234, 0.05)' : 'rgba(102, 126, 234, 0.05)';
+                              e.currentTarget.style.transform = 'translateX(4px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'translateX(0)';
+                            }}
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-bold text-card-foreground">
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              marginBottom: '8px'
+                            }}>
+                              <h4 style={{
+                                fontWeight: '700',
+                                color: isDark ? '#f9fafb' : '#1f2937',
+                                margin: 0,
+                                fontSize: '15px'
+                              }}>
                                 Game {game.game_id.slice(0, 8)}
                               </h4>
-                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                              <div style={{
+                                padding: '4px 12px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                background: isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.1)',
+                                color: isDark ? '#86efac' : '#16a34a'
+                              }}>
                                 Waiting
                               </div>
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div style={{
+                              fontSize: '14px',
+                              color: isDark ? '#9ca3af' : '#6b7280',
+                              marginBottom: '4px'
+                            }}>
                               Created by {game.player_white}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div style={{
+                              fontSize: '14px',
+                              color: isDark ? '#9ca3af' : '#6b7280'
+                            }}>
                               Created {new Date(game.createdAt || "").toLocaleDateString()}
                             </div>
                           </div>
@@ -267,25 +739,72 @@ export const PlayPage: React.FC = () => {
                     )}
                     {activeGames.length > 0 && (
                       <>
-                        <h3 className="font-semibold text-card-foreground mb-3">Active Games</h3>
+                        <h3 style={{
+                          fontWeight: '600',
+                          color: isDark ? '#f9fafb' : '#1f2937',
+                          marginBottom: '12px',
+                          fontSize: '16px',
+                          marginTop: waitingGames.length > 0 ? '8px' : '0'
+                        }}>Active Games</h3>
                         {activeGames.slice(0, 5).map((game) => (
                           <div
                             key={game._id}
-                            className="p-4 rounded-2xl border border-border hover:border-primary/50 hover:bg-accent/50 transition-all cursor-pointer"
                             onClick={() => handleJoinGame(game.game_id)}
+                            style={{
+                              padding: '16px',
+                              borderRadius: '16px',
+                              border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'}`,
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+                              e.currentTarget.style.background = isDark ? 'rgba(168, 85, 247, 0.05)' : 'rgba(168, 85, 247, 0.05)';
+                              e.currentTarget.style.transform = 'translateX(4px)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.transform = 'translateX(0)';
+                            }}
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-bold text-card-foreground">
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              marginBottom: '8px'
+                            }}>
+                              <h4 style={{
+                                fontWeight: '700',
+                                color: isDark ? '#f9fafb' : '#1f2937',
+                                margin: 0,
+                                fontSize: '15px'
+                              }}>
                                 Game {game.game_id.slice(0, 8)}
                               </h4>
-                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                              <div style={{
+                                padding: '4px 12px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                background: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                                color: isDark ? '#93c5fd' : '#2563eb'
+                              }}>
                                 Active
                               </div>
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div style={{
+                              fontSize: '14px',
+                              color: isDark ? '#9ca3af' : '#6b7280',
+                              marginBottom: '4px'
+                            }}>
                               {game.player_white} vs {game.player_black}
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div style={{
+                              fontSize: '14px',
+                              color: isDark ? '#9ca3af' : '#6b7280'
+                            }}>
                               Current turn: {game.game_state.turn}
                             </div>
                           </div>
@@ -299,9 +818,33 @@ export const PlayPage: React.FC = () => {
               {games.length > 5 && (
                 <button
                   onClick={() => navigate("/games")}
-                  className="w-full mt-4 bg-secondary text-secondary-foreground px-8 py-3 rounded-2xl hover:bg-secondary/90 transition-all flex items-center justify-center gap-2"
+                  style={{
+                    width: '100%',
+                    marginTop: '16px',
+                    background: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+                    color: isDark ? '#f9fafb' : '#1f2937',
+                    padding: '12px 32px',
+                    borderRadius: '12px',
+                    border: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)'}`,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
-                  <Search className="w-4 h-4" />
+                  <Search style={{ width: '16px', height: '16px' }} />
                   <span>View All Games</span>
                 </button>
               )}

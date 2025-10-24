@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { Share2, BookOpen } from "lucide-react";
 import { ChessBoard } from "../components/ChessBoard";
 import { CompactGameControls } from "../components/CompactGameControls";
 import { CollapsibleRulesSidebar } from "../components/CollapsibleRulesSidebar";
@@ -19,7 +18,8 @@ export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { addNotification } = useAppStore();
-  const { theme } = useTheme();
+  const { actualTheme } = useTheme();
+  const isDark = actualTheme === 'dark';
   const { user } = useAuth();
   const {
     currentGame,
@@ -33,6 +33,18 @@ export const GamePage: React.FC = () => {
     setLoading,
     setError,
   } = useGameStore();
+
+  const {
+    game: chessGame,
+    gameState,
+    drawCard,
+    reshuffleDeck,
+    onDrop,
+    // newGame,
+    handleSquareClick,
+  } = useCardChess(currentGame, {
+    userId: user?._id || ''
+  });
 
   // Check if current user can join this game
   const canJoinGame = currentGame && user && (
@@ -113,38 +125,82 @@ export const GamePage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-6"></div>
-            <p className="text-muted-foreground text-lg">Loading game...</p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              border: `4px solid ${isDark ? '#667eea' : '#667eea'}`,
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              margin: '0 auto 24px',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              fontSize: '18px'
+            }}>Loading game...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const {
-    game: chessGame,
-    gameState,
-    drawCard,
-    reshuffleDeck,
-    onDrop,
-    // newGame,
-    handleSquareClick,
-  } = useCardChess(currentGame, {
-    userId: user?._id
-  });
-
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-6"></div>
-            <p className="text-muted-foreground text-lg">Loading game...</p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              border: `4px solid ${isDark ? '#667eea' : '#667eea'}`,
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              margin: '0 auto 24px',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              fontSize: '18px'
+            }}>Loading game...</p>
           </div>
         </div>
       </div>
@@ -153,18 +209,83 @@ export const GamePage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div style={{
+        minHeight: '100vh',
+        background: isDark 
+          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
+          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
+        color: isDark ? '#f9fafb' : '#1f2937',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }}>
         <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="text-center bg-card p-10 rounded-3xl shadow-lg max-w-md mx-auto border border-border">
-            <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">⚠️</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 'calc(100vh - 64px)',
+          padding: '16px'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            background: isDark 
+              ? 'rgba(255, 255, 255, 0.05)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            padding: '40px',
+            borderRadius: '24px',
+            boxShadow: isDark 
+              ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+              : '0 8px 32px rgba(0, 0, 0, 0.1)',
+            maxWidth: '448px',
+            width: '100%',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              background: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px'
+            }}>
+              <span style={{ fontSize: '40px' }}>⚠️</span>
             </div>
-            <h2 className="text-3xl font-bold text-destructive mb-4">Error</h2>
-            <p className="text-muted-foreground mb-8 text-lg">{error}</p>
+            <h2 style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              color: '#ef4444',
+              marginBottom: '16px'
+            }}>Error</h2>
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              marginBottom: '32px',
+              fontSize: '18px',
+              lineHeight: '1.5'
+            }}>{error}</p>
             <button
               onClick={() => navigate("/")}
-              className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                padding: '16px 32px',
+                borderRadius: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600',
+                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+              }}
             >
               Go Home
             </button>
@@ -175,11 +296,17 @@ export const GamePage: React.FC = () => {
   }
 
   return (
-    <div className={`h-screen w-screen flex flex-col overflow-hidden ${
-      theme === 'dark'
-        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900'
-        : 'bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50'
-    }`}>
+    <div style={{
+      height: '100vh',
+      width: '100vw',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      background: isDark 
+        ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
+        : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%)',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
       <CollapsibleRulesSidebar
         isOpen={showRules}
         onClose={() => setShowRules(false)}
@@ -190,17 +317,58 @@ export const GamePage: React.FC = () => {
 
       {/* Join Game Prompt - Show if user can join but hasn't yet */}
       {canJoinGame && !isPlayerInGame && (
-        <div className="flex items-center justify-center p-4 bg-primary/10 border-b border-primary/20">
-          <div className="text-center max-w-md mx-auto">
-            <h3 className="text-lg font-semibold text-primary mb-2">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          background: isDark 
+            ? 'rgba(102, 126, 234, 0.1)'
+            : 'rgba(102, 126, 234, 0.1)',
+          borderBottom: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.2)'}`
+        }}>
+          <div style={{
+            textAlign: 'center',
+            maxWidth: '448px',
+            margin: '0 auto'
+          }}>
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#667eea',
+              marginBottom: '8px'
+            }}>
               Join This Game?
             </h3>
-            <p className="text-muted-foreground mb-4">
+            <p style={{
+              color: isDark ? '#9ca3af' : '#6b7280',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
               This game is waiting for a second player. Click below to join!
             </p>
             <button
               onClick={handleJoinGameAsOpponent}
-              className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl hover:bg-primary/90 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                padding: '12px 24px',
+                borderRadius: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+              }}
             >
               Join Game
             </button>
@@ -209,14 +377,86 @@ export const GamePage: React.FC = () => {
       )}
 
       {/* Main Game Layout */}
-      <main className="flex-1 flex">
-        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6">
-          <motion.div
+      <main style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'stretch',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        padding: '24px 16px',
+        minHeight: 0
+      }}>
+        {/* Background decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+          zIndex: 0
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '15%',
+            left: '5%',
+            width: '400px',
+            height: '400px',
+            background: isDark 
+              ? 'radial-gradient(circle, rgba(102, 126, 234, 0.12) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%)',
+            borderRadius: '50%',
+            filter: 'blur(60px)'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: '15%',
+            right: '5%',
+            width: '350px',
+            height: '350px',
+            background: isDark 
+              ? 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)',
+            borderRadius: '50%',
+            filter: 'blur(60px)'
+          }}></div>
+        </div>
+
+        {/* Main Content Container with Max Width */}
+        <div style={{
+          width: '100%',
+          maxWidth: '1400px',
+          height: '100%',
+          display: 'flex',
+          position: 'relative',
+          zIndex: 1,
+          gap: '24px'
+        }}>
+          {/* Chess Board Area */}
+          <div style={{
+            flex: '1 1 60%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0',
+            minWidth: 0
+          }}>
+            <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full h-full"
-            style={{ width: "70%", height: "70%" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            style={{
+              width: '100%',
+              maxWidth: 'min(700px, 100%)',
+              aspectRatio: '1',
+              boxShadow: isDark 
+                ? '0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)' 
+                : '0 30px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+              borderRadius: '20px',
+              overflow: 'hidden'
+            }}
           >
             <ChessBoard
               game={chessGame}
@@ -231,39 +471,60 @@ export const GamePage: React.FC = () => {
             />
           </motion.div>
         </div>
-          <aside
-            className={`sm:w-80 lg:w-96 flex items-center justify-center p-2 sm:p-4 lg:p-6 border-l ${
-              theme === 'dark'
-                ? 'border-slate-700 bg-slate-800/40 backdrop-blur-sm'
-                : 'border-gray-200/50 bg-white/40 backdrop-blur-sm'
-            }`}
-            style={{ width: "40%" }}
+
+        {/* Game Controls Sidebar */}
+        <aside style={{
+          flex: '1 1 40%',
+          background: isDark
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)'
+            : 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
+          backdropFilter: 'blur(20px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 1,
+          borderRadius: '20px',
+          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
+          boxShadow: isDark
+            ? '0 20px 40px -12px rgba(0, 0, 0, 0.5)'
+            : '0 20px 40px -12px rgba(0, 0, 0, 0.15)',
+          minWidth: 0,
+          maxWidth: '480px'
+        }}>
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              padding: '20px',
+              minHeight: 0
+            }}
           >
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-              className="w-full h-full overflow-y-auto"
-            >
-              <CompactGameControls
-                currentCard={gameState.currentCard}
-                cardsRemaining={gameState.cardsRemaining}
-                isInCheck={gameState.isInCheck}
-                checkAttempts={gameState.checkAttempts}
-                onDrawCard={drawCard}
-                noValidCard={gameState.noValidCard}
-                onReshuffle={reshuffleDeck}
-                canDrawCard={gameState.canDrawCard}
-                currentPlayer={gameState.currentPlayer}
-                userColor={gameState.userColor}
-                gameOver={gameState.gameOver}
-                winner={gameState.winner}
-                // onNewGame={newGame}
-                showMoves={showMoves}
-                handleShowMoveButton={setShowMoves}
-              />
-            </motion.div>
-          </aside>
+            <CompactGameControls
+              currentCard={gameState.currentCard}
+              cardsRemaining={gameState.cardsRemaining}
+              isInCheck={gameState.isInCheck}
+              checkAttempts={gameState.checkAttempts}
+              onDrawCard={drawCard}
+              noValidCard={gameState.noValidCard}
+              onReshuffle={reshuffleDeck}
+              canDrawCard={gameState.canDrawCard}
+              currentPlayer={gameState.currentPlayer}
+              userColor={gameState.userColor}
+              gameOver={gameState.gameOver}
+              winner={gameState.winner}
+              // onNewGame={newGame}
+              showMoves={showMoves}
+              handleShowMoveButton={setShowMoves}
+            />
+          </motion.div>
+        </aside>
+        </div>
       </main>
 
       {/* Move History Footer */}

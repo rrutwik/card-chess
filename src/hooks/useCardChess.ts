@@ -28,7 +28,7 @@ export interface GameState {
 }
 
 interface UseCardChessOptions {
-  userId: string;
+  userId?: string;
   onGameUpdate?: (
     fen: string,
     currentPlayer: string,
