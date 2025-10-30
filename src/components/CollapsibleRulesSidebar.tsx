@@ -126,10 +126,6 @@ export function CollapsibleRulesSidebar({ isOpen, onClose }: CollapsibleRulesSid
                   </li>
                   <li className="flex items-start gap-2 p-3 bg-purple-50 rounded-lg">
                     <span className="text-purple-600 mt-0.5">•</span>
-                    <span>Kings can move into check</span>
-                  </li>
-                  <li className="flex items-start gap-2 p-3 bg-purple-50 rounded-lg">
-                    <span className="text-purple-600 mt-0.5">•</span>
                     <span>Game ends when a King is captured</span>
                   </li>
                   <li className="flex items-start gap-2 p-3 bg-purple-50 rounded-lg">

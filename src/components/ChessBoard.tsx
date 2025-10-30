@@ -1,13 +1,12 @@
 import {
-  Arrow,
   Chessboard,
-  ChessboardProvider,
   DraggingPieceDataType,
   PieceDataType,
 } from "react-chessboard";
 import { Chess, Move, Square } from "chess.js";
 import { PieceColor, BoardOrientation } from "../types/game";
 import React from "react";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface ChessBoardProps {
   game: Chess;
@@ -32,6 +31,8 @@ export function ChessBoard({
   canMove,
   orientation,
 }: ChessBoardProps) {
+  const { actualTheme } = useTheme();
+  const isDark = actualTheme === 'dark';
 
   const handleSquareClick = ({
     square,
@@ -115,8 +116,22 @@ export function ChessBoard({
   }, [fromMoveSelected, showMoves, validMoves, currentPlayer]);
 
   return (
-    <div className="w-full h-full min-h-0 flex items-center justify-center p-2">
-      <div className="relative bg-gray-800 rounded-2xl shadow-2xl p-3 sm:p-4">
+    <div style={{
+      width: '100%',
+      height: '100%',
+      minHeight: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '8px'
+    }}>
+      <div style={{
+        position: 'relative',
+        background: isDark ? '#1e293b' : '#374151',
+        borderRadius: '16px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        padding: 'clamp(12px, 2vw, 16px)'
+      }}>
         <Chessboard
           options={{
             position: game.fen(),
@@ -124,8 +139,6 @@ export function ChessBoard({
             onPieceDrop: handleDrop,
             boardOrientation: orientation === 'auto' ? (currentPlayer === "white" ? "white" : "black") : orientation,
             boardStyle: {
-              width: "100%",
-              height: "100%",
               cursor: "default",
               borderRadius: "2px",
               boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",

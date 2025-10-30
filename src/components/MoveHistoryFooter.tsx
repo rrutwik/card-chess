@@ -1,27 +1,23 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { History, ChevronUp, X } from 'lucide-react';
-import { PlayingCard } from '../types/game';
+import { MoveHistory } from '../types/game';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface MoveHistoryFooterProps {
-  moveHistory: {
-    card: PlayingCard;
-    move: {
-      from: string;
-      to: string;
-      piece: string;
-    };
-  }[];
+  moveHistory: MoveHistory[];
 }
 
 export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
+  const { actualTheme } = useTheme();
+  const isDark = actualTheme === 'dark';
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (moveHistory.length === 0) return null;
 
   return (
     <>
-
+      {/* Backdrop */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -29,16 +25,27 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsExpanded(false)}
-            className="fixed inset-0 bg-black/50 z-40"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 40
+            }}
           />
         )}
       </AnimatePresence>
 
-
+      {/* Footer */}
       <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50
+        }}
       >
         <AnimatePresence>
           {isExpanded && (
@@ -47,36 +54,85 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="bg-white border-t-2 border-gray-300 shadow-2xl overflow-hidden"
+              style={{
+                background: isDark ? '#1f2937' : 'white',
+                borderTop: `2px solid ${isDark ? '#374151' : '#d1d5db'}`,
+                boxShadow: '0 -25px 50px -12px rgba(0, 0, 0, 0.25)',
+                overflow: 'hidden'
+              }}
             >
-              <div className="container mx-auto px-4 py-4 max-h-[60vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-indigo-600" />
-                    <h3 className="font-black text-gray-900">Move History</h3>
-                    <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              <div style={{
+                maxWidth: '1280px',
+                margin: '0 auto',
+                padding: '16px',
+                maxHeight: '60vh',
+                overflowY: 'auto'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <History style={{ width: '20px', height: '20px', color: '#4f46e5' }} />
+                    <h3 style={{ fontWeight: '900', color: isDark ? '#f9fafb' : '#111827' }}>Move History</h3>
+                    <span style={{
+                      fontSize: '14px',
+                      color: isDark ? '#9ca3af' : '#6b7280',
+                      background: isDark ? '#374151' : '#f3f4f6',
+                      padding: '2px 8px',
+                      borderRadius: '9999px'
+                    }}>
                       {moveHistory.length} moves
                     </span>
                   </div>
                   <button
                     onClick={() => setIsExpanded(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    style={{
+                      padding: '8px',
+                      background: isDark ? '#374151' : '#f3f4f6',
+                      borderRadius: '8px',
+                      transition: 'background 0.2s ease',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = isDark ? '#4b5563' : '#e5e7eb';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isDark ? '#374151' : '#f3f4f6';
+                    }}
                   >
-                    <X className="w-5 h-5 text-gray-500" />
+                    <X style={{ width: '20px', height: '20px', color: isDark ? '#9ca3af' : '#6b7280' }} />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: '8px'
+                }}>
                   {[...moveHistory].reverse().map((move, index) => (
                     <motion.div
                       key={moveHistory.length - index}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.02 }}
-                      className="text-sm p-2.5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200"
+                      style={{
+                        fontSize: '14px',
+                        padding: '10px',
+                        background: isDark 
+                          ? 'linear-gradient(90deg, #374151 0%, #4b5563 100%)'
+                          : 'linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%)',
+                        borderRadius: '8px',
+                        border: `1px solid ${isDark ? '#4b5563' : '#e5e7eb'}`
+                      }}
                     >
-                      <span className="font-bold text-indigo-600">#{moveHistory.length - index}</span>{' '}
-                      <span className="text-gray-900 text-xs">{move.card.value} {move.card.suit[0].toUpperCase()} - {move.move.piece.toUpperCase()} {move.move.from} {move.move.to}</span>
+                      <span style={{ fontWeight: '700', color: '#4f46e5' }}>#{moveHistory.length - index}</span>{' '}
+                      <span style={{ color: isDark ? '#f9fafb' : '#111827', fontSize: '12px' }}>
+                        {move.card.value} {move.card.suit[0].toUpperCase()} - {move.move?.piece.toUpperCase()} {move.move?.from} {move.move?.to}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
@@ -85,32 +141,72 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
           )}
         </AnimatePresence>
 
-
-        <div className="bg-white border-t-2 border-gray-300 shadow-xl">
-          <div className="container mx-auto px-4">
+        {/* Collapsed Bar */}
+        <div style={{
+          background: isDark ? '#1f2937' : 'white',
+          borderTop: `2px solid ${isDark ? '#374151' : '#d1d5db'}`,
+          boxShadow: '0 -10px 15px -3px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full py-3 flex items-center justify-between hover:bg-gray-50 transition-colors group"
+              style={{
+                width: '100%',
+                padding: '12px 0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isDark ? 'rgba(55, 65, 81, 0.5)' : 'rgba(249, 250, 251, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
-                  <History className="w-5 h-5 text-indigo-600" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  padding: '8px',
+                  background: '#e0e7ff',
+                  borderRadius: '8px',
+                  transition: 'background 0.2s ease'
+                }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#c7d2fe';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e0e7ff';
+                  }}
+                >
+                  <History style={{ width: '20px', height: '20px', color: '#4f46e5' }} />
                 </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">Move History</p>
-                  <p className="text-xs text-gray-500">
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontWeight: '700', color: isDark ? '#f9fafb' : '#111827' }}>Move History</p>
+                  <p style={{ fontSize: '12px', color: isDark ? '#9ca3af' : '#6b7280' }}>
                     {moveHistory.length} {moveHistory.length === 1 ? 'move' : 'moves'} played
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Last move info */}
                 {moveHistory.length > 0 && (
-                  <div className="hidden sm:block text-right">
-                    <p className="text-xs text-gray-500">Last move:</p>
-                    <p className="text-sm font-bold text-gray-900 max-w-xs truncate">
-                      {moveHistory[moveHistory.length - 1].card.value} {moveHistory[moveHistory.length - 1].card.suit[0].toUpperCase()} - {moveHistory[moveHistory.length - 1].move.piece.toUpperCase()} {moveHistory[moveHistory.length - 1].move.from} {moveHistory[moveHistory.length - 1].move.to}
+                  <div style={{ textAlign: 'right', display: 'none' }} className="sm:block">
+                    <p style={{ fontSize: '12px', color: isDark ? '#9ca3af' : '#6b7280' }}>Last move:</p>
+                    <p style={{
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      color: isDark ? '#f9fafb' : '#111827',
+                      maxWidth: '384px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {moveHistory[moveHistory.length - 1].card.value} {moveHistory[moveHistory.length - 1].card.suit[0].toUpperCase()} - {moveHistory[moveHistory.length - 1].move?.piece?.toUpperCase()} {moveHistory[moveHistory.length - 1].move?.from} {moveHistory[moveHistory.length - 1].move?.to}
                     </p>
                   </div>
                 )}
@@ -118,9 +214,13 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
-                  className="p-2 bg-gray-100 rounded-lg"
+                  style={{
+                    padding: '8px',
+                    background: isDark ? '#374151' : '#f3f4f6',
+                    borderRadius: '8px'
+                  }}
                 >
-                  <ChevronUp className="w-5 h-5 text-gray-600" />
+                  <ChevronUp style={{ width: '20px', height: '20px', color: isDark ? '#9ca3af' : '#4b5563' }} />
                 </motion.div>
               </div>
             </button>

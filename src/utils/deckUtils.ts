@@ -27,14 +27,16 @@ export function createDeck(): PlayingCard[] {
   const redJoker = {
     suit: 'joker' as Suit,
     value: 'Joker',
-    color: 'red' as 'red' || 'black'
+    color: 'red' as const
   }
   const blackJoker = {
     suit: 'joker' as Suit,
     value: 'Joker',
-    color: 'black' as 'red' || 'black'
+    color: 'black' as const
   }
+
   cards.push(redJoker);
+
   cards.push(blackJoker);
 
   return shuffleDeck(cards);

@@ -20,15 +20,14 @@ export interface PlayingCard {
   color: 'red' | 'black';
 }
 
-export interface GameState {
-  board: (Piece | null)[][];
-  deck: PlayingCard[];
-  discardPile: PlayingCard[];
-  currentCard: PlayingCard | null;
-  currentPlayer: PieceColor;
-  selectedPiece: Position | null;
-  validMoves: Position[];
-  gameOver: boolean;
-  winner: PieceColor | null;
-  moveHistory: string[];
+export interface MoveHistory {
+  card: PlayingCard;
+  move?: {
+    from: string;
+    to: string;
+    piece: string;
+  },
+  player: "white" | "black";
+  isFailedAttempt?: boolean; // For tracking failed check escape attempts
 }
+

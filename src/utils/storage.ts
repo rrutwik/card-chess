@@ -28,7 +28,8 @@ export const saveGameState = (
     checkAttempts,
     moveHistory
   };
-  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));};
+  localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+};
 
 export const loadGameState = (): StoredGameState | null => {
   const saved = localStorage.getItem(GAME_STATE_KEY);
