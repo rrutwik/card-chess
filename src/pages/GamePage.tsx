@@ -13,6 +13,7 @@ import { useAppStore } from "../stores/appStore";
 import { BoardOrientation } from "../types/game";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+import { Link2, Check, Users } from "lucide-react";
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -21,6 +22,7 @@ export const GamePage: React.FC = () => {
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
   const { user } = useAuth();
+  const [linkCopied, setLinkCopied] = useState(false);
   const {
     currentGame,
     showRules,
@@ -56,6 +58,34 @@ export const GamePage: React.FC = () => {
   const isPlayerInGame = currentGame && user && (
     currentGame.player_white === user._id || currentGame.player_black === user._id
   ) ? true : false;
+
+  // Check if waiting for opponent (player is in game but opponent slot is empty)
+  const isWaitingForOpponent = currentGame && user && isPlayerInGame && (
+    !currentGame.player_black || !currentGame.player_white
+  );
+
+  // Handle copy game link
+  const handleCopyLink = () => {
+    const gameLink = `${window.location.origin}/game/${gameId}`;
+    navigator.clipboard.writeText(gameLink).then(() => {
+      setLinkCopied(true);
+      addNotification({
+        type: "success",
+        title: "Link Copied!",
+        message: "Game link copied to clipboard",
+        duration: 2000,
+      });
+      setTimeout(() => setLinkCopied(false), 2000);
+    }).catch((err) => {
+      console.error('Failed to copy link:', err);
+      addNotification({
+        type: "error",
+        title: "Failed to copy",
+        message: "Could not copy link to clipboard",
+        duration: 3000,
+      });
+    });
+  };
 
   // Load game data from backend if gameId is provided
   useEffect(() => {
@@ -374,6 +404,125 @@ export const GamePage: React.FC = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Waiting for Opponent - Show if player is in game but waiting for opponent */}
+      {isWaitingForOpponent && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            background: isDark 
+              ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)'
+              : 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%)',
+            borderBottom: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)'}`,
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            maxWidth: '800px',
+            width: '100%',
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              flex: '1 1 auto'
+            }}>
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Users style={{ 
+                  width: '24px', 
+                  height: '24px', 
+                  color: '#a855f7'
+                }} />
+              </motion.div>
+              <div>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: isDark ? '#f9fafb' : '#1f2937',
+                  marginBottom: '4px'
+                }}>
+                  Waiting for Opponent
+                </h3>
+                <p style={{
+                  color: isDark ? '#d1d5db' : '#6b7280',
+                  fontSize: '13px',
+                  margin: 0
+                }}>
+                  Share the link below to invite someone to play
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={handleCopyLink}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: linkCopied
+                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  : 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '12px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600',
+                boxShadow: linkCopied
+                  ? '0 4px 16px rgba(16, 185, 129, 0.4)'
+                  : '0 4px 16px rgba(168, 85, 247, 0.4)',
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                if (!linkCopied) {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(168, 85, 247, 0.5)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!linkCopied) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(168, 85, 247, 0.4)';
+                }
+              }}
+            >
+              {linkCopied ? (
+                <>
+                  <Check style={{ width: '16px', height: '16px' }} />
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Link2 style={{ width: '16px', height: '16px' }} />
+                  <span>Copy Game Link</span>
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
       )}
 
       {/* Main Game Layout */}

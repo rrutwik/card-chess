@@ -25,6 +25,7 @@ export interface ChessGame {
   game_id: string;
   player_white: string;
   player_black: string;
+  version: number;
   game_state: {
     fen: string;
     pgn?: string;
@@ -96,7 +97,7 @@ const API_BASE_URL = 'https://backend-api.techkarmic.com';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 2000,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -224,6 +225,15 @@ export const getUserDetails = async (includeProfile: boolean = false): Promise<U
   }
 };
 
+export const logout = async () => {
+  try {
+    await api.post('/auth/logout');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    throw error;
+  }
+};
+
 // Chess API functions with enhanced error handling and loading states
 export class ChessAPI {
   // Create a new chess game
@@ -340,9 +350,12 @@ export class ChessAPI {
     }
   }
 
-  static async updateGameState(gameId: string, gameState: UpdateGameStateRequest): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+  static async updateGameState(gameId: string, gameState: UpdateGameStateRequest, version: number): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
-      const response = await api.put<ApiResponse<ChessGame>>(`/chess/game/${gameId}/state`, gameState);
+      const response = await api.put<ApiResponse<ChessGame>>(`/chess/game/${gameId}/state`, {
+        game_state: gameState,
+        version
+      });
       return response;
     } catch (error) {
       if (error instanceof ApiError) {

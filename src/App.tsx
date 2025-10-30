@@ -8,6 +8,7 @@ import { PlayPage } from './pages/PlayPage';
 import { GamesListPage } from './pages/GamesListPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { GamePage } from './pages/GamePage';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
   return (
@@ -17,10 +18,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/play" element={<PlayPage />} />
-            <Route path="/games" element={<GamesListPage />} />
-            <Route path="/game/:gameId" element={<GamePage />} />
-            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/play" element={<ProtectedRoute><PlayPage /></ProtectedRoute>} />
+            <Route path="/games" element={<ProtectedRoute><GamesListPage /></ProtectedRoute>} />
+            <Route path="/game/:gameId" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
             {/* Add more routes as needed */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

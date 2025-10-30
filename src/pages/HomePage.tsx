@@ -12,7 +12,10 @@ export const HomePage: React.FC = () => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
       background: isDark 
         ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
         : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
@@ -64,7 +67,13 @@ export const HomePage: React.FC = () => {
         zIndex: 1,
         maxWidth: '1024px',
         margin: '0 auto',
-        padding: '64px 16px'
+        padding: '16px 16px',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        minHeight: 0
       }}>
         {/* Header Section */}
         <motion.div
@@ -73,15 +82,16 @@ export const HomePage: React.FC = () => {
           transition={{ duration: 0.6 }}
           style={{
             textAlign: 'center',
-            marginBottom: '64px'
+            marginBottom: '20px',
+            flexShrink: 0
           }}
         >
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '16px',
-            marginBottom: '24px',
+            gap: '12px',
+            marginBottom: '12px',
             flexWrap: 'wrap'
           }}>
             <motion.div
@@ -97,14 +107,14 @@ export const HomePage: React.FC = () => {
               }}
             >
               <Crown style={{ 
-                width: '48px', 
-                height: '48px', 
+                width: '36px', 
+                height: '36px', 
                 color: '#667eea',
                 filter: 'drop-shadow(0 4px 8px rgba(102, 126, 234, 0.4))'
               }} />
             </motion.div>
             <h1 style={{
-              fontSize: 'clamp(32px, 8vw, 56px)',
+              fontSize: 'clamp(28px, 6vw, 44px)',
               fontWeight: '800',
               color: isDark ? '#f9fafb' : '#1f2937',
               margin: 0,
@@ -126,8 +136,8 @@ export const HomePage: React.FC = () => {
               }}
             >
               <Swords style={{ 
-                width: '48px', 
-                height: '48px', 
+                width: '36px', 
+                height: '36px', 
                 color: '#a855f7',
                 filter: 'drop-shadow(0 4px 8px rgba(168, 85, 247, 0.4))'
               }} />
@@ -135,11 +145,11 @@ export const HomePage: React.FC = () => {
           </div>
           
           <p style={{
-            fontSize: '18px',
+            fontSize: '14px',
             color: isDark ? '#d1d5db' : '#6b7280',
             maxWidth: '600px',
-            margin: '0 auto 32px',
-            lineHeight: '1.6'
+            margin: '0 auto 8px',
+            lineHeight: '1.4'
           }}>
             Play chess with cards. Strategy meets chance in this exciting twist on the classic game.
           </p>
@@ -147,10 +157,10 @@ export const HomePage: React.FC = () => {
           {/* Feature badges */}
           <div style={{
             display: 'flex',
-            gap: '12px',
+            gap: '8px',
             justifyContent: 'center',
             flexWrap: 'wrap',
-            marginTop: '24px'
+            marginTop: '8px'
           }}>
             {[
               { icon: '⚡', text: 'Fast-paced' },
@@ -165,19 +175,19 @@ export const HomePage: React.FC = () => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 16px',
+                  gap: '4px',
+                  padding: '6px 12px',
                   background: isDark 
                     ? 'rgba(255, 255, 255, 0.05)' 
                     : 'rgba(102, 126, 234, 0.08)',
-                  borderRadius: '24px',
-                  fontSize: '14px',
+                  borderRadius: '20px',
+                  fontSize: '13px',
                   fontWeight: '500',
                   color: isDark ? '#e5e7eb' : '#4b5563',
                   border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`
                 }}
               >
-                <span style={{ fontSize: '16px' }}>{badge.icon}</span>
+                <span style={{ fontSize: '14px' }}>{badge.icon}</span>
                 <span>{badge.text}</span>
               </motion.div>
             ))}
@@ -187,10 +197,11 @@ export const HomePage: React.FC = () => {
         {/* Game Options */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '32px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '20px',
           maxWidth: '800px',
-          margin: '0 auto'
+          margin: '0 auto',
+          flexShrink: 0
         }}>
           {/* New Game Card */}
           <motion.div
@@ -210,8 +221,8 @@ export const HomePage: React.FC = () => {
                   : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
                 backdropFilter: 'blur(10px)',
                 border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
-                borderRadius: '24px',
-                padding: '40px 32px',
+                borderRadius: '20px',
+                padding: '24px 20px',
                 textDecoration: 'none',
                 boxShadow: isDark 
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
@@ -256,27 +267,27 @@ export const HomePage: React.FC = () => {
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ duration: 0.3 }}
                 style={{
-                  width: '72px',
-                  height: '72px',
+                  width: '56px',
+                  height: '56px',
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 24px',
+                  margin: '0 auto 12px',
                   boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
                   position: 'relative',
                   zIndex: 1
                 }}
               >
-                <Play style={{ width: '36px', height: '36px', color: 'white' }} />
+                <Play style={{ width: '28px', height: '28px', color: 'white' }} />
               </motion.div>
 
               <h3 style={{
-                fontSize: '28px',
+                fontSize: '22px',
                 fontWeight: '700',
                 color: isDark ? '#f9fafb' : '#1f2937',
-                marginBottom: '12px',
+                marginBottom: '6px',
                 textAlign: 'center',
                 position: 'relative',
                 zIndex: 1
@@ -284,15 +295,15 @@ export const HomePage: React.FC = () => {
                 New Game
               </h3>
               <p style={{
-                fontSize: '15px',
+                fontSize: '13px',
                 color: isDark ? '#d1d5db' : '#6b7280',
                 textAlign: 'center',
-                lineHeight: '1.6',
+                lineHeight: '1.4',
                 margin: 0,
                 position: 'relative',
                 zIndex: 1
               }}>
-                Start a new game
+                Start a fresh game with card-based chess mechanics
               </p>
             </Link>
           </motion.div>
@@ -315,8 +326,8 @@ export const HomePage: React.FC = () => {
                   : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
                 backdropFilter: 'blur(10px)',
                 border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(168, 85, 247, 0.2)'}`,
-                borderRadius: '24px',
-                padding: '40px 32px',
+                borderRadius: '20px',
+                padding: '24px 20px',
                 textDecoration: 'none',
                 boxShadow: isDark 
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
@@ -361,27 +372,27 @@ export const HomePage: React.FC = () => {
                 whileHover={{ scale: 1.1, rotate: -5 }}
                 transition={{ duration: 0.3 }}
                 style={{
-                  width: '72px',
-                  height: '72px',
+                  width: '56px',
+                  height: '56px',
                   background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 24px',
+                  margin: '0 auto 12px',
                   boxShadow: '0 8px 24px rgba(168, 85, 247, 0.4)',
                   position: 'relative',
                   zIndex: 1
                 }}
               >
-                <Users style={{ width: '36px', height: '36px', color: 'white' }} />
+                <Users style={{ width: '28px', height: '28px', color: 'white' }} />
               </motion.div>
 
               <h3 style={{
-                fontSize: '28px',
+                fontSize: '22px',
                 fontWeight: '700',
                 color: isDark ? '#f9fafb' : '#1f2937',
-                marginBottom: '12px',
+                marginBottom: '6px',
                 textAlign: 'center',
                 position: 'relative',
                 zIndex: 1
@@ -389,10 +400,10 @@ export const HomePage: React.FC = () => {
                 Active Games
               </h3>
               <p style={{
-                fontSize: '15px',
+                fontSize: '13px',
                 color: isDark ? '#d1d5db' : '#6b7280',
                 textAlign: 'center',
-                lineHeight: '1.6',
+                lineHeight: '1.4',
                 margin: 0,
                 position: 'relative',
                 zIndex: 1
@@ -410,32 +421,33 @@ export const HomePage: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           style={{
             textAlign: 'center',
-            marginTop: '64px',
-            padding: '32px',
+            marginTop: '20px',
+            padding: '16px 20px',
             background: isDark 
               ? 'rgba(255, 255, 255, 0.03)' 
               : 'rgba(102, 126, 234, 0.05)',
-            borderRadius: '20px',
-            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(102, 126, 234, 0.15)'}`
+            borderRadius: '16px',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(102, 126, 234, 0.15)'}`,
+            flexShrink: 0
           }}
         >
           <Trophy style={{ 
-            width: '40px', 
-            height: '40px', 
+            width: '28px', 
+            height: '28px', 
             color: '#fbbf24',
-            margin: '0 auto 16px',
+            margin: '0 auto 8px',
             filter: 'drop-shadow(0 4px 8px rgba(251, 191, 36, 0.4))'
           }} />
           <h3 style={{
-            fontSize: '20px',
+            fontSize: '16px',
             fontWeight: '600',
             color: isDark ? '#f9fafb' : '#1f2937',
-            marginBottom: '8px'
+            marginBottom: '4px'
           }}>
             Ready to Master the Board?
           </h3>
           <p style={{
-            fontSize: '15px',
+            fontSize: '13px',
             color: isDark ? '#9ca3af' : '#6b7280',
             margin: 0
           }}>

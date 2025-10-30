@@ -6,7 +6,7 @@ import React, {
   ReactNode,
   useMemo,
 } from "react";
-import { api, getUserDetails } from "../services/api";
+import { logout as apiLogout, getUserDetails } from "../services/api";
 
 export interface User {
   _id: string;
@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     console.log("🔓 AuthContext: Logout called");
+    apiLogout();
     localStorage.removeItem("authToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userData");

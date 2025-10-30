@@ -5,10 +5,12 @@ import { Trophy, Clock, Eye, RotateCcw, Calendar } from 'lucide-react';
 import { ChessAPI, ChessGame } from '../services/api';
 import { Header } from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
   const { actualTheme } = useTheme();
+  const { user } = useAuth();
   const isDark = actualTheme === 'dark';
   const [games, setGames] = useState<ChessGame[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,13 @@ export const HistoryPage: React.FC = () => {
     if (game.game_state.winner === 'draw') {
       return 'Draw';
     }
-    return `${game.game_state.winner} wins`;
+    const isUserWinner = 
+      (game.game_state.winner === 'white' && game.player_white === user?._id.toString()) ||
+      (game.game_state.winner === 'black' && game.player_black === user?._id.toString());
+    if (isUserWinner) {
+      return 'You won';
+    }
+    return 'You lost';
   };
 
   const getResultColor = (game: ChessGame) => {
@@ -55,6 +63,10 @@ export const HistoryPage: React.FC = () => {
     }
     return isDark ? '#34d399' : '#059669';
   };
+
+  if (!user) {
+    return null;
+  }
 
   if (loading) {
     return (

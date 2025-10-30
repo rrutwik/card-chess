@@ -3,7 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { getUserDetails, loginWithGoogle } from '../services/api';
 import { GoogleLoginComponent } from '../components/GoogleLogin';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -11,9 +11,13 @@ export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const { actualTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const clientId = '201954194593-36t0nksh9jusg01k58et81ct27objt26.apps.googleusercontent.com';
 
   const isDark = actualTheme === 'dark';
+
+  // Get the redirect path from location state, default to '/'
+  const from = (location.state as any)?.from?.pathname || '/';
 
   const handleLoginSuccess = async (response: any) => {
     try {
@@ -28,10 +32,10 @@ export function LoginPage() {
 
       console.log('✅ User logged in successfully:', data.data.user);
 
-      // Navigate to home page after successful login
+      // Navigate to the original page or home page after successful login
       setTimeout(() => {
-        console.log('🔄 Navigating to home page...');
-        navigate('/');
+        console.log('🔄 Navigating to:', from);
+        navigate(from, { replace: true });
       }, 100);
 
     } catch (error) {
@@ -47,10 +51,10 @@ export function LoginPage() {
   // Navigate away when user becomes authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('🔄 LoginPage: User is authenticated, navigating to home...');
-      navigate('/');
+      console.log('🔄 LoginPage: User is authenticated, navigating to:', from);
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from]);
 
   const handleLoginError = (error: any) => {
     console.error('Login failed:', error);
