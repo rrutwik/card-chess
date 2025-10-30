@@ -32,7 +32,7 @@ jobs:
           aws-region: us-east-1  # Change to your region
 
       - name: Sync to S3
-        run: aws s3 sync dist/ s3://card-chess/ --delete
+        run: aws s3 sync build/ s3://card-chess/ --delete
 
       - name: Invalidate CloudFront
         run: aws cloudfront create-invalidation --distribution-id E2HBFHXPCW8YH9 --paths '/index.html'
