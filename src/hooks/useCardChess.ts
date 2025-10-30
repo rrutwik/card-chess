@@ -188,7 +188,7 @@ export function useCardChess(
       if (!gameId || !userId) return;
 
       try {
-        await ChessAPI.updateGameState(
+        const response = await ChessAPI.updateGameState(
           gameId,
           {
             fen,
@@ -202,6 +202,33 @@ export function useCardChess(
           },
           currentVersion
         );
+        const responseGame = response.data.data;
+        if (responseGame.version > gameState.version) {
+          const backendCard = responseGame.game_state.current_card;
+          setGameState((prev) => ({ ...prev, version: responseGame.version }));
+          console.log("FEN changed, updating local state");
+          gameRef.current.load(responseGame.game_state.fen);
+          let moves = [] as Move[];
+          if (backendCard) {
+            moves = getAnyValidMoveForSelectedCard(
+              gameRef.current,
+              backendCard
+            );
+          }
+          setGameState((prev) => ({
+            ...prev,
+            isInCheck: gameRef.current.isCheck(),
+            currentPlayer: responseGame.game_state.turn,
+            moveHistory: responseGame.game_state.moves || [],
+            currentCard: backendCard || null,
+            fromMoveSelected: null,
+            validMoves: moves,
+            deck: responseGame.game_state.cards_deck || [],
+            checkAttempts: responseGame.game_state.check_attempts || 0,
+            gameStatus: responseGame.game_state.status,
+            gameOver: responseGame.game_state.status === "completed",
+          }));
+        }
       } catch (error) {
         console.error("Failed to sync with backend:", error);
       }
@@ -527,9 +554,6 @@ export function useCardChess(
 
         // Update local game state from backend
         if (latestGame.version > gameState.version) {
-          console.log(
-            `Game version updated from ${gameState.version} to ${latestGame.version}`
-          );
           const backendCard = latestGame.game_state.current_card;
           setGameState((prev) => ({ ...prev, version: latestGame.version }));
           console.log("FEN changed, updating local state");
