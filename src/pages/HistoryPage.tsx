@@ -6,6 +6,7 @@ import { ChessAPI, ChessGame } from "../services/api";
 import { Header } from "../components/Header";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
+import { logger } from "../utils/logger";
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,17 +18,20 @@ export const HistoryPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    logger.info('HistoryPage: Mounted');
     loadGameHistory();
   }, []);
 
   const loadGameHistory = async () => {
     try {
+      logger.info('HistoryPage: Loading game history');
       setLoading(true);
       const response = await ChessAPI.getGameHistory();
       setGames(response.data.data);
       setError(null);
+      logger.info(`HistoryPage: Loaded ${response.data.data.length} past games`);
     } catch (err: any) {
-      console.error("Error loading game history:", err);
+      logger.error("Error loading game history:", err);
       setError(err.response?.data?.message || "Failed to load game history");
     } finally {
       setLoading(false);
@@ -107,9 +111,8 @@ export const HistoryPage: React.FC = () => {
                 : "0 8px 32px rgba(0, 0, 0, 0.1)",
               maxWidth: "448px",
               width: "100%",
-              border: `1px solid ${
-                isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"
-              }`,
+              border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"
+                }`,
             }}
           >
             <div
@@ -347,11 +350,10 @@ export const HistoryPage: React.FC = () => {
                 boxShadow: isDark
                   ? "0 8px 32px rgba(0, 0, 0, 0.3)"
                   : "0 8px 32px rgba(102, 126, 234, 0.1)",
-                border: `1px solid ${
-                  isDark
+                border: `1px solid ${isDark
                     ? "rgba(255, 255, 255, 0.1)"
                     : "rgba(102, 126, 234, 0.2)"
-                }`,
+                  }`,
               }}
             >
               <div
@@ -391,11 +393,10 @@ export const HistoryPage: React.FC = () => {
                 boxShadow: isDark
                   ? "0 8px 32px rgba(0, 0, 0, 0.3)"
                   : "0 8px 32px rgba(102, 126, 234, 0.1)",
-                border: `1px solid ${
-                  isDark
+                border: `1px solid ${isDark
                     ? "rgba(255, 255, 255, 0.1)"
                     : "rgba(102, 126, 234, 0.2)"
-                }`,
+                  }`,
               }}
             >
               <div
@@ -481,11 +482,10 @@ export const HistoryPage: React.FC = () => {
                   ? "0 8px 32px rgba(0, 0, 0, 0.3)"
                   : "0 8px 32px rgba(102, 126, 234, 0.1)",
                 overflow: "hidden",
-                border: `1px solid ${
-                  isDark
+                border: `1px solid ${isDark
                     ? "rgba(255, 255, 255, 0.1)"
                     : "rgba(102, 126, 234, 0.2)"
-                }`,
+                  }`,
               }}
             >
               <div style={{ overflowX: "auto" }}>
@@ -578,11 +578,10 @@ export const HistoryPage: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
                         style={{
-                          borderTop: `1px solid ${
-                            isDark
+                          borderTop: `1px solid ${isDark
                               ? "rgba(255, 255, 255, 0.05)"
                               : "rgba(0, 0, 0, 0.05)"
-                          }`,
+                            }`,
                           transition: "background 0.2s ease",
                         }}
                         onMouseEnter={(e) => {

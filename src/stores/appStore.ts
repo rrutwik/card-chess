@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { logger } from '../utils/logger';
 
 export interface Notification {
   id: string;
@@ -46,10 +47,12 @@ export const useAppStore = create<AppState>()(
 
         // Actions
         setLoading: (loading: boolean, message?: string) => {
+          logger.debug(`AppStore: setLoading ${loading}`, { message });
           set({ isLoading: loading, loadingMessage: message }, false, 'setLoading');
         },
 
         setError: (error: string | null) => {
+          if (error) logger.error(`AppStore: Error set`, { error });
           set({ error }, false, 'setError');
         },
 
@@ -60,6 +63,8 @@ export const useAppStore = create<AppState>()(
             id,
             timestamp: Date.now(),
           };
+
+          logger.info(`AppStore: Notification added`, { type: notification.type, title: notification.title });
 
           set(
             (state) => ({
@@ -93,6 +98,7 @@ export const useAppStore = create<AppState>()(
         },
 
         setOnlineStatus: (online: boolean) => {
+          logger.info(`AppStore: Online status changed: ${online ? 'Online' : 'Offline'}`);
           set({ isOnline: online }, false, 'setOnlineStatus');
 
           // Show notification when coming back online

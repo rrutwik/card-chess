@@ -14,6 +14,7 @@ import { BoardOrientation } from "../types/game";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { Link2, Check, Users } from "lucide-react";
+import { logger } from "../utils/logger";
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -77,7 +78,7 @@ export const GamePage: React.FC = () => {
       });
       setTimeout(() => setLinkCopied(false), 2000);
     }).catch((err) => {
-      console.error('Failed to copy link:', err);
+      logger.error('Failed to copy link:', err);
       addNotification({
         type: "error",
         title: "Failed to copy",
@@ -102,12 +103,14 @@ export const GamePage: React.FC = () => {
       }
 
       try {
+        logger.info(`GamePage: Loading game ${gameId}`);
         setLoading(true);
         setError(null);
         const response = await ChessAPI.getGame(gameId);
         setCurrentGame(response.data.data);
+        logger.info(`GamePage: Game loaded`, { gameId });
       } catch (err) {
-        console.error("Error loading game:", err);
+        logger.error("Error loading game:", err);
         const errorMessage =
           err instanceof ApiError ? err.message : "Failed to load game";
         setError(errorMessage);
@@ -130,6 +133,7 @@ export const GamePage: React.FC = () => {
     if (!gameId || !currentGame || !user) return;
 
     try {
+      logger.info(`GamePage: Joining game ${gameId}`);
       await ChessAPI.joinGame(gameId);
 
       // Reload the game to get updated state
@@ -142,8 +146,9 @@ export const GamePage: React.FC = () => {
         message: "You have successfully joined the game!",
         duration: 3000,
       });
+      logger.info(`GamePage: Joined game successfully`, { gameId, userId: user._id });
     } catch (err) {
-      console.error("Error joining game:", err);
+      logger.error("Error joining game:", err);
       addNotification({
         type: "error",
         title: "Failed to join game",
@@ -157,7 +162,7 @@ export const GamePage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -199,7 +204,7 @@ export const GamePage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -241,7 +246,7 @@ export const GamePage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -257,13 +262,13 @@ export const GamePage: React.FC = () => {
         }}>
           <div style={{
             textAlign: 'center',
-            background: isDark 
+            background: isDark
               ? 'rgba(255, 255, 255, 0.05)'
               : 'rgba(255, 255, 255, 0.9)',
             backdropFilter: 'blur(10px)',
             padding: '40px',
             borderRadius: '24px',
-            boxShadow: isDark 
+            boxShadow: isDark
               ? '0 8px 32px rgba(0, 0, 0, 0.3)'
               : '0 8px 32px rgba(0, 0, 0, 0.1)',
             maxWidth: '448px',
@@ -332,7 +337,7 @@ export const GamePage: React.FC = () => {
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      background: isDark 
+      background: isDark
         ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
         : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -352,7 +357,7 @@ export const GamePage: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '16px',
-          background: isDark 
+          background: isDark
             ? 'rgba(102, 126, 234, 0.1)'
             : 'rgba(102, 126, 234, 0.1)',
           borderBottom: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.2)'}`
@@ -416,7 +421,7 @@ export const GamePage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '16px',
-            background: isDark 
+            background: isDark
               ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)'
               : 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%)',
             borderBottom: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)'}`,
@@ -439,7 +444,7 @@ export const GamePage: React.FC = () => {
               flex: '1 1 auto'
             }}>
               <motion.div
-                animate={{ 
+                animate={{
                   scale: [1, 1.2, 1],
                   rotate: [0, 10, -10, 0]
                 }}
@@ -449,9 +454,9 @@ export const GamePage: React.FC = () => {
                   ease: "easeInOut"
                 }}
               >
-                <Users style={{ 
-                  width: '24px', 
-                  height: '24px', 
+                <Users style={{
+                  width: '24px',
+                  height: '24px',
                   color: '#a855f7'
                 }} />
               </motion.div>
@@ -473,7 +478,7 @@ export const GamePage: React.FC = () => {
                 </p>
               </div>
             </div>
-            
+
             <button
               onClick={handleCopyLink}
               style={{
@@ -553,7 +558,7 @@ export const GamePage: React.FC = () => {
             left: '5%',
             width: '400px',
             height: '400px',
-            background: isDark 
+            background: isDark
               ? 'radial-gradient(circle, rgba(102, 126, 234, 0.12) 0%, transparent 70%)'
               : 'radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%)',
             borderRadius: '50%',
@@ -565,7 +570,7 @@ export const GamePage: React.FC = () => {
             right: '5%',
             width: '350px',
             height: '350px',
-            background: isDark 
+            background: isDark
               ? 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)'
               : 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)',
             borderRadius: '50%',
@@ -593,86 +598,86 @@ export const GamePage: React.FC = () => {
             minWidth: 0
           }}>
             <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            style={{
-              width: '100%',
-              maxWidth: 'min(700px, 100%)',
-              aspectRatio: '1',
-              boxShadow: isDark 
-                ? '0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)' 
-                : '0 30px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-              borderRadius: '20px',
-              overflow: 'hidden'
-            }}
-          >
-            <ChessBoard
-              game={chessGame}
-              fromMoveSelected={gameState.fromMoveSelected}
-              validMoves={gameState.validMoves}
-              showMoves={showMoves}
-              onDrop={onDrop}
-              onSquareClick={handleSquareClick}
-              currentPlayer={gameState.currentPlayer}
-              canMove={gameState.currentCard !== null && gameState.gameOver === false && isPlayerInGame === true}
-              orientation={currentGame?.player_white?.toString() === user?._id.toString() ? "white" : "black"}
-            />
-          </motion.div>
-        </div>
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              style={{
+                width: '100%',
+                maxWidth: 'min(700px, 100%)',
+                aspectRatio: '1',
+                boxShadow: isDark
+                  ? '0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                  : '0 30px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+                borderRadius: '20px',
+                overflow: 'hidden'
+              }}
+            >
+              <ChessBoard
+                game={chessGame}
+                fromMoveSelected={gameState.fromMoveSelected}
+                validMoves={gameState.validMoves}
+                showMoves={showMoves}
+                onDrop={onDrop}
+                onSquareClick={handleSquareClick}
+                currentPlayer={gameState.currentPlayer}
+                canMove={gameState.currentCard !== null && gameState.gameOver === false && isPlayerInGame === true}
+                orientation={currentGame?.player_white?.toString() === user?._id.toString() ? "white" : "black"}
+              />
+            </motion.div>
+          </div>
 
-        {/* Game Controls Sidebar */}
-        <aside style={{
-          flex: '1 1 40%',
-          background: isDark
-            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)'
-            : 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
-          backdropFilter: 'blur(20px)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          position: 'relative',
-          zIndex: 1,
-          borderRadius: '20px',
-          border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
-          boxShadow: isDark
-            ? '0 20px 40px -12px rgba(0, 0, 0, 0.5)'
-            : '0 20px 40px -12px rgba(0, 0, 0, 0.15)',
-          minWidth: 0,
-          maxWidth: '480px'
-        }}>
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              padding: '20px',
-              minHeight: 0
-            }}
-          >
-            <CompactGameControls
-              currentCard={gameState.currentCard}
-              cardsRemaining={gameState.cardsRemaining}
-              isInCheck={gameState.isInCheck}
-              checkAttempts={gameState.checkAttempts}
-              onDrawCard={drawCard}
-              noValidCard={gameState.noValidCard}
-              onReshuffle={reshuffleDeck}
-              canDrawCard={gameState.canDrawCard}
-              currentPlayer={gameState.currentPlayer}
-              userColor={gameState.userColor}
-              gameOver={gameState.gameOver}
-              winner={gameState.winner}
-              // onNewGame={newGame}
-              showMoves={showMoves}
-              handleShowMoveButton={setShowMoves}
-            />
-          </motion.div>
-        </aside>
+          {/* Game Controls Sidebar */}
+          <aside style={{
+            flex: '1 1 40%',
+            background: isDark
+              ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)'
+              : 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
+            backdropFilter: 'blur(20px)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            position: 'relative',
+            zIndex: 1,
+            borderRadius: '20px',
+            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
+            boxShadow: isDark
+              ? '0 20px 40px -12px rgba(0, 0, 0, 0.5)'
+              : '0 20px 40px -12px rgba(0, 0, 0, 0.15)',
+            minWidth: 0,
+            maxWidth: '480px'
+          }}>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                padding: '20px',
+                minHeight: 0
+              }}
+            >
+              <CompactGameControls
+                currentCard={gameState.currentCard}
+                cardsRemaining={gameState.cardsRemaining}
+                isInCheck={gameState.isInCheck}
+                checkAttempts={gameState.checkAttempts}
+                onDrawCard={drawCard}
+                noValidCard={gameState.noValidCard}
+                onReshuffle={reshuffleDeck}
+                canDrawCard={gameState.canDrawCard}
+                currentPlayer={gameState.currentPlayer}
+                userColor={gameState.userColor}
+                gameOver={gameState.gameOver}
+                winner={gameState.winner}
+                // onNewGame={newGame}
+                showMoves={showMoves}
+                handleShowMoveButton={setShowMoves}
+              />
+            </motion.div>
+          </aside>
         </div>
       </main>
 

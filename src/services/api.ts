@@ -2,6 +2,7 @@ import axios, { AxiosResponse, AxiosError } from 'axios';
 import type { User } from '../contexts/AuthContext';
 import { useAppStore } from '../stores/appStore';
 import { MoveHistory, PlayingCard } from '../types/game';
+import { logger } from '../utils/logger';
 
 export interface LoginResponse {
   sessionToken: string;
@@ -110,30 +111,39 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    logger.info(`API Request: ${config.method?.toUpperCase()} ${config.url}`, { params: config.params });
     return config;
   },
   (error) => {
+    logger.error('API Request Error', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor to handle common errors and retries
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    logger.info(`API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
   async (error: AxiosError) => {
     const { config, response } = error;
 
     // Don't retry if request was cancelled or if it's not a retryable error
     if (!config || axios.isCancel(error) || !response) {
+      logger.error(`API Error: ${error.message}`, error, { url: config?.url });
       return Promise.reject(error);
     }
 
     const { status } = response;
     const isRetryable = RETRY_CONFIG.retryableStatuses.includes(status);
 
+    logger.warn(`API Error ${status} for ${config.url}`, { isRetryable, retryCount: config.retryCount });
+
     // If it's a retryable error and we haven't exceeded max retries
     if (isRetryable && (config.retryCount || 0) < RETRY_CONFIG.maxRetries) {
       config.retryCount = (config.retryCount || 0) + 1;
+      logger.info(`Retrying request ${config.url} (Attempt ${config.retryCount})`);
 
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, RETRY_CONFIG.retryDelay * (config.retryCount || 1)));
@@ -145,10 +155,12 @@ api.interceptors.response.use(
     if (status === 401) {
 
       if (!config.url?.includes('/auth/refresh_token')) {
+        logger.info('Token expired, attempting refresh');
         await refreshToken();
         return api(config);
       }
 
+      logger.warn('Refresh token failed or unauthorized, clearing session');
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
 
@@ -172,6 +184,8 @@ api.interceptors.response.use(
       response.data
     );
 
+    logger.error(`API Request Failed: ${config.url}`, apiError);
+
     return Promise.reject(apiError);
   }
 );
@@ -191,7 +205,7 @@ export const refreshToken = async () => {
     localStorage.setItem('refreshToken', response.data.data.refreshToken);
     return response;
   } catch (error) {
-    console.error('Refresh token failed:', error);
+    logger.error('Refresh token failed:', error);
     throw error;
   }
 }
@@ -210,17 +224,17 @@ export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<AxiosRe
 
     return response;
   } catch (error) {
-    console.error('Google login failed:', error);
+    logger.error('Google login failed:', error);
     throw error;
   }
 };
 
 export const getUserDetails = async (includeProfile: boolean = false): Promise<User> => {
   try {
-    const response = await api.get<{data: User}>(`/auth/me${includeProfile ? '?includeProfile=true' : ''}`);
+    const response = await api.get<{ data: User }>(`/auth/me${includeProfile ? '?includeProfile=true' : ''}`);
     return response.data.data;
   } catch (error) {
-    console.error('Failed to get user details:', error);
+    logger.error('Failed to get user details:', error);
     throw error;
   }
 };
@@ -229,7 +243,7 @@ export const logout = async () => {
   try {
     await api.post('/auth/logout');
   } catch (error) {
-    console.error('Logout failed:', error);
+    logger.error('Logout failed:', error);
     throw error;
   }
 };

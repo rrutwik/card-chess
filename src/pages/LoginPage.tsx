@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { logger } from '../utils/logger';
 
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -20,9 +21,13 @@ export function LoginPage() {
   // Get the redirect path from location state, default to '/'
   const from = (location.state as any)?.from?.pathname || '/';
 
+  useEffect(() => {
+    logger.info('LoginPage: Mounted');
+  }, []);
+
   const handleLoginSuccess = async (response: any) => {
     try {
-      console.log('🔐 Login attempt started');
+      logger.info('🔐 Login attempt started');
 
       if (!response.credential) {
         throw new Error('No credential received from Google');
@@ -34,7 +39,7 @@ export function LoginPage() {
         credential: response.credential,
         language: navigator.language
       });
-      console.log('✅ Login response received:', data);
+      logger.info('✅ Login response received', { userId: data?.data?.user?._id });
 
       // The API service already stored the token in localStorage
       // Now just call login with the user data from the response
@@ -48,11 +53,11 @@ export function LoginPage() {
           duration: 3000
         });
 
-        console.log('✅ User logged in successfully:', data.data.user);
+        logger.info('✅ User logged in successfully', { userId: data.data.user._id });
 
         // Navigate to the original page or home page after successful login
         setTimeout(() => {
-          console.log('🔄 Navigating to:', from);
+          logger.info('🔄 Navigating to:', { from });
           navigate(from, { replace: true });
         }, 100);
       } else {
@@ -60,7 +65,7 @@ export function LoginPage() {
       }
 
     } catch (error) {
-      console.error('❌ Login failed:', error);
+      logger.error('❌ Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
 
       addNotification({
@@ -70,7 +75,7 @@ export function LoginPage() {
         duration: 5000
       });
 
-      console.error('❌ Error details:', {
+      logger.error('❌ Error details:', error, {
         message: errorMessage,
         status: (error as any)?.status,
         data: (error as any)?.response?.data
@@ -83,13 +88,13 @@ export function LoginPage() {
   // Navigate away when user becomes authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('🔄 LoginPage: User is authenticated, navigating to:', from);
+      logger.info('🔄 LoginPage: User is authenticated, navigating to:', { from });
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
 
   const handleLoginError = (error: any) => {
-    console.error('Login failed:', error);
+    logger.error('Login failed:', error);
     addNotification({
       type: 'error',
       title: 'Google Login Failed',

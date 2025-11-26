@@ -7,6 +7,7 @@ import { Header } from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import type { User } from "../contexts/AuthContext";
+import { logger } from "../utils/logger";
 
 export const PlayPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,18 +21,21 @@ export const PlayPage: React.FC = () => {
   const [creatingGame, setCreatingGame] = useState(false);
 
   useEffect(() => {
+    logger.info('PlayPage: Mounted');
     loadGames();
   }, []);
 
   const loadGames = async () => {
     try {
+      logger.info('PlayPage: Loading active games');
       setLoading(true);
       setError(null);
 
       const response = await ChessAPI.getActiveGames();
       setGames(response.data.data);
+      logger.info(`PlayPage: Loaded ${response.data.data.length} active games`);
     } catch (err: any) {
-      console.error("Error loading games:", err);
+      logger.error("Error loading games:", err);
       setError(err.response?.data?.message || "Failed to load games");
     } finally {
       setLoading(false);
@@ -40,6 +44,7 @@ export const PlayPage: React.FC = () => {
 
   const handleCreateGame = async () => {
     try {
+      logger.info('PlayPage: Creating new game', { color: selectedColor });
       setCreatingGame(true);
 
       // Create game with current user and selected color
@@ -47,6 +52,7 @@ export const PlayPage: React.FC = () => {
 
       if (response.data?.data?.game_id) {
         const gameUrl = `${window.location.origin}/game/${response.data.data.game_id}`;
+        logger.info('PlayPage: Game created successfully', { gameId: response.data.data.game_id });
         navigate(`/game/${response.data.data.game_id}`);
 
         // Show shareable link
@@ -66,7 +72,7 @@ export const PlayPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      console.error("Error creating game:", err);
+      logger.error("Error creating game:", err);
       setError(err.response?.data?.message || "Failed to create game");
     } finally {
       setCreatingGame(false);
@@ -91,7 +97,7 @@ export const PlayPage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -133,7 +139,7 @@ export const PlayPage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -149,13 +155,13 @@ export const PlayPage: React.FC = () => {
         }}>
           <div style={{
             textAlign: 'center',
-            background: isDark 
+            background: isDark
               ? 'rgba(255, 255, 255, 0.05)'
               : 'rgba(255, 255, 255, 0.9)',
             backdropFilter: 'blur(10px)',
             padding: '40px',
             borderRadius: '24px',
-            boxShadow: isDark 
+            boxShadow: isDark
               ? '0 8px 32px rgba(0, 0, 0, 0.3)'
               : '0 8px 32px rgba(0, 0, 0, 0.1)',
             maxWidth: '448px',
@@ -226,7 +232,7 @@ export const PlayPage: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: isDark 
+      background: isDark
         ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
         : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
       color: isDark ? '#f9fafb' : '#1f2937',
@@ -251,7 +257,7 @@ export const PlayPage: React.FC = () => {
           right: '5%',
           width: '350px',
           height: '350px',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
@@ -263,7 +269,7 @@ export const PlayPage: React.FC = () => {
           left: '5%',
           width: '300px',
           height: '300px',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
@@ -297,7 +303,7 @@ export const PlayPage: React.FC = () => {
               flexWrap: 'wrap'
             }}>
               <motion.div
-                animate={{ 
+                animate={{
                   rotate: [0, -10, 10, 0],
                   scale: [1, 1.1, 1]
                 }}
@@ -308,9 +314,9 @@ export const PlayPage: React.FC = () => {
                   ease: "easeInOut"
                 }}
               >
-                <Crown style={{ 
-                  width: '48px', 
-                  height: '48px', 
+                <Crown style={{
+                  width: '48px',
+                  height: '48px',
                   color: '#667eea',
                   filter: 'drop-shadow(0 4px 8px rgba(102, 126, 234, 0.4))'
                 }} />
@@ -325,7 +331,7 @@ export const PlayPage: React.FC = () => {
                 Start Playing
               </h1>
               <motion.div
-                animate={{ 
+                animate={{
                   rotate: [0, 10, -10, 0],
                   scale: [1, 1.1, 1]
                 }}
@@ -337,9 +343,9 @@ export const PlayPage: React.FC = () => {
                   delay: 0.5
                 }}
               >
-                <Swords style={{ 
-                  width: '48px', 
-                  height: '48px', 
+                <Swords style={{
+                  width: '48px',
+                  height: '48px',
                   color: '#a855f7',
                   filter: 'drop-shadow(0 4px 8px rgba(168, 85, 247, 0.4))'
                 }} />
@@ -367,12 +373,12 @@ export const PlayPage: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
               style={{
-                background: isDark 
+                background: isDark
                   ? 'rgba(255, 255, 255, 0.05)'
                   : 'rgba(255, 255, 255, 0.9)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '24px',
-                boxShadow: isDark 
+                boxShadow: isDark
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                   : '0 8px 32px rgba(102, 126, 234, 0.15)',
                 border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
@@ -523,7 +529,7 @@ export const PlayPage: React.FC = () => {
                 disabled={creatingGame}
                 style={{
                   width: '100%',
-                  background: creatingGame 
+                  background: creatingGame
                     ? isDark ? 'rgba(102, 126, 234, 0.5)' : 'rgba(102, 126, 234, 0.7)'
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
@@ -609,12 +615,12 @@ export const PlayPage: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               style={{
-                background: isDark 
+                background: isDark
                   ? 'rgba(255, 255, 255, 0.05)'
                   : 'rgba(255, 255, 255, 0.9)',
                 backdropFilter: 'blur(10px)',
                 borderRadius: '24px',
-                boxShadow: isDark 
+                boxShadow: isDark
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                   : '0 8px 32px rgba(168, 85, 247, 0.15)',
                 border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(168, 85, 247, 0.2)'}`,
@@ -646,9 +652,9 @@ export const PlayPage: React.FC = () => {
                     textAlign: 'center',
                     padding: '32px 0'
                   }}>
-                    <GamepadIcon style={{ 
-                      width: '64px', 
-                      height: '64px', 
+                    <GamepadIcon style={{
+                      width: '64px',
+                      height: '64px',
                       color: isDark ? '#4b5563' : '#9ca3af',
                       margin: '0 auto 16px'
                     }} />

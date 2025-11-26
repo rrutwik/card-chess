@@ -7,6 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { logout as apiLogout, getUserDetails } from "../services/api";
+import { logger } from "../utils/logger";
 
 export interface User {
   _id: string;
@@ -45,48 +46,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check for existing auth token on app start and validate it
     const initializeAuth = async () => {
-      console.log("🚀 AuthContext: Initializing authentication...");
+      logger.info("🚀 AuthContext: Initializing authentication...");
 
-      console.log("🔍 AuthContext: Found existing token, validating...");
+      logger.info("🔍 AuthContext: Found existing token, validating...");
       try {
         // Validate the token by making an API call
         const data = await getUserDetails(true);
         setUser(data);
         setUpdateTrigger((prev) => prev + 1); // Force re-render
-        console.log("✅ AuthContext: Token validated, user set:", data);
+        logger.info("✅ AuthContext: Token validated, user set:", { userId: data._id });
       } catch (error) {
         // Token is invalid or expired, clear it
-        console.warn(
-          "❌ AuthContext: Token validation failed, clearing stored auth data"
+        logger.warn(
+          "❌ AuthContext: Token validation failed, clearing stored auth data",
+          error
         );
         localStorage.removeItem("authToken");
         localStorage.removeItem("userData");
       }
 
       setIsLoading(false);
-      console.log("✅ AuthContext: Initialization complete");
+      logger.info("✅ AuthContext: Initialization complete");
     };
 
     initializeAuth();
   }, []);
 
   const login = (user: User) => {
-    console.log("🔑 AuthContext: Login called with user:", user);
+    logger.info("🔑 AuthContext: Login called", { userId: user._id });
     localStorage.setItem("userData", JSON.stringify(user));
     setUser(user);
     setUpdateTrigger((prev) => prev + 1); // Force re-render
-    console.log("✅ AuthContext: User state updated");
+    logger.info("✅ AuthContext: User state updated");
   };
 
   const logout = () => {
-    console.log("🔓 AuthContext: Logout called");
+    logger.info("🔓 AuthContext: Logout called");
     apiLogout();
     localStorage.removeItem("authToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userData");
     setUser(null);
     setUpdateTrigger((prev) => prev + 1); // Force re-render
-    console.log("✅ AuthContext: User logged out");
+    logger.info("✅ AuthContext: User logged out");
   };
 
   const value: AuthContextType = useMemo(() => {
@@ -97,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isAuthenticated: !!user,
       isLoading,
     };
-    console.log("🔄 AuthContext: Context value computed:", computedValue);
+    logger.debug("🔄 AuthContext: Context value computed", { isAuthenticated: !!user, isLoading });
     return computedValue;
   }, [user, isLoading]);
 

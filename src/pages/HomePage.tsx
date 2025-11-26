@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Play, Users, Crown, Swords, Zap, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { logger } from '../utils/logger';
 
 export const HomePage: React.FC = () => {
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
+
+  useEffect(() => {
+    logger.info('HomePage: Mounted');
+  }, []);
 
   return (
     <div style={{
@@ -16,7 +21,7 @@ export const HomePage: React.FC = () => {
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      background: isDark 
+      background: isDark
         ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
         : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
       color: isDark ? '#f9fafb' : '#1f2937',
@@ -42,7 +47,7 @@ export const HomePage: React.FC = () => {
           right: '10%',
           width: '400px',
           height: '400px',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
@@ -54,7 +59,7 @@ export const HomePage: React.FC = () => {
           left: '10%',
           width: '350px',
           height: '350px',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
@@ -95,7 +100,7 @@ export const HomePage: React.FC = () => {
             flexWrap: 'wrap'
           }}>
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, -5, 5, 0],
                 scale: [1, 1.1, 1]
               }}
@@ -106,9 +111,9 @@ export const HomePage: React.FC = () => {
                 ease: "easeInOut"
               }}
             >
-              <Crown style={{ 
-                width: '36px', 
-                height: '36px', 
+              <Crown style={{
+                width: '36px',
+                height: '36px',
                 color: '#667eea',
                 filter: 'drop-shadow(0 4px 8px rgba(102, 126, 234, 0.4))'
               }} />
@@ -123,7 +128,7 @@ export const HomePage: React.FC = () => {
               Card Chess
             </h1>
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, 5, -5, 0],
                 scale: [1, 1.1, 1]
               }}
@@ -135,15 +140,15 @@ export const HomePage: React.FC = () => {
                 delay: 0.5
               }}
             >
-              <Swords style={{ 
-                width: '36px', 
-                height: '36px', 
+              <Swords style={{
+                width: '36px',
+                height: '36px',
                 color: '#a855f7',
                 filter: 'drop-shadow(0 4px 8px rgba(168, 85, 247, 0.4))'
               }} />
             </motion.div>
           </div>
-          
+
           <p style={{
             fontSize: '14px',
             color: isDark ? '#d1d5db' : '#6b7280',
@@ -177,8 +182,8 @@ export const HomePage: React.FC = () => {
                   alignItems: 'center',
                   gap: '4px',
                   padding: '6px 12px',
-                  background: isDark 
-                    ? 'rgba(255, 255, 255, 0.05)' 
+                  background: isDark
+                    ? 'rgba(255, 255, 255, 0.05)'
                     : 'rgba(102, 126, 234, 0.08)',
                   borderRadius: '20px',
                   fontSize: '13px',
@@ -216,7 +221,7 @@ export const HomePage: React.FC = () => {
               to="/play"
               style={{
                 display: 'block',
-                background: isDark 
+                background: isDark
                   ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)'
                   : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
                 backdropFilter: 'blur(10px)',
@@ -224,7 +229,7 @@ export const HomePage: React.FC = () => {
                 borderRadius: '20px',
                 padding: '24px 20px',
                 textDecoration: 'none',
-                boxShadow: isDark 
+                boxShadow: isDark
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                   : '0 8px 32px rgba(102, 126, 234, 0.15)',
                 transition: 'all 0.3s ease',
@@ -232,14 +237,14 @@ export const HomePage: React.FC = () => {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = isDark 
+                e.currentTarget.style.boxShadow = isDark
                   ? '0 12px 48px rgba(0, 0, 0, 0.4)'
                   : '0 12px 48px rgba(102, 126, 234, 0.25)';
                 e.currentTarget.style.borderColor = isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.4)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = isDark 
+                e.currentTarget.style.boxShadow = isDark
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                   : '0 8px 32px rgba(102, 126, 234, 0.15)';
                 e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)';
@@ -321,7 +326,7 @@ export const HomePage: React.FC = () => {
               to="/games"
               style={{
                 display: 'block',
-                background: isDark 
+                background: isDark
                   ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)'
                   : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
                 backdropFilter: 'blur(10px)',
@@ -329,7 +334,7 @@ export const HomePage: React.FC = () => {
                 borderRadius: '20px',
                 padding: '24px 20px',
                 textDecoration: 'none',
-                boxShadow: isDark 
+                boxShadow: isDark
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                   : '0 8px 32px rgba(168, 85, 247, 0.15)',
                 transition: 'all 0.3s ease',
@@ -337,14 +342,14 @@ export const HomePage: React.FC = () => {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = isDark 
+                e.currentTarget.style.boxShadow = isDark
                   ? '0 12px 48px rgba(0, 0, 0, 0.4)'
                   : '0 12px 48px rgba(168, 85, 247, 0.25)';
                 e.currentTarget.style.borderColor = isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.4)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = isDark 
+                e.currentTarget.style.boxShadow = isDark
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                   : '0 8px 32px rgba(168, 85, 247, 0.15)';
                 e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(168, 85, 247, 0.2)';
@@ -423,17 +428,17 @@ export const HomePage: React.FC = () => {
             textAlign: 'center',
             marginTop: '20px',
             padding: '16px 20px',
-            background: isDark 
-              ? 'rgba(255, 255, 255, 0.03)' 
+            background: isDark
+              ? 'rgba(255, 255, 255, 0.03)'
               : 'rgba(102, 126, 234, 0.05)',
             borderRadius: '16px',
             border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(102, 126, 234, 0.15)'}`,
             flexShrink: 0
           }}
         >
-          <Trophy style={{ 
-            width: '28px', 
-            height: '28px', 
+          <Trophy style={{
+            width: '28px',
+            height: '28px',
             color: '#fbbf24',
             margin: '0 auto 8px',
             filter: 'drop-shadow(0 4px 8px rgba(251, 191, 36, 0.4))'

@@ -5,6 +5,7 @@ import { Clock, Users, Play, Plus, Link as LinkIcon } from "lucide-react";
 import { ChessAPI, ChessGame } from "../services/api";
 import { Header } from "../components/Header";
 import { useTheme } from "../contexts/ThemeContext";
+import { logger } from "../utils/logger";
 
 export const GamesListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,17 +17,20 @@ export const GamesListPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
+    logger.info('GamesListPage: Mounted');
     loadGames();
   }, []);
 
   const loadGames = async () => {
     try {
+      logger.info('GamesListPage: Loading active games');
       setLoading(true);
       const response = await ChessAPI.getActiveGames();
       setGames(response.data.data);
       setError(null);
+      logger.info(`GamesListPage: Loaded ${response.data.data.length} active games`);
     } catch (err: any) {
-      console.error("Error loading games:", err);
+      logger.error("Error loading games:", err);
       setError(err.response?.data?.message || "Failed to load games");
     } finally {
       setLoading(false);
@@ -42,11 +46,10 @@ export const GamesListPage: React.FC = () => {
     const turn = game.game_state.turn;
 
     if (status === "completed") {
-      return `Finished - ${
-        game.game_state.winner === "draw"
+      return `Finished - ${game.game_state.winner === "draw"
           ? "Draw"
           : `${game.game_state.winner} wins`
-      }`;
+        }`;
     }
     if (status === "abandoned") {
       return "Abandoned";
@@ -65,7 +68,7 @@ export const GamesListPage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -107,7 +110,7 @@ export const GamesListPage: React.FC = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
           : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
         color: isDark ? '#f9fafb' : '#1f2937',
@@ -123,13 +126,13 @@ export const GamesListPage: React.FC = () => {
         }}>
           <div style={{
             textAlign: 'center',
-            background: isDark 
+            background: isDark
               ? 'rgba(255, 255, 255, 0.05)'
               : 'rgba(255, 255, 255, 0.9)',
             backdropFilter: 'blur(10px)',
             padding: '40px',
             borderRadius: '24px',
-            boxShadow: isDark 
+            boxShadow: isDark
               ? '0 8px 32px rgba(0, 0, 0, 0.3)'
               : '0 8px 32px rgba(0, 0, 0, 0.1)',
             maxWidth: '448px',
@@ -199,7 +202,7 @@ export const GamesListPage: React.FC = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: isDark 
+      background: isDark
         ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
         : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
       color: isDark ? '#f9fafb' : '#1f2937',
@@ -224,7 +227,7 @@ export const GamesListPage: React.FC = () => {
           right: '10%',
           width: '300px',
           height: '300px',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
@@ -236,7 +239,7 @@ export const GamesListPage: React.FC = () => {
           left: '10%',
           width: '250px',
           height: '250px',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%)'
             : 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
@@ -327,7 +330,7 @@ export const GamesListPage: React.FC = () => {
               <div style={{
                 width: '128px',
                 height: '128px',
-                background: isDark 
+                background: isDark
                   ? 'rgba(255, 255, 255, 0.05)'
                   : 'rgba(102, 126, 234, 0.1)',
                 borderRadius: '50%',
@@ -336,10 +339,10 @@ export const GamesListPage: React.FC = () => {
                 justifyContent: 'center',
                 margin: '0 auto 32px'
               }}>
-                <Users style={{ 
-                  width: '64px', 
-                  height: '64px', 
-                  color: isDark ? '#4b5563' : '#9ca3af' 
+                <Users style={{
+                  width: '64px',
+                  height: '64px',
+                  color: isDark ? '#4b5563' : '#9ca3af'
                 }} />
               </div>
               <h3 style={{
@@ -396,12 +399,12 @@ export const GamesListPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.05 }}
                   style={{
-                    background: isDark 
+                    background: isDark
                       ? 'rgba(255, 255, 255, 0.05)'
                       : 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(10px)',
                     borderRadius: '24px',
-                    boxShadow: isDark 
+                    boxShadow: isDark
                       ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                       : '0 8px 32px rgba(102, 126, 234, 0.1)',
                     border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
@@ -410,13 +413,13 @@ export const GamesListPage: React.FC = () => {
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-8px)';
-                    e.currentTarget.style.boxShadow = isDark 
+                    e.currentTarget.style.boxShadow = isDark
                       ? '0 16px 48px rgba(0, 0, 0, 0.4)'
                       : '0 16px 48px rgba(102, 126, 234, 0.2)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = isDark 
+                    e.currentTarget.style.boxShadow = isDark
                       ? '0 8px 32px rgba(0, 0, 0, 0.3)'
                       : '0 8px 32px rgba(102, 126, 234, 0.1)';
                   }}
@@ -481,12 +484,12 @@ export const GamesListPage: React.FC = () => {
                         fontSize: '14px',
                         gap: '8px'
                       }}>
-                        <span style={{ 
+                        <span style={{
                           color: isDark ? '#9ca3af' : '#6b7280',
                           flexShrink: 0
                         }}>Status:</span>
-                        <span style={{ 
-                          fontWeight: '600', 
+                        <span style={{
+                          fontWeight: '600',
                           color: isDark ? '#f9fafb' : '#1f2937',
                           textAlign: 'right',
                           overflow: 'hidden',
@@ -554,7 +557,7 @@ export const GamesListPage: React.FC = () => {
                         style={{
                           padding: '12px',
                           border: `2px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(102, 126, 234, 0.2)'}`,
-                          background: copiedId === game.game_id 
+                          background: copiedId === game.game_id
                             ? isDark ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.1)'
                             : 'transparent',
                           borderRadius: '12px',
@@ -579,15 +582,15 @@ export const GamesListPage: React.FC = () => {
                         title={copiedId === game.game_id ? "Copied!" : "Copy game link"}
                       >
                         {copiedId === game.game_id ? (
-                          <span style={{ 
+                          <span style={{
                             fontSize: '16px',
                             color: '#22c55e'
                           }}>✓</span>
                         ) : (
-                          <LinkIcon style={{ 
-                            width: '20px', 
-                            height: '20px', 
-                            color: isDark ? '#9ca3af' : '#6b7280' 
+                          <LinkIcon style={{
+                            width: '20px',
+                            height: '20px',
+                            color: isDark ? '#9ca3af' : '#6b7280'
                           }} />
                         )}
                       </button>
