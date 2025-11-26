@@ -156,7 +156,14 @@ api.interceptors.response.use(
 
       if (!config.url?.includes('/auth/refresh_token')) {
         logger.info('Token expired, attempting refresh');
-        await refreshToken();
+        const localStorageRefreshToken = localStorage.getItem('refreshToken');
+
+        if (!localStorageRefreshToken) {
+          logger.warn('Refresh token not found in localStorage');
+          return Promise.reject(error);
+        }
+
+        await refreshToken(localStorageRefreshToken);
         return api(config);
       }
 
@@ -196,10 +203,10 @@ const withRetryConfig = (config: any) => ({
   retryCount: 0,
 });
 
-export const refreshToken = async () => {
+export const refreshToken = async (refreshToken: string) => {
   try {
     const response = await api.post<{ data: { sessionToken: string, refreshToken: string } }>('/auth/refresh_token', {
-      refresh_token: localStorage.getItem('refreshToken')
+      refresh_token: refreshToken
     });
     localStorage.setItem('authToken', response.data.data.sessionToken);
     localStorage.setItem('refreshToken', response.data.data.refreshToken);
