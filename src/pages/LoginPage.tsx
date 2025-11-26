@@ -1,4 +1,4 @@
-import Cookies from 'js-cookie';
+import { useAppStore } from '../stores/appStore';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { getUserDetails, loginWithGoogle } from '../services/api';
 import { GoogleLoginComponent } from '../components/GoogleLogin';
@@ -10,6 +10,7 @@ import { useTheme } from '../contexts/ThemeContext';
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const { actualTheme } = useTheme();
+  const { setLoading, addNotification } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
   const clientId = '201954194593-36t0nksh9jusg01k58et81ct27objt26.apps.googleusercontent.com';
@@ -23,28 +24,59 @@ export function LoginPage() {
     try {
       console.log('🔐 Login attempt started');
 
-      const { data } = await loginWithGoogle({ ...response });
+      if (!response.credential) {
+        throw new Error('No credential received from Google');
+      }
+
+      setLoading(true, 'Logging in...');
+
+      const { data } = await loginWithGoogle({
+        credential: response.credential,
+        language: navigator.language
+      });
       console.log('✅ Login response received:', data);
 
       // The API service already stored the token in localStorage
       // Now just call login with the user data from the response
-      login(data.data.user); // Pass only the user data
+      if (data?.data?.user) {
+        login(data.data.user); // Pass only the user data
 
-      console.log('✅ User logged in successfully:', data.data.user);
+        addNotification({
+          type: 'success',
+          title: 'Welcome back!',
+          message: `Logged in as ${data.data.user.first_name || 'User'}`,
+          duration: 3000
+        });
 
-      // Navigate to the original page or home page after successful login
-      setTimeout(() => {
-        console.log('🔄 Navigating to:', from);
-        navigate(from, { replace: true });
-      }, 100);
+        console.log('✅ User logged in successfully:', data.data.user);
+
+        // Navigate to the original page or home page after successful login
+        setTimeout(() => {
+          console.log('🔄 Navigating to:', from);
+          navigate(from, { replace: true });
+        }, 100);
+      } else {
+        throw new Error('Invalid response from server');
+      }
 
     } catch (error) {
       console.error('❌ Login failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+
+      addNotification({
+        type: 'error',
+        title: 'Login Failed',
+        message: errorMessage,
+        duration: 5000
+      });
+
       console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: errorMessage,
         status: (error as any)?.status,
         data: (error as any)?.response?.data
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,13 +90,19 @@ export function LoginPage() {
 
   const handleLoginError = (error: any) => {
     console.error('Login failed:', error);
+    addNotification({
+      type: 'error',
+      title: 'Google Login Failed',
+      message: 'Failed to authenticate with Google. Please try again.',
+      duration: 5000
+    });
   };
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <div style={{
         minHeight: '100vh',
-        background: isDark 
+        background: isDark
           ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
           : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
@@ -110,13 +148,13 @@ export function LoginPage() {
         <div style={{
           width: '100%',
           maxWidth: '440px',
-          background: isDark 
-            ? 'rgba(30, 30, 46, 0.95)' 
+          background: isDark
+            ? 'rgba(30, 30, 46, 0.95)'
             : 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(10px)',
           borderRadius: '24px',
-          boxShadow: isDark 
-            ? '0 20px 60px rgba(0, 0, 0, 0.5)' 
+          boxShadow: isDark
+            ? '0 20px 60px rgba(0, 0, 0, 0.5)'
             : '0 20px 60px rgba(0, 0, 0, 0.3)',
           position: 'relative',
           zIndex: 1,
@@ -152,7 +190,7 @@ export function LoginPage() {
               }
             }
           `}</style>
-          
+
           {/* Card Header */}
           <div style={{
             padding: '48px 32px 32px',
@@ -205,9 +243,9 @@ export function LoginPage() {
           </div>
 
           {/* Card Content */}
-          <GoogleLoginComponent 
-            handleLoginSuccess={handleLoginSuccess} 
-            handleLoginError={handleLoginError} 
+          <GoogleLoginComponent
+            handleLoginSuccess={handleLoginSuccess}
+            handleLoginError={handleLoginError}
           />
 
           {/* Footer */}
