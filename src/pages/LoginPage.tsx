@@ -11,7 +11,7 @@ import { logger } from '../utils/logger';
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const { actualTheme } = useTheme();
-  const { setLoading, addNotification } = useAppStore();
+  const { setLoading, addNotification, isLoading } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
   const clientId = '201954194593-36t0nksh9jusg01k58et81ct27objt26.apps.googleusercontent.com';
@@ -251,6 +251,7 @@ export function LoginPage() {
           <GoogleLoginComponent
             handleLoginSuccess={handleLoginSuccess}
             handleLoginError={handleLoginError}
+            isLoading={isLoading}
           />
 
           {/* Footer */}

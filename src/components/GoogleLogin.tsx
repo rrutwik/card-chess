@@ -1,15 +1,14 @@
-// NOTE: This component requires @react-oauth/google to be installed
-// Run: npm install @react-oauth/google
-
 import { GoogleLogin } from "@react-oauth/google";
 import { useTheme } from "../contexts/ThemeContext";
 
 export function GoogleLoginComponent({
   handleLoginSuccess,
   handleLoginError,
+  isLoading = false,
 }: {
   handleLoginSuccess: (response: any) => void;
   handleLoginError: (error: any) => void;
+  isLoading?: boolean;
 }) {
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
@@ -25,37 +24,71 @@ export function GoogleLoginComponent({
         width: '100%',
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        minHeight: '44px' // Match Google button height
       }}>
-        <GoogleLogin
-          onSuccess={(response) => {
-            try {
-              console.log("Login success:", response);
-              handleLoginSuccess(response);
-            } catch (err) {
-              console.error("Login error:", err);
-              handleLoginError(err);
-            }
-          }}
-          onError={() => {
-            handleLoginError("Login failed, please try again.");
-          }}
-          containerProps={{
-            style: {
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            },
-          }}
-          text="signin_with"
-          theme="filled_blue"
-          shape="pill"
-          size="large"
-          width="320"
-        />
+        {isLoading ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '10px 24px',
+            background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f3f4f6',
+            borderRadius: '24px',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e5e7eb',
+          }}>
+            <div className="spinner" style={{
+              width: '20px',
+              height: '20px',
+              border: `2px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+              borderLeftColor: isDark ? '#fff' : '#000',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <span style={{
+              fontSize: '14px',
+              fontWeight: '500',
+              color: isDark ? '#e5e7eb' : '#374151'
+            }}>
+              Signing in...
+            </span>
+            <style>{`
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        ) : (
+          <GoogleLogin
+            onSuccess={(response) => {
+              try {
+                console.log("Login success:", response);
+                handleLoginSuccess(response);
+              } catch (err) {
+                console.error("Login error:", err);
+                handleLoginError(err);
+              }
+            }}
+            onError={() => {
+              handleLoginError("Login failed, please try again.");
+            }}
+            containerProps={{
+              style: {
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            }}
+            text="signin_with"
+            theme="filled_blue"
+            shape="pill"
+            size="large"
+            width="320"
+          />
+        )}
       </div>
-      
+
       {/* Divider */}
       <div style={{
         width: '100%',
