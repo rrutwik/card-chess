@@ -80,9 +80,9 @@ export function LoginPage() {
         status: (error as any)?.status,
         data: (error as any)?.response?.data
       });
-    } finally {
       setLoading(false);
     }
+    // Note: We don't set loading to false on success to prevent UI flash before navigation
   };
 
   // Navigate away when user becomes authenticated

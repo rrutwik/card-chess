@@ -98,7 +98,7 @@ const API_BASE_URL = 'https://backend-api.techkarmic.com';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -275,6 +275,7 @@ export class ChessAPI {
 
       return response;
     } catch (error) {
+      logger.error('Create game failed:', error);
       const appStore = useAppStore.getState();
       appStore.setLoading(false);
 
@@ -302,6 +303,7 @@ export class ChessAPI {
       appStore.setLoading(false);
       return response;
     } catch (error) {
+      logger.error('Get game failed:', error);
       const appStore = useAppStore.getState();
       appStore.setLoading(false);
 
@@ -329,6 +331,7 @@ export class ChessAPI {
       appStore.setLoading(false);
       return response;
     } catch (error) {
+      logger.error('Get active games failed:', error);
       const appStore = useAppStore.getState();
       appStore.setLoading(false);
 
@@ -355,6 +358,7 @@ export class ChessAPI {
       appStore.setLoading(false);
       return response;
     } catch (error) {
+      logger.error('Join game failed:', error);
       const appStore = useAppStore.getState();
       appStore.setLoading(false);
 
@@ -380,6 +384,7 @@ export class ChessAPI {
       return response;
     } catch (error) {
       if (error instanceof ApiError) {
+        logger.error('Update game state failed:', error);
         const appStore = useAppStore.getState();
         appStore.addNotification({
           type: 'error',
@@ -410,6 +415,7 @@ export class ChessAPI {
 
       return response;
     } catch (error) {
+      logger.error('End game failed:', error);
       const appStore = useAppStore.getState();
       appStore.setLoading(false);
 
@@ -471,6 +477,7 @@ export class ChessAPI {
       appStore.setLoading(false);
       return response;
     } catch (error) {
+      logger.error('Get game history failed:', error);
       const appStore = useAppStore.getState();
       appStore.setLoading(false);
 
