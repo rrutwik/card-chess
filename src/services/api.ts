@@ -3,6 +3,7 @@ import type { User } from '../contexts/AuthContext';
 import { useAppStore } from '../stores/appStore';
 import { MoveHistory, PlayingCard } from '../types/game';
 import { logger } from '../utils/logger';
+import { getGuestToken, GUEST_TOKEN_STORAGE_KEY, GUEST_USER_ID } from '../utils/sessionIdentity';
 
 export interface LoginResponse {
   sessionToken: string;
@@ -26,6 +27,7 @@ export interface ChessGame {
   game_id: string;
   player_white: string;
   player_black: string;
+  is_vs_bot?: boolean;
   version: number;
   game_state: {
     fen: string;
@@ -44,7 +46,8 @@ export interface ChessGame {
 }
 
 export interface CreateGameRequest {
-  opponentId: string;
+  color: 'white' | 'black';
+  is_vs_bot?: boolean;
 }
 
 export interface UpdateGameStateRequest {
@@ -107,9 +110,19 @@ const api = axios.create({
 // Request interceptor to add auth token if available
 api.interceptors.request.use(
   (config) => {
+    config.headers = config.headers || {};
     const token = localStorage.getItem('authToken');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      (config.headers as any).Authorization = `Bearer ${token}`;
+      (config.headers as any)['X-Guest-Token'] = undefined;
+    } else {
+      (config.headers as any).Authorization = undefined;
+      if (config.url?.startsWith('/chess')) {
+        const guestToken = getGuestToken();
+        if (guestToken) {
+          (config.headers as any)['X-Guest-Token'] = guestToken;
+        }
+      }
     }
     logger.info(`API Request: ${config.method?.toUpperCase()} ${config.url}`, { params: config.params });
     return config;
@@ -236,6 +249,37 @@ export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<AxiosRe
   }
 };
 
+export async function getOrCreateGuest(data: any): Promise<{
+  _id: string;
+  token: string;
+}> {
+  if (typeof window === "undefined") return {
+    _id: '',
+    token: ''
+  };
+
+  const existingToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
+  const existingUserId = sessionStorage.getItem(GUEST_USER_ID);
+  if (existingToken && existingUserId)  {
+    return {
+      _id: existingUserId,
+      token: existingToken
+    };
+  }
+  try {
+    const response = await api.post("/guest-session", data);
+    sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, response.data.token);
+    sessionStorage.setItem(GUEST_USER_ID, response.data._id);
+    return {
+      _id: response.data._id,
+      token: response.data.token
+    };
+  } catch (error) {
+    logger.error('Failed to create guest token:', error);
+    throw error;
+  }
+}
+
 export const getUserDetails = async (includeProfile: boolean = false): Promise<User> => {
   try {
     const response = await api.get<{ data: User }>(`/auth/me${includeProfile ? '?includeProfile=true' : ''}`);
@@ -258,12 +302,12 @@ export const logout = async () => {
 // Chess API functions with enhanced error handling and loading states
 export class ChessAPI {
   // Create a new chess game
-  static async createGame(color: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+  static async createGame(color: 'white' | 'black', isVsBot: boolean = false): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
       const appStore = useAppStore.getState();
       appStore.setLoading(true, 'Creating game...');
 
-      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { color });
+      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { color, is_vs_bot: isVsBot });
 
       appStore.setLoading(false);
       appStore.addNotification({

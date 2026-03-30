@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ChessBoard } from "../components/ChessBoard";
@@ -10,11 +10,11 @@ import { useCardChess } from "../hooks/useCardChess";
 import { ChessAPI, ApiError } from "../services/api";
 import { useGameStore } from "../stores/gameStore";
 import { useAppStore } from "../stores/appStore";
-import { BoardOrientation } from "../types/game";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { Link2, Check, Users } from "lucide-react";
 import { logger } from "../utils/logger";
+import { getSessionIdentity } from "../utils/sessionIdentity";
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -23,7 +23,26 @@ export const GamePage: React.FC = () => {
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
   const { user } = useAuth();
+  const [identityId, setIdentityId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isPlayerInGame, setIsPlayerInGame] = useState(false);
+  const [canJoinGame, setCanJoinGame] = useState(false);
+  const [isWaitingForOpponent, setIsWaitingForOpponent] = useState(true);
+
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        const sessionIdentity = await getSessionIdentity(user);
+        setIdentityId(sessionIdentity.id);
+      } catch (err) {
+        logger.error("Failed to initialize session identity:", err);
+      }
+    };
+    initializeSession();
+  }, [user]);
+
+  const botTurnTimeoutRef = useRef<number | null>(null);
+  const botActionInFlightRef = useRef(false);
   const {
     currentGame,
     showRules,
@@ -37,33 +56,27 @@ export const GamePage: React.FC = () => {
     setError,
   } = useGameStore();
 
-  const {
-    game: chessGame,
-    gameState,
-    drawCard,
-    reshuffleDeck,
-    onDrop,
-    // newGame,
-    handleSquareClick,
-  } = useCardChess(currentGame, {
-    userId: user?._id || ''
-  });
+  const isBotGame = Boolean(currentGame?.is_vs_bot);
 
-  // Check if current user can join this game
-  const canJoinGame = currentGame && user && (
-    (!currentGame.player_black && currentGame.player_white !== user._id) ||
-    (!currentGame.player_white && currentGame.player_black !== user._id)
-  );
+  useEffect(() => {
+    const canJoinGame = currentGame && !isBotGame && (
+      (!currentGame.player_black && currentGame.player_white !== identityId) ||
+      (!currentGame.player_white && currentGame.player_black !== identityId)
+    );
 
-  // Check if current user is already playing in this game
-  const isPlayerInGame = currentGame && user && (
-    currentGame.player_white === user._id || currentGame.player_black === user._id
-  ) ? true : false;
+    // Check if current user is already playing in this game
+    const isPlayerInGame = currentGame && (
+      currentGame.player_white === identityId || currentGame.player_black === identityId
+    ) ? true : false;
 
-  // Check if waiting for opponent (player is in game but opponent slot is empty)
-  const isWaitingForOpponent = currentGame && user && isPlayerInGame && (
-    !currentGame.player_black || !currentGame.player_white
-  );
+    // Check if waiting for opponent (player is in game but opponent slot is empty)
+    const isWaitingForOpponent = currentGame && !isBotGame && isPlayerInGame && (
+      !currentGame.player_black || !currentGame.player_white
+    );
+    setCanJoinGame(!!canJoinGame);
+    setIsPlayerInGame(isPlayerInGame);
+    setIsWaitingForOpponent(!!isWaitingForOpponent);
+  }, [currentGame, identityId]);
 
   // Handle copy game link
   const handleCopyLink = () => {
@@ -95,13 +108,15 @@ export const GamePage: React.FC = () => {
         addNotification({
           type: "info",
           title: "No Game Found",
-          message: "Please create a game first to get a shareable link",
+          message: "No game ID provided. Redirecting to home.",
           duration: 5000,
         });
         navigate("/play");
         return;
       }
-
+      if (!identityId) {
+        return; // Wait for identity to initialize
+      }
       try {
         logger.info(`GamePage: Loading game ${gameId}`);
         setLoading(true);
@@ -126,11 +141,11 @@ export const GamePage: React.FC = () => {
     };
 
     loadGame();
-  }, [gameId, setCurrentGame, setLoading, setError, addNotification, navigate]);
+  }, [gameId, identityId, setCurrentGame, setLoading, setError, addNotification, navigate]);
 
   // Handle opponent registration when joining a game
   const handleJoinGameAsOpponent = async () => {
-    if (!gameId || !currentGame || !user) return;
+    if (!gameId || !currentGame || isBotGame) return;
 
     try {
       logger.info(`GamePage: Joining game ${gameId}`);
@@ -146,7 +161,7 @@ export const GamePage: React.FC = () => {
         message: "You have successfully joined the game!",
         duration: 3000,
       });
-      logger.info(`GamePage: Joined game successfully`, { gameId, userId: user._id });
+      logger.info(`GamePage: Joined game successfully`, { gameId, userId: identityId });
     } catch (err) {
       logger.error("Error joining game:", err);
       addNotification({
@@ -158,47 +173,86 @@ export const GamePage: React.FC = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: isDark
-          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
-          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
-        color: isDark ? '#f9fafb' : '#1f2937',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      }}>
-        <Header />
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 'calc(100vh - 64px)'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              border: `4px solid ${isDark ? '#667eea' : '#667eea'}`,
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              margin: '0 auto 24px',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            <style>{`
-              @keyframes spin {
-                to { transform: rotate(360deg); }
-              }
-            `}</style>
-            <p style={{
-              color: isDark ? '#9ca3af' : '#6b7280',
-              fontSize: '18px'
-            }}>Loading game...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const {
+    game: chessGame,
+    gameState,
+    drawCard,
+    reshuffleDeck,
+    onDrop,
+    playRandomValidMove,
+    // newGame,
+    handleSquareClick,
+  } = useCardChess(currentGame, {
+    userId: identityId!,
+  });
+
+  useEffect(() => {
+    const shouldBotPlay =
+      isBotGame &&
+      isPlayerInGame &&
+      gameState.gameStatus === "active" &&
+      !gameState.gameOver &&
+      gameState.currentPlayer !== gameState.userColor;
+    console.log("Bot turn check", { shouldBotPlay, 
+      isBotGame, isPlayerInGame, gameStatus: gameState.gameStatus, gameOver: gameState.gameOver, currentPlayer: gameState.currentPlayer, userColor: gameState.userColor });
+    
+    if (!shouldBotPlay) {
+      if (botTurnTimeoutRef.current !== null) {
+        window.clearTimeout(botTurnTimeoutRef.current);
+        botTurnTimeoutRef.current = null;
+      }
+      botActionInFlightRef.current = false;
+      return;
+    }
+
+    if (botActionInFlightRef.current) return;
+
+    botActionInFlightRef.current = true;
+    botTurnTimeoutRef.current = window.setTimeout(() => {
+      botTurnTimeoutRef.current = null;
+      botActionInFlightRef.current = false;
+
+      const stillBotTurn =
+        isBotGame &&
+        isPlayerInGame &&
+        gameState.gameStatus === "active" &&
+        !gameState.gameOver &&
+        gameState.currentPlayer !== gameState.userColor;
+
+      if (!stillBotTurn) return;
+
+      if (
+        !gameState.currentCard ||
+        gameState.noValidCard ||
+        gameState.validMoves.length === 0
+      ) {
+        drawCard();
+        return;
+      }
+
+      playRandomValidMove();
+    }, 2000);
+
+    return () => {
+      if (botTurnTimeoutRef.current !== null) {
+        window.clearTimeout(botTurnTimeoutRef.current);
+        botTurnTimeoutRef.current = null;
+      }
+      botActionInFlightRef.current = false;
+    };
+  }, [
+    isBotGame,
+    isPlayerInGame,
+    gameState.gameStatus,
+    gameState.gameOver,
+    gameState.currentPlayer,
+    gameState.userColor,
+    gameState.currentCard,
+    gameState.noValidCard,
+    gameState.validMoves.length,
+    drawCard,
+    playRandomValidMove,
+  ]);
 
   if (isLoading) {
     return (
@@ -350,8 +404,32 @@ export const GamePage: React.FC = () => {
       {/* Header */}
       <Header showBackButton={true} backTo="/" onToggleRules={() => setShowRules(!showRules)} />
 
+      {/* {isBotGame && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '14px 16px',
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(16, 185, 129, 0.18) 100%)'
+            : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)',
+          borderBottom: `1px solid ${isDark ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.25)'}`,
+        }}>
+          <p style={{
+            margin: 0,
+            fontSize: '14px',
+            fontWeight: '600',
+            color: isDark ? '#bfdbfe' : '#1e3a8a',
+          }}>
+            {isPlayerInGame
+              ? "Bot match active: the bot will play automatically on its turn."
+              : "This is a private bot game and cannot be joined."}
+          </p>
+        </div>
+      )} */}
+
       {/* Join Game Prompt - Show if user can join but hasn't yet */}
-      {canJoinGame && !isPlayerInGame && (
+      {!isBotGame && canJoinGame && !isPlayerInGame && (
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -412,7 +490,7 @@ export const GamePage: React.FC = () => {
       )}
 
       {/* Waiting for Opponent - Show if player is in game but waiting for opponent */}
-      {isWaitingForOpponent && (
+      {!isBotGame && isWaitingForOpponent && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -620,8 +698,19 @@ export const GamePage: React.FC = () => {
                 onDrop={onDrop}
                 onSquareClick={handleSquareClick}
                 currentPlayer={gameState.currentPlayer}
-                canMove={gameState.currentCard !== null && gameState.gameOver === false && isPlayerInGame === true}
-                orientation={currentGame?.player_white?.toString() === user?._id.toString() ? "white" : "black"}
+                canMove={
+                  gameState.currentCard !== null &&
+                  gameState.gameOver === false &&
+                  isPlayerInGame === true &&
+                  gameState.currentPlayer === gameState.userColor
+                }
+                orientation={
+                  currentGame?.player_white === identityId
+                    ? "white"
+                    : currentGame?.player_black === identityId
+                      ? "black"
+                      : "white"
+                }
               />
             </motion.div>
           </div>

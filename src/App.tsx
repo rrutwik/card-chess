@@ -18,9 +18,9 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/play" element={<ProtectedRoute><PlayPage /></ProtectedRoute>} />
+            <Route path="/play" element={<PlayPage />} />
             <Route path="/games" element={<ProtectedRoute><GamesListPage /></ProtectedRoute>} />
-            <Route path="/game/:gameId" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
+            <Route path="/game/:gameId" element={<GamePage />} />
             <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
             {/* Add more routes as needed */}
             <Route path="*" element={<Navigate to="/" replace />} />

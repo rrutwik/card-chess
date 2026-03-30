@@ -48,6 +48,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       logger.info("🚀 AuthContext: Initializing authentication...");
 
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        logger.info("ℹ️ AuthContext: No auth token found, continuing as guest");
+        setIsLoading(false);
+        return;
+      }
+
       logger.info("🔍 AuthContext: Found existing token, validating...");
       try {
         // Validate the token by making an API call
@@ -62,6 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           error
         );
         localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("userData");
       }
 

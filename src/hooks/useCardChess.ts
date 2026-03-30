@@ -15,6 +15,7 @@ export interface GameState {
   currentCard: PlayingCard | null;
   currentPlayer: "white" | "black";
   userColor: "white" | "black";
+  isPlayerInGame: boolean;
   checkAttempts: number;
   gameOver: boolean;
   winner: "white" | "black" | "draw" | null;
@@ -119,6 +120,9 @@ export function useCardChess(
     currentCard: game?.game_state?.current_card || null,
     currentPlayer: "white",
     userColor: "white",
+    isPlayerInGame: game
+      ? game.player_white === userId || game.player_black === userId
+      : false,
     checkAttempts: 0,
     gameOver: false,
     winner: null,
@@ -144,6 +148,8 @@ export function useCardChess(
         );
       }
       gameRef.current.load(game.game_state.fen);
+      const isPlayerInGame =
+        game.player_white === userId || game.player_black === userId;
       const isInCheck = gameRef.current.inCheck();
       let moves: Move[] = [];
       if (game.game_state.current_card) {
@@ -165,6 +171,7 @@ export function useCardChess(
         gameStatus: game.game_state.status,
         version: newGameVersion,
         userColor: game.player_white === userId ? "white" : "black",
+        isPlayerInGame,
         currentCard: game.game_state.current_card || null,
         cardsRemaining: (game.game_state.cards_deck || []).length,
         validMoves: moves,
@@ -544,6 +551,22 @@ export function useCardChess(
     ]
   );
 
+  const playRandomValidMove = useCallback(() => {
+    if (!gameState.currentCard || gameState.gameOver) return false;
+
+    const possibleMoves = getAnyValidMoveForSelectedCard(
+      gameRef.current,
+      gameState.currentCard
+    );
+
+    if (possibleMoves.length === 0) return false;
+
+    const randomMove =
+      possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+
+    return chessMakeMove(randomMove.from as Square, randomMove.to as Square, "q");
+  }, [gameState.currentCard, gameState.gameOver, chessMakeMove]);
+
   useEffect(() => {
     if (!gameId) return;
 
@@ -598,6 +621,7 @@ export function useCardChess(
 
   useEffect(() => {
     const canDraw =
+      gameState.isPlayerInGame &&
       gameState.userColor === gameState.currentPlayer &&
       (!gameState.currentCard || gameState.noValidCard) &&
       !gameState.gameOver &&
@@ -606,6 +630,7 @@ export function useCardChess(
   }, [
     gameState.currentPlayer,
     gameState.userColor,
+    gameState.isPlayerInGame,
     gameState.currentCard,
     gameState.noValidCard,
     gameState.gameOver,
@@ -618,6 +643,7 @@ export function useCardChess(
     drawCard,
     handleSquareClick,
     onDrop,
+    playRandomValidMove,
     reshuffleDeck,
     // newGame,
     isInCheck: gameRef.current.isCheck(),
