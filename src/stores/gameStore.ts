@@ -7,7 +7,6 @@ interface GameState {
   currentGame: ChessGame | null;
 
   // UI state
-  showRules: boolean;
   showMoves: boolean;
 
   // Loading and error states
@@ -16,7 +15,6 @@ interface GameState {
 
   // Actions
   setCurrentGame: (game: ChessGame | null) => void;
-  setShowRules: (show: boolean) => void;
   setShowMoves: (show: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -29,7 +27,6 @@ export const useGameStore = create<GameState>()(
       (set) => ({
         // Initial state
         currentGame: null,
-        showRules: false,
         showMoves: false,
         isLoading: false,
         error: null,
@@ -37,10 +34,6 @@ export const useGameStore = create<GameState>()(
         // Actions
         setCurrentGame: (game: ChessGame | null) => {
           set({ currentGame: game }, false, 'setCurrentGame');
-        },
-
-        setShowRules: (show: boolean) => {
-          set({ showRules: show }, false, 'setShowRules');
         },
 
         setShowMoves: (show: boolean) => {
@@ -58,7 +51,6 @@ export const useGameStore = create<GameState>()(
         resetGameState: () => {
           set({
             currentGame: null,
-            showRules: false,
             showMoves: false,
             isLoading: false,
             error: null,
@@ -69,7 +61,6 @@ export const useGameStore = create<GameState>()(
         name: 'card-chess-game-state',
         partialize: (state) => ({
           // Don't persist UI state, only game data if needed
-          showRules: state.showRules,
           showMoves: state.showMoves,
         }),
       }

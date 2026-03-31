@@ -19,15 +19,12 @@ import { getSessionIdentity } from "../utils/sessionIdentity";
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { addNotification } = useAppStore();
+  const { addNotification, showRules, setShowRules } = useAppStore();
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
   const { user } = useAuth();
   const [identityId, setIdentityId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [isPlayerInGame, setIsPlayerInGame] = useState(false);
-  const [canJoinGame, setCanJoinGame] = useState(false);
-  const [isWaitingForOpponent, setIsWaitingForOpponent] = useState(true);
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -45,12 +42,10 @@ export const GamePage: React.FC = () => {
   const botActionInFlightRef = useRef(false);
   const {
     currentGame,
-    showRules,
     showMoves,
     isLoading,
     error,
     setCurrentGame,
-    setShowRules,
     setShowMoves,
     setLoading,
     setError,
@@ -58,25 +53,25 @@ export const GamePage: React.FC = () => {
 
   const isBotGame = Boolean(currentGame?.is_vs_bot);
 
-  useEffect(() => {
-    const canJoinGame = currentGame && !isBotGame && (
-      (!currentGame.player_black && currentGame.player_white !== identityId) ||
-      (!currentGame.player_white && currentGame.player_black !== identityId)
-    );
-
-    // Check if current user is already playing in this game
-    const isPlayerInGame = currentGame && (
-      currentGame.player_white === identityId || currentGame.player_black === identityId
-    ) ? true : false;
-
-    // Check if waiting for opponent (player is in game but opponent slot is empty)
-    const isWaitingForOpponent = currentGame && !isBotGame && isPlayerInGame && (
-      !currentGame.player_black || !currentGame.player_white
-    );
-    setCanJoinGame(!!canJoinGame);
-    setIsPlayerInGame(isPlayerInGame);
-    setIsWaitingForOpponent(!!isWaitingForOpponent);
-  }, [currentGame, identityId]);
+  // Derived from currentGame + identityId — computed inline so they're
+  // always up-to-date rather than one render behind (no state/effect needed)
+  const isPlayerInGame = Boolean(
+    currentGame &&
+      (currentGame.player_white === identityId ||
+        currentGame.player_black === identityId)
+  );
+  const canJoinGame = Boolean(
+    currentGame &&
+      !isBotGame &&
+      ((!currentGame.player_black && currentGame.player_white !== identityId) ||
+        (!currentGame.player_white && currentGame.player_black !== identityId))
+  );
+  const isWaitingForOpponent = Boolean(
+    currentGame &&
+      !isBotGame &&
+      isPlayerInGame &&
+      (!currentGame.player_black || !currentGame.player_white)
+  );
 
   // Handle copy game link
   const handleCopyLink = () => {
@@ -103,6 +98,8 @@ export const GamePage: React.FC = () => {
 
   // Load game data from backend if gameId is provided
   useEffect(() => {
+    let ignore = false;
+
     const loadGame = async () => {
       if (!gameId) {
         addNotification({
@@ -117,30 +114,45 @@ export const GamePage: React.FC = () => {
       if (!identityId) {
         return; // Wait for identity to initialize
       }
+
+      // Clear stale game from a previous navigation so isBotGame / hook
+      // don't briefly inherit the wrong game's data.
+      setCurrentGame(null);
+
       try {
         logger.info(`GamePage: Loading game ${gameId}`);
         setLoading(true);
         setError(null);
         const response = await ChessAPI.getGame(gameId);
-        setCurrentGame(response.data.data);
-        logger.info(`GamePage: Game loaded`, { gameId });
+        // Guard against stale response if gameId/identityId changed mid-flight
+        if (!ignore) {
+          setCurrentGame(response.data.data);
+          logger.info(`GamePage: Game loaded`, { gameId });
+        }
       } catch (err) {
-        logger.error("Error loading game:", err);
-        const errorMessage =
-          err instanceof ApiError ? err.message : "Failed to load game";
-        setError(errorMessage);
-        addNotification({
-          type: "error",
-          title: "Failed to load game",
-          message: errorMessage,
-          duration: 5000,
-        });
+        if (!ignore) {
+          logger.error("Error loading game:", err);
+          const errorMessage =
+            err instanceof ApiError ? err.message : "Failed to load game";
+          setError(errorMessage);
+          addNotification({
+            type: "error",
+            title: "Failed to load game",
+            message: errorMessage,
+            duration: 5000,
+          });
+        }
       } finally {
-        setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
 
     loadGame();
+    return () => {
+      ignore = true;
+    };
   }, [gameId, identityId, setCurrentGame, setLoading, setError, addNotification, navigate]);
 
   // Handle opponent registration when joining a game
@@ -193,8 +205,6 @@ export const GamePage: React.FC = () => {
       gameState.gameStatus === "active" &&
       !gameState.gameOver &&
       gameState.currentPlayer !== gameState.userColor;
-    console.log("Bot turn check", { shouldBotPlay, 
-      isBotGame, isPlayerInGame, gameStatus: gameState.gameStatus, gameOver: gameState.gameOver, currentPlayer: gameState.currentPlayer, userColor: gameState.userColor });
     
     if (!shouldBotPlay) {
       if (botTurnTimeoutRef.current !== null) {
@@ -402,7 +412,7 @@ export const GamePage: React.FC = () => {
       />
 
       {/* Header */}
-      <Header showBackButton={true} backTo="/" onToggleRules={() => setShowRules(!showRules)} />
+      <Header showBackButton={true} backTo="/" />
 
       {/* {isBotGame && (
         <div style={{

@@ -54,12 +54,12 @@ export function CompactGameControls({
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
   const attemptsRemaining = MAX_CHECK_ATTEMPTS - checkAttempts;
-  
+
   return (
-    <div style={{ 
-      position: 'relative', 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
       gap: '12px',
       height: '100%',
       width: '100%'
@@ -144,14 +144,14 @@ export function CompactGameControls({
           borderRadius: '12px',
           padding: '16px',
           border: '2px solid',
-          borderColor: currentPlayer === "white" 
+          borderColor: currentPlayer === "white"
             ? (isDark ? '#e5e7eb' : '#1f2937')
             : (isDark ? '#f3f4f6' : '#374151'),
-          boxShadow: isDark 
-            ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' 
+          boxShadow: isDark
+            ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
             : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
           transition: 'all 0.3s ease',
-          background: currentPlayer === "white" 
+          background: currentPlayer === "white"
             ? (isDark ? 'rgba(249, 250, 251, 0.95)' : 'white')
             : (isDark ? 'rgba(17, 24, 39, 0.95)' : '#111827'),
           flexShrink: 0
@@ -327,6 +327,7 @@ export function CompactGameControls({
             padding: '12px 16px',
             display: 'flex',
             justifyContent: 'space-between',
+            alignItems: 'center',
             flexShrink: 0
           }}>
             <span style={{ fontWeight: '700', fontSize: '12px', color: 'white' }}>Current Card</span>
@@ -565,15 +566,15 @@ export function CompactGameControls({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               {userColor === currentPlayer ?
-               canDrawCard ? (
-                <>
-                  <Play style={{ width: '20px', height: '20px' }} /> Draw Card
-                </>
-              ) : (
-                "Make Your Move"
-              ) : (
-                "Opponent's Turn"
-              )}
+                canDrawCard ? (
+                  <>
+                    <Play style={{ width: '20px', height: '20px' }} /> Draw Card
+                  </>
+                ) : (
+                  "Make Your Move"
+                ) : (
+                  "Opponent's Turn"
+                )}
             </div>
           </button>
 
@@ -582,7 +583,7 @@ export function CompactGameControls({
             style={{
               width: '100%',
               padding: '12px',
-              background: isDark 
+              background: isDark
                 ? 'rgba(55, 65, 81, 0.8)'
                 : '#374151',
               color: isDark ? '#d1d5db' : 'white',

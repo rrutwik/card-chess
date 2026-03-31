@@ -4,22 +4,22 @@ import { motion } from 'motion/react';
 import { LogOut, User, Sun, Moon, Monitor, BookOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAppStore } from '../stores/appStore';
 
 interface HeaderProps {
   showBackButton?: boolean;
   backTo?: string;
   title?: string;
-  onToggleRules?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   showBackButton = false,
   backTo = '/',
-  title = 'Card Chess',
-  onToggleRules
+  title = 'Card Chess'
 }) => {
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, setTheme, actualTheme } = useTheme();
+  const { showRules, setShowRules } = useAppStore();
   const navigate = useNavigate();
   const isDark = actualTheme === 'dark';
 
@@ -198,9 +198,8 @@ export const Header: React.FC<HeaderProps> = ({
             gap: '8px'
           }}>
             {/* Rules button */}
-            {onToggleRules && (
-              <button
-                onClick={onToggleRules}
+            <button
+                onClick={showRules ? () => setShowRules(false) : () => setShowRules(true)}
                 style={{
                   padding: '8px',
                   color: isDark ? '#9ca3af' : '#6b7280',
@@ -226,7 +225,6 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <BookOpen style={{ width: '16px', height: '16px' }} />
               </button>
-            )}
 
             {/* Theme toggle */}
             <button

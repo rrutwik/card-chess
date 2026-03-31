@@ -96,7 +96,7 @@ const RETRY_CONFIG = {
 };
 
 // API Configuration
-const API_BASE_URL = 'https://backend-api.techkarmic.com';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'https://backend-api.techkarmic.com';
 
 // Create axios instance with default config
 const api = axios.create({

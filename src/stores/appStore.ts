@@ -15,6 +15,7 @@ interface AppState {
   // Loading states
   isLoading: boolean;
   loadingMessage?: string;
+  showRules: boolean;
 
   // Error states
   error: string | null;
@@ -29,6 +30,7 @@ interface AppState {
   setLoading: (loading: boolean, message?: string) => void;
   setError: (error: string | null) => void;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
+  setShowRules: (show: boolean) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
   setOnlineStatus: (online: boolean) => void;
@@ -42,6 +44,7 @@ export const useAppStore = create<AppState>()(
         isLoading: false,
         loadingMessage: undefined,
         error: null,
+        showRules: false,
         notifications: [],
         isOnline: navigator.onLine,
 
@@ -50,7 +53,10 @@ export const useAppStore = create<AppState>()(
           logger.debug(`AppStore: setLoading ${loading}`, { message });
           set({ isLoading: loading, loadingMessage: message }, false, 'setLoading');
         },
-
+        setShowRules: (show: boolean) => {
+          logger.debug(`AppStore: setShowRules ${show}`);
+          set({ showRules: show }, false, 'setShowRules');
+        },
         setError: (error: string | null) => {
           if (error) logger.error(`AppStore: Error set`, { error });
           set({ error }, false, 'setError');

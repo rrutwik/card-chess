@@ -6,10 +6,13 @@ import { Header } from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { logger } from '../utils/logger';
+import { CollapsibleRulesSidebar } from '../components/CollapsibleRulesSidebar';
+import { useAppStore } from '../stores/appStore';
 
 export const HomePage: React.FC = () => {
   const { actualTheme } = useTheme();
   const isDark = actualTheme === 'dark';
+  const {showRules, setShowRules} = useAppStore();
 
   useEffect(() => {
     logger.info('HomePage: Mounted');
@@ -28,6 +31,10 @@ export const HomePage: React.FC = () => {
       transition: 'all 0.3s ease',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
     }}>
+      <CollapsibleRulesSidebar
+        isOpen={showRules}
+        onClose={() => setShowRules(false)}
+      />
       <Header />
 
       {/* Background decorative elements */}

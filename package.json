@@ -3,7 +3,6 @@
       "version": "0.1.0",
       "private": true,
       "dependencies": {
-            "@alehuo/react-playing-cards": "^1.0.1",
             "@chrisoakman/chessboard2": "0.5.0",
             "@letele/playing-cards": "^0.1.0",
             "@radix-ui/react-accordion": "1.2.12",

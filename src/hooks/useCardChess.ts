@@ -8,7 +8,7 @@ import { ChessAPI, ChessGame } from "../services/api";
 
 export const MAX_CHECK_ATTEMPTS = 5;
 
-const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1";
+const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 export interface GameState {
   deck: PlayingCard[];
@@ -114,8 +114,9 @@ export function useCardChess(
   const gameId = game?.game_id;
 
   const gameRef = useRef(new Chess(game?.game_state?.fen || undefined));
+  // Ref to track version without depending on full gameState in callbacks
+  const versionRef = useRef(game?.version || 0);
   const [gameState, setGameState] = useState<GameState>(() => ({
-    fen: game?.game_state?.fen || DEFAULT_FEN,
     deck: game?.game_state?.cards_deck || createDeck(),
     currentCard: game?.game_state?.current_card || null,
     currentPlayer: "white",
@@ -176,6 +177,7 @@ export function useCardChess(
         cardsRemaining: (game.game_state.cards_deck || []).length,
         validMoves: moves,
       }));
+      versionRef.current = newGameVersion;
     }
   }, [game, userId]);
 
@@ -210,10 +212,9 @@ export function useCardChess(
           currentVersion
         );
         const responseGame = response.data.data;
-        if (responseGame.version > gameState.version) {
+        if (responseGame.version > versionRef.current) {
+          versionRef.current = responseGame.version;
           const backendCard = responseGame.game_state.current_card;
-          setGameState((prev) => ({ ...prev, version: responseGame.version }));
-          console.log("FEN changed, updating local state");
           gameRef.current.load(responseGame.game_state.fen);
           let moves = [] as Move[];
           if (backendCard) {
@@ -224,7 +225,8 @@ export function useCardChess(
           }
           setGameState((prev) => ({
             ...prev,
-            isInCheck: gameRef.current.isCheck(),
+            version: responseGame.version,
+            isInCheck: gameRef.current.inCheck(),
             currentPlayer: responseGame.game_state.turn,
             moveHistory: responseGame.game_state.moves || [],
             currentCard: backendCard || null,
@@ -240,7 +242,7 @@ export function useCardChess(
         console.error("Failed to sync with backend:", error);
       }
     },
-    [gameId, userId, gameState]
+    [gameId, userId]
   );
 
   useEffect(() => {
@@ -364,15 +366,6 @@ export function useCardChess(
     (card: PlayingCard, move: Move) => {
       if (gameState.gameOver) return;
 
-      setGameState((prev) => ({
-        ...prev,
-        fen: gameRef.current.fen(),
-        checkAttempts: 0,
-        fromMoveSelected: null,
-        validMoves: [],
-        currentCard: null,
-      }));
-      // Update move history first
       const newMoveHistory = [
         ...gameState.moveHistory,
         {
@@ -385,27 +378,11 @@ export function useCardChess(
           player: gameState.currentPlayer,
         },
       ];
-      setGameState((prev) => ({ ...prev, moveHistory: newMoveHistory }));
-
-      // Clear current card and selection state
-      setGameState((prev) => ({ ...prev, currentCard: null }));
-      setGameState((prev) => ({ ...prev, fromMoveSelected: null }));
-      setGameState((prev) => ({ ...prev, validMoves: [] }));
 
       const nextPlayer = gameRef.current.turn() === "w" ? "white" : "black";
-
-      const opponentInCheck = gameRef.current.isCheck();
+      const opponentInCheck = gameRef.current.inCheck();
       let gameOver = false;
       let winner: "white" | "black" | "draw" | null = null;
-      if (opponentInCheck) {
-        setGameState((prev) => ({ ...prev, isInCheck: true }));
-        setGameState((prev) => ({ ...prev, checkAttempts: 0 }));
-        setGameState((prev) => ({ ...prev, currentPlayer: nextPlayer }));
-      } else {
-        setGameState((prev) => ({ ...prev, isInCheck: false }));
-        setGameState((prev) => ({ ...prev, checkAttempts: 0 }));
-        setGameState((prev) => ({ ...prev, currentPlayer: nextPlayer }));
-      }
 
       if (gameRef.current.isCheckmate()) {
         gameOver = true;
@@ -418,7 +395,21 @@ export function useCardChess(
         gameOver = true;
         winner = "draw";
       }
-      setGameState((prev) => ({ ...prev, gameOver, winner }));
+
+      // Single batched state update
+      setGameState((prev) => ({
+        ...prev,
+        checkAttempts: 0,
+        fromMoveSelected: null,
+        validMoves: [],
+        currentCard: null,
+        moveHistory: newMoveHistory,
+        isInCheck: opponentInCheck,
+        currentPlayer: nextPlayer,
+        gameOver,
+        winner,
+      }));
+
       syncWithBackend(
         gameRef.current.fen(),
         nextPlayer,
@@ -427,16 +418,16 @@ export function useCardChess(
         0,
         newMoveHistory,
         gameState.version,
-        gameState.gameOver ? "completed" : "active",
+        gameOver ? "completed" : "active",
         winner || undefined
       );
     },
     [
       gameState.currentPlayer,
-      gameState.deck,
       gameState.gameOver,
       gameState.version,
       gameState.moveHistory,
+      syncWithBackend,
     ]
   );
 
@@ -576,10 +567,9 @@ export function useCardChess(
         const latestGame = response.data.data;
 
         // Update local game state from backend
-        if (latestGame.version > gameState.version) {
+        if (latestGame.version > versionRef.current) {
+          versionRef.current = latestGame.version;
           const backendCard = latestGame.game_state.current_card;
-          setGameState((prev) => ({ ...prev, version: latestGame.version }));
-          console.log("FEN changed, updating local state");
           gameRef.current.load(latestGame.game_state.fen);
           let moves = [] as Move[];
           if (backendCard) {
@@ -590,7 +580,8 @@ export function useCardChess(
           }
           setGameState((prev) => ({
             ...prev,
-            isInCheck: gameRef.current.isCheck(),
+            version: latestGame.version,
+            isInCheck: gameRef.current.inCheck(),
             currentPlayer: latestGame.game_state.turn,
             moveHistory: latestGame.game_state.moves || [],
             currentCard: backendCard || null,
@@ -608,16 +599,7 @@ export function useCardChess(
     };
     const intervalId = setInterval(pollForUpdates, 2000);
     return () => clearInterval(intervalId);
-  }, [
-    gameId,
-    gameState.currentPlayer,
-    gameState.currentCard,
-    gameState.deck,
-    gameState.gameOver,
-    gameState.winner,
-    gameState.checkAttempts,
-    gameState.gameStatus,
-  ]);
+  }, [gameId]);
 
   useEffect(() => {
     const canDraw =
@@ -646,6 +628,6 @@ export function useCardChess(
     playRandomValidMove,
     reshuffleDeck,
     // newGame,
-    isInCheck: gameRef.current.isCheck(),
+    isInCheck: gameRef.current.inCheck(),
   } as const;
 }

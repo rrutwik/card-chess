@@ -87,9 +87,6 @@ export function ChessBoard({
           "radial-gradient(circle, rgba(34,197,94,0.8) 25%, transparent 26%)";
       }
     });
-    console.log({
-      styles
-    })
     return styles;
   }, [fromMoveSelected, validMoves, showMoves]);
 
