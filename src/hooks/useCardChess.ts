@@ -26,7 +26,7 @@ export interface GameState {
   isInCheck: boolean;
   canDrawCard: boolean;
   cardsRemaining: number;
-  gameStatus?: "active" | "completed" | "abandoned";
+  gameStatus?: "active" | "completed" | "abandoned" | "waiting_for_opponent";
   version: number;
 }
 
@@ -565,7 +565,12 @@ export function useCardChess(
       try {
         const response = await ChessAPI.getGame(gameId);
         const latestGame = response.data.data;
-
+        if (gameState.gameStatus === "waiting_for_opponent" && latestGame.game_state.status === "active") {
+          setGameState((prev) => ({
+            ...prev,
+            ...latestGame
+          }));
+        }
         // Update local game state from backend
         if (latestGame.version > versionRef.current) {
           versionRef.current = latestGame.version;
@@ -597,8 +602,15 @@ export function useCardChess(
         console.error("Error polling for game updates:", error);
       }
     };
-    const intervalId = setInterval(pollForUpdates, 2000);
-    return () => clearInterval(intervalId);
+    let intervalId = null as unknown as NodeJS.Timeout;
+    if (gameState.gameStatus === "waiting_for_opponent" || gameState.gameStatus === "active") {
+      intervalId = setInterval(pollForUpdates, 2000);
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [gameId]);
 
   useEffect(() => {
