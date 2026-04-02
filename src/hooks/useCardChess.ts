@@ -261,6 +261,7 @@ export function useCardChess(
             fromMoveSelected: null,
             validMoves: moves,
             deck: responseGame.game_state.cards_deck || [],
+            cardsRemaining: (responseGame.game_state.cards_deck || []).length,
             checkAttempts: responseGame.game_state.check_attempts || 0,
             gameStatus: responseGame.game_state.status,
             gameOver: responseGame.game_state.status === "completed",
@@ -339,7 +340,7 @@ export function useCardChess(
     }
 
     if (drawnCards.length > 0) {
-      setGameState((prev) => ({ ...prev, currentCards: drawnCards, deck: newDeck }));
+      setGameState((prev) => ({ ...prev, currentCards: drawnCards, deck: newDeck, cardsRemaining: newDeck.length }));
 
       const hasValidMoves = checkForValidMoves(drawnCards, gameState.currentPlayer);
       let newAttempts = gameState.checkAttempts;
@@ -404,7 +405,7 @@ export function useCardChess(
 
   const reshuffleDeck = useCallback(() => {
     const newDeck = shuffleDeck(createDeck());
-    setGameState((prev) => ({ ...prev, deck: newDeck, checkAttempts: 0 }));
+    setGameState((prev) => ({ ...prev, deck: newDeck, cardsRemaining: newDeck.length, checkAttempts: 0 }));
   }, []);
 
   const updateMove = useCallback(
@@ -684,6 +685,7 @@ export function useCardChess(
             fromMoveSelected: null,
             validMoves: moves,
             deck: latestGame.game_state.cards_deck || [],
+            cardsRemaining: (latestGame.game_state.cards_deck || []).length,
             checkAttempts: latestGame.game_state.check_attempts || 0,
             gameStatus: latestGame.game_state.status,
             gameOver: latestGame.game_state.status === "completed",
