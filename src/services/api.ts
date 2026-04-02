@@ -33,7 +33,7 @@ export interface ChessGame {
     fen: string;
     pgn?: string;
     turn: 'white' | 'black';
-    status: 'active' | 'completed' | 'abandoned';
+    status: 'active' | 'completed' | 'abandoned' | 'waiting_for_opponent';
     winner?: 'white' | 'black' | 'draw';
     moves: MoveHistory[];
     check_attempts?: number;

@@ -53,47 +53,30 @@ export const GamePage: React.FC = () => {
 
   const isBotGame = Boolean(currentGame?.is_vs_bot);
 
-  // Derived from currentGame + identityId — computed inline so they're
-  // always up-to-date rather than one render behind (no state/effect needed)
-  const isPlayerInGame = Boolean(
-    currentGame &&
-      (currentGame.player_white === identityId ||
-        currentGame.player_black === identityId)
-  );
-  const canJoinGame = Boolean(
-    currentGame &&
-      !isBotGame &&
-      ((!currentGame.player_black && currentGame.player_white !== identityId) ||
-        (!currentGame.player_white && currentGame.player_black !== identityId))
-  );
-  const isWaitingForOpponent = Boolean(
-    currentGame &&
-      !isBotGame &&
-      isPlayerInGame &&
-      (!currentGame.player_black || !currentGame.player_white)
-  );
-
   // Handle copy game link
   const handleCopyLink = () => {
     const gameLink = `${window.location.origin}/game/${gameId}`;
-    navigator.clipboard.writeText(gameLink).then(() => {
-      setLinkCopied(true);
-      addNotification({
-        type: "success",
-        title: "Link Copied!",
-        message: "Game link copied to clipboard",
-        duration: 2000,
+    navigator.clipboard
+      .writeText(gameLink)
+      .then(() => {
+        setLinkCopied(true);
+        addNotification({
+          type: "success",
+          title: "Link Copied!",
+          message: "Game link copied to clipboard",
+          duration: 2000,
+        });
+        setTimeout(() => setLinkCopied(false), 2000);
+      })
+      .catch((err) => {
+        logger.error("Failed to copy link:", err);
+        addNotification({
+          type: "error",
+          title: "Failed to copy",
+          message: "Could not copy link to clipboard",
+          duration: 3000,
+        });
       });
-      setTimeout(() => setLinkCopied(false), 2000);
-    }).catch((err) => {
-      logger.error('Failed to copy link:', err);
-      addNotification({
-        type: "error",
-        title: "Failed to copy",
-        message: "Could not copy link to clipboard",
-        duration: 3000,
-      });
-    });
   };
 
   // Load game data from backend if gameId is provided
@@ -111,6 +94,9 @@ export const GamePage: React.FC = () => {
         navigate("/play");
         return;
       }
+      setLoading(true);
+      setError(null);
+      logger.info(`GamePage: Loading game ${gameId}`)
       if (!identityId) {
         return; // Wait for identity to initialize
       }
@@ -121,7 +107,6 @@ export const GamePage: React.FC = () => {
 
       try {
         logger.info(`GamePage: Loading game ${gameId}`);
-        setLoading(true);
         setError(null);
         const response = await ChessAPI.getGame(gameId);
         // Guard against stale response if gameId/identityId changed mid-flight
@@ -153,7 +138,15 @@ export const GamePage: React.FC = () => {
     return () => {
       ignore = true;
     };
-  }, [gameId, identityId, setCurrentGame, setLoading, setError, addNotification, navigate]);
+  }, [
+    gameId,
+    identityId,
+    setCurrentGame,
+    setLoading,
+    setError,
+    addNotification,
+    navigate,
+  ]);
 
   // Handle opponent registration when joining a game
   const handleJoinGameAsOpponent = async () => {
@@ -166,6 +159,7 @@ export const GamePage: React.FC = () => {
       // Reload the game to get updated state
       const response = await ChessAPI.getGame(gameId);
       setCurrentGame(response.data.data);
+      setLoading(false);
 
       addNotification({
         type: "success",
@@ -173,13 +167,17 @@ export const GamePage: React.FC = () => {
         message: "You have successfully joined the game!",
         duration: 3000,
       });
-      logger.info(`GamePage: Joined game successfully`, { gameId, userId: identityId });
+      logger.info(`GamePage: Joined game successfully`, {
+        gameId,
+        userId: identityId,
+      });
     } catch (err) {
       logger.error("Error joining game:", err);
+      setLoading(false);
       addNotification({
         type: "error",
         title: "Failed to join game",
-        message: "Could not join the game. It may be full or no longer available.",
+        message: "Could not join the game.",
         duration: 5000,
       });
     }
@@ -196,7 +194,28 @@ export const GamePage: React.FC = () => {
     handleSquareClick,
   } = useCardChess(currentGame, {
     userId: identityId!,
+    onGameStateChanged: (updatedGame) => {
+      setCurrentGame(updatedGame);
+    },
   });
+
+  const isPlayerInGame = Boolean(
+    currentGame &&
+    (currentGame.player_white === identityId ||
+      currentGame.player_black === identityId),
+  );
+  const canJoinGame = Boolean(
+    currentGame &&
+    !isBotGame &&
+    ((!currentGame.player_black && currentGame.player_white !== identityId) ||
+      (!currentGame.player_white && currentGame.player_black !== identityId)),
+  );
+  const isWaitingForOpponent = Boolean(
+    currentGame &&
+    !isBotGame &&
+    isPlayerInGame &&
+    gameState.gameStatus === "waiting_for_opponent",
+  );
 
   useEffect(() => {
     const shouldBotPlay =
@@ -205,7 +224,7 @@ export const GamePage: React.FC = () => {
       gameState.gameStatus === "active" &&
       !gameState.gameOver &&
       gameState.currentPlayer !== gameState.userColor;
-    
+
     if (!shouldBotPlay) {
       if (botTurnTimeoutRef.current !== null) {
         window.clearTimeout(botTurnTimeoutRef.current);
@@ -266,40 +285,51 @@ export const GamePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: isDark
-          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
-          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
-        color: isDark ? '#f9fafb' : '#1f2937',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: isDark
+            ? "linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)"
+            : "linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)",
+          color: isDark ? "#f9fafb" : "#1f2937",
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        }}
+      >
         <Header />
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 'calc(100vh - 64px)'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              border: `4px solid ${isDark ? '#667eea' : '#667eea'}`,
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              margin: '0 auto 24px',
-              animation: 'spin 1s linear infinite'
-            }}></div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "calc(100vh - 64px)",
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                border: `4px solid ${isDark ? "#667eea" : "#667eea"}`,
+                borderTopColor: "transparent",
+                borderRadius: "50%",
+                margin: "0 auto 24px",
+                animation: "spin 1s linear infinite",
+              }}
+            ></div>
             <style>{`
               @keyframes spin {
                 to { transform: rotate(360deg); }
               }
             `}</style>
-            <p style={{
-              color: isDark ? '#9ca3af' : '#6b7280',
-              fontSize: '18px'
-            }}>Loading game...</p>
+            <p
+              style={{
+                color: isDark ? "#9ca3af" : "#6b7280",
+                fontSize: "18px",
+              }}
+            >
+              Loading game...
+            </p>
           </div>
         </div>
       </div>
@@ -308,82 +338,104 @@ export const GamePage: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: isDark
-          ? 'linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)'
-          : 'linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)',
-        color: isDark ? '#f9fafb' : '#1f2937',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: isDark
+            ? "linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)"
+            : "linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)",
+          color: isDark ? "#f9fafb" : "#1f2937",
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        }}
+      >
         <Header />
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 'calc(100vh - 64px)',
-          padding: '16px'
-        }}>
-          <div style={{
-            textAlign: 'center',
-            background: isDark
-              ? 'rgba(255, 255, 255, 0.05)'
-              : 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
-            padding: '40px',
-            borderRadius: '24px',
-            boxShadow: isDark
-              ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-              : '0 8px 32px rgba(0, 0, 0, 0.1)',
-            maxWidth: '448px',
-            width: '100%',
-            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              background: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px'
-            }}>
-              <span style={{ fontSize: '40px' }}>⚠️</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "calc(100vh - 64px)",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              textAlign: "center",
+              background: isDark
+                ? "rgba(255, 255, 255, 0.05)"
+                : "rgba(255, 255, 255, 0.9)",
+              backdropFilter: "blur(10px)",
+              padding: "40px",
+              borderRadius: "24px",
+              boxShadow: isDark
+                ? "0 8px 32px rgba(0, 0, 0, 0.3)"
+                : "0 8px 32px rgba(0, 0, 0, 0.1)",
+              maxWidth: "448px",
+              width: "100%",
+              border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}`,
+            }}
+          >
+            <div
+              style={{
+                width: "80px",
+                height: "80px",
+                background: isDark
+                  ? "rgba(239, 68, 68, 0.2)"
+                  : "rgba(239, 68, 68, 0.1)",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+              }}
+            >
+              <span style={{ fontSize: "40px" }}>⚠️</span>
             </div>
-            <h2 style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#ef4444',
-              marginBottom: '16px'
-            }}>Error</h2>
-            <p style={{
-              color: isDark ? '#9ca3af' : '#6b7280',
-              marginBottom: '32px',
-              fontSize: '18px',
-              lineHeight: '1.5'
-            }}>{error}</p>
+            <h2
+              style={{
+                fontSize: "32px",
+                fontWeight: "700",
+                color: "#ef4444",
+                marginBottom: "16px",
+              }}
+            >
+              Error
+            </h2>
+            <p
+              style={{
+                color: isDark ? "#9ca3af" : "#6b7280",
+                marginBottom: "32px",
+                fontSize: "18px",
+                lineHeight: "1.5",
+              }}
+            >
+              {error}
+            </p>
             <button
               onClick={() => navigate("/")}
               style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                padding: '16px 32px',
-                borderRadius: '16px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: '600',
-                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
-                transition: 'all 0.3s ease'
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                padding: "16px 32px",
+                borderRadius: "16px",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "16px",
+                fontWeight: "600",
+                boxShadow: "0 4px 16px rgba(102, 126, 234, 0.4)",
+                transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
+                e.currentTarget.style.transform =
+                  "translateY(-2px) scale(1.05)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 24px rgba(102, 126, 234, 0.5)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                e.currentTarget.style.transform = "translateY(0) scale(1)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 16px rgba(102, 126, 234, 0.4)";
               }}
             >
               Go Home
