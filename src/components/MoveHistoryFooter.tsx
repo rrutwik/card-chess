@@ -110,8 +110,8 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
 
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                  gap: '8px'
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '12px'
                 }}>
                   {[...moveHistory].reverse().map((move, index) => (
                     <motion.div
@@ -120,19 +120,141 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.02 }}
                       style={{
-                        fontSize: '14px',
-                        padding: '10px',
+                        fontSize: '13px',
+                        padding: '12px',
                         background: isDark 
                           ? 'linear-gradient(90deg, #374151 0%, #4b5563 100%)'
                           : 'linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%)',
-                        borderRadius: '8px',
-                        border: `1px solid ${isDark ? '#4b5563' : '#e5e7eb'}`
+                        borderRadius: '10px',
+                        border: `1px solid ${isDark ? '#4b5563' : '#e5e7eb'}`,
+                        overflow: 'hidden'
                       }}
                     >
-                      <span style={{ fontWeight: '700', color: '#4f46e5' }}>#{moveHistory.length - index}</span>{' '}
-                      <span style={{ color: isDark ? '#f9fafb' : '#111827', fontSize: '12px' }}>
-                        {move.card.value} {move.card.suit[0].toUpperCase()} - {move.move?.piece.toUpperCase()} {move.move?.from} {move.move?.to}
-                      </span>
+                      {/* Move Number Badge */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '8px',
+                        paddingBottom: '8px',
+                        borderBottom: `1px solid ${isDark ? '#6b7280' : '#d1d5db'}`
+                      }}>
+                        <span style={{ 
+                          fontWeight: '900', 
+                          color: '#4f46e5',
+                          fontSize: '14px',
+                          background: isDark ? '#6366f1' : '#e0e7ff',
+                          padding: '2px 8px',
+                          borderRadius: '4px'
+                        }}>
+                          #{moveHistory.length - index}
+                        </span>
+                        <span style={{
+                          fontWeight: '700',
+                          color: isDark ? '#d1d5db' : '#4b5563',
+                          fontSize: '12px',
+                          textTransform: 'capitalize'
+                        }}>
+                          {move.player}
+                        </span>
+                        {move.isFailedAttempt && (
+                          <span style={{
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: '700'
+                          }}>
+                            ⚠️ Failed
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Cards Drawn */}
+                      <div style={{ marginBottom: '8px' }}>
+                        <p style={{
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          color: isDark ? '#9ca3af' : '#6b7280',
+                          marginBottom: '4px'
+                        }}>
+                          Cards Drawn ({move.cards?.length || 1}):
+                        </p>
+                        <div style={{
+                          display: 'flex',
+                          gap: '4px',
+                          flexWrap: 'wrap'
+                        }}>
+                          {move.cards?.map((card, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                background: card.color === 'red' ? '#fee2e2' : '#f3f4f6',
+                                color: card.color === 'red' ? '#dc2626' : '#1f2937',
+                                padding: '3px 8px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                border: move.usedCard === card ? `2px solid ${card.color === 'red' ? '#dc2626' : '#1f2937'}` : 'none'
+                              }}
+                            >
+                              {card.value} {card.suit[0].toUpperCase()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Used Card */}
+                      {move.usedCard && (
+                        <div style={{ marginBottom: '8px' }}>
+                          <p style={{
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            color: '#4f46e5',
+                            marginBottom: '3px'
+                          }}>
+                            Used Card:
+                          </p>
+                          <span style={{
+                            background: '#f3f4f6',
+                            color: '#1f2937',
+                            padding: '4px 10px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            display: 'inline-block',
+                            border: `2px solid #4f46e5`
+                          }}>
+                            {move.usedCard.value} {move.usedCard.suit[0].toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Chess Move */}
+                      {move.move && (
+                        <div>
+                          <p style={{
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            color: isDark ? '#9ca3af' : '#6b7280',
+                            marginBottom: '4px'
+                          }}>
+                            Move:
+                          </p>
+                          <div style={{
+                            background: isDark ? '#1f2937' : '#ffffff',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: isDark ? '#f3f4f6' : '#111827',
+                            fontFamily: 'monospace'
+                          }}>
+                            {move.move.piece.toUpperCase()} {move.move.from} → {move.move.to}
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -206,7 +328,7 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
                     }}>
-                      {moveHistory[moveHistory.length - 1].card.value} {moveHistory[moveHistory.length - 1].card.suit[0].toUpperCase()} - {moveHistory[moveHistory.length - 1].move?.piece?.toUpperCase()} {moveHistory[moveHistory.length - 1].move?.from} {moveHistory[moveHistory.length - 1].move?.to}
+                      {moveHistory[moveHistory.length - 1].usedCard.value} {moveHistory[moveHistory.length - 1].usedCard.suit[0].toUpperCase()} - {moveHistory[moveHistory.length - 1].move?.piece?.toUpperCase()} {moveHistory[moveHistory.length - 1].move?.from} {moveHistory[moveHistory.length - 1].move?.to}
                     </p>
                   </div>
                 )}

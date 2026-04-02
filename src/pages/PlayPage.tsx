@@ -31,6 +31,7 @@ export const PlayPage: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<"white" | "black">(
     "white",
   );
+  const [cardsToDraw, setCardsToDrawCount] = useState<number>(1);
   const [creatingGame, setCreatingGame] = useState(false);
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export const PlayPage: React.FC = () => {
       setCreatingGame(true);
 
       // Create game with current user and selected color
-      const response = await ChessAPI.createGame(selectedColor, isBotMode);
+      const response = await ChessAPI.createGame(selectedColor, isBotMode, cardsToDraw);
 
       if (response.data?.data?.game_id) {
         const gameUrl = `${window.location.origin}/game/${response.data.data.game_id}`;
@@ -360,17 +361,22 @@ export const PlayPage: React.FC = () => {
           zIndex: 1,
           maxWidth: "1280px",
           margin: "0 auto",
-          padding: "32px 16px",
+          padding: "24px 16px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          height: "calc(100vh - 64px)",
+          overflowY: "auto",
         }}
       >
-        <div style={{ marginBottom: "32px" }}>
-          <motion.div
+        <div style={{ marginBottom: "24px" }}>
+          {/* <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             style={{
               textAlign: "center",
-              marginBottom: "48px",
+              marginBottom: "32px",
             }}
           >
             <div
@@ -378,7 +384,7 @@ export const PlayPage: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "16px",
+                gap: "8px",
                 marginBottom: "24px",
                 flexWrap: "wrap",
               }}
@@ -397,8 +403,8 @@ export const PlayPage: React.FC = () => {
               >
                 <Crown
                   style={{
-                    width: "48px",
-                    height: "48px",
+                    width: "36px",
+                    height: "36px",
                     color: "#667eea",
                     filter: "drop-shadow(0 4px 8px rgba(102, 126, 234, 0.4))",
                   }}
@@ -406,8 +412,8 @@ export const PlayPage: React.FC = () => {
               </motion.div>
               <h1
                 style={{
-                  fontSize: "clamp(24px, 6vw, 48px)",
-                  fontWeight: "800",
+                  fontSize: "clamp(20px, 5vw, 36px)",
+                  fontWeight: "700",
                   color: isDark ? "#f9fafb" : "#1f2937",
                   margin: 0,
                   letterSpacing: "-0.5px",
@@ -430,8 +436,8 @@ export const PlayPage: React.FC = () => {
               >
                 <Swords
                   style={{
-                    width: "48px",
-                    height: "48px",
+                    width: "36px",
+                    height: "36px",
                     color: "#a855f7",
                     filter: "drop-shadow(0 4px 8px rgba(168, 85, 247, 0.4))",
                   }}
@@ -449,13 +455,14 @@ export const PlayPage: React.FC = () => {
             >
               Create a game and share the link with a friend to start playing
             </p>
-          </motion.div>
+          </motion.div> */}
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: "32px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+              gap: "24px",
+              justifyItems: "stretch",
             }}
           >
             {/* Game Creation */}
@@ -473,7 +480,10 @@ export const PlayPage: React.FC = () => {
                   ? "0 8px 32px rgba(0, 0, 0, 0.3)"
                   : "0 8px 32px rgba(102, 126, 234, 0.15)",
                 border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(102, 126, 234, 0.2)"}`,
-                padding: "32px",
+                padding: "24px",
+                maxWidth: user ? "none" : "480px",
+                margin: user ? "0" : "0 auto",
+                width: "100%",
               }}
             >
               <div
@@ -796,6 +806,98 @@ export const PlayPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Cards to Draw Selection */}
+              <div style={{ marginBottom: "24px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: isDark ? "#f9fafb" : "#1f2937",
+                    marginBottom: "12px",
+                  }}
+                >
+                  Cards to Draw Per Turn
+                </label>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(5, 1fr)",
+                    gap: "8px",
+                  }}
+                >
+                  {[1, 2, 3, 4, 5].map((count) => (
+                    <button
+                      key={count}
+                      onClick={() => setCardsToDrawCount(count)}
+                      style={{
+                        padding: "12px",
+                        borderRadius: "12px",
+                        border:
+                          cardsToDraw === count
+                            ? "2px solid #667eea"
+                            : `2px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
+                        background:
+                          cardsToDraw === count
+                            ? isDark
+                              ? "rgba(102, 126, 234, 0.15)"
+                              : "rgba(102, 126, 234, 0.1)"
+                            : "transparent",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        transform: cardsToDraw === count ? "scale(1.05)" : "scale(1)",
+                        boxShadow:
+                          cardsToDraw === count
+                            ? "0 4px 12px rgba(102, 126, 234, 0.3)"
+                            : "none",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (cardsToDraw !== count) {
+                          e.currentTarget.style.borderColor = "rgba(102, 126, 234, 0.5)";
+                          e.currentTarget.style.background = isDark
+                            ? "rgba(102, 126, 234, 0.05)"
+                            : "rgba(102, 126, 234, 0.05)";
+                          e.currentTarget.style.transform = "scale(1.02)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (cardsToDraw !== count) {
+                          e.currentTarget.style.borderColor = isDark
+                            ? "rgba(255, 255, 255, 0.1)"
+                            : "#e5e7eb";
+                          e.currentTarget.style.background = "transparent";
+                          e.currentTarget.style.transform = "scale(1)";
+                        }
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "700",
+                          color:
+                            cardsToDraw === count
+                              ? "#667eea"
+                              : isDark
+                                ? "#f9fafb"
+                                : "#1f2937",
+                        }}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: isDark ? "#9ca3af" : "#6b7280",
+                    marginTop: "6px",
+                  }}
+                >
+                  Players draw {cardsToDraw} card{cardsToDraw > 1 ? "s" : ""} per turn and can play any move from the drawn cards
+                </p>
+              </div>
+
               <button
                 onClick={handleCreateGame}
                 disabled={creatingGame}
@@ -907,7 +1009,7 @@ export const PlayPage: React.FC = () => {
             </motion.div>
 
             {/* Join Existing Games */}
-            <motion.div
+            {user && <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -921,7 +1023,8 @@ export const PlayPage: React.FC = () => {
                   ? "0 8px 32px rgba(0, 0, 0, 0.3)"
                   : "0 8px 32px rgba(168, 85, 247, 0.15)",
                 border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(168, 85, 247, 0.2)"}`,
-                padding: "32px",
+                padding: "24px",
+                width: "100%",
               }}
             >
               <div
@@ -1226,7 +1329,7 @@ export const PlayPage: React.FC = () => {
                   <span>View All Games</span>
                 </button>
               )}
-            </motion.div>
+            </motion.div> }
           </div>
         </div>
       </main>

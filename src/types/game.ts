@@ -21,7 +21,8 @@ export interface PlayingCard {
 }
 
 export interface MoveHistory {
-  card: PlayingCard;
+  cards: PlayingCard[]; // Multiple cards drawn
+  usedCard: PlayingCard; // Which card was actually used for this move
   move?: {
     from: string;
     to: string;

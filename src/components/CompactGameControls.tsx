@@ -15,7 +15,8 @@ import { MAX_CHECK_ATTEMPTS } from "../hooks/useCardChess";
 import { useTheme } from "../contexts/ThemeContext";
 
 interface CompactGameControlsProps {
-  currentCard: PlayingCard | null;
+  currentCards: PlayingCard[];
+  cardsToDrawCount: number;
   noValidCard: boolean;
   isInCheck: boolean;
   checkAttempts: number;
@@ -37,7 +38,8 @@ function getCardMeaning(card: PlayingCard): string {
 }
 
 export function CompactGameControls({
-  currentCard,
+  currentCards,
+  cardsToDrawCount,
   isInCheck,
   checkAttempts,
   onDrawCard,
@@ -308,7 +310,7 @@ export function CompactGameControls({
           )}
         </AnimatePresence>
 
-        {/* Card Section */}
+        {/* Current Card */}
         <div style={{
           background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'white',
           borderRadius: '16px',
@@ -330,7 +332,7 @@ export function CompactGameControls({
             alignItems: 'center',
             flexShrink: 0
           }}>
-            <span style={{ fontWeight: '700', fontSize: '12px', color: 'white' }}>Current Card</span>
+            <span style={{ fontWeight: '700', fontSize: '12px', color: 'white' }}>Current Cards ({currentCards.length})</span>
           </div>
           <div style={{
             padding: '16px',
@@ -338,12 +340,13 @@ export function CompactGameControls({
             alignItems: 'center',
             justifyContent: 'center',
             flex: 1,
-            minHeight: 0
+            minHeight: 0,
+            overflowX: 'auto'
           }}>
             <AnimatePresence mode="wait">
-              {currentCard ? (
+              {currentCards && currentCards.length > 0 ? (
                 <motion.div
-                  key="card"
+                  key="cards"
                   initial={{ rotateY: 90, opacity: 0 }}
                   animate={{ rotateY: 0, opacity: 1 }}
                   exit={{ rotateY: -90, opacity: 0 }}
@@ -351,128 +354,103 @@ export function CompactGameControls({
                   style={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
                     gap: '16px',
-                    maxWidth: '400px'
+                    width: '100%',
+                    overflowX: 'auto',
+                    paddingBottom: '8px'
                   }}
                 >
-                  {/* Card */}
-                  <div style={{
-                    position: 'relative',
-                    background: 'white',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    padding: '16px',
-                    border: `3px solid ${currentCard.color === "red" ? '#ef4444' : '#111827'}`,
-                    width: '140px',
-                    height: '196px',
-                    aspectRatio: '2.5/3.5',
-                    flexShrink: 0
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      lineHeight: 1,
-                      color: currentCard.color === "red" ? '#dc2626' : '#111827'
-                    }}>
-                      <span style={{ fontSize: '20px', fontWeight: '900' }}>
-                        {currentCard.value}
-                      </span>
-                      <span style={{ fontSize: '24px' }}>
-                        {SUIT_SYMBOLS[currentCard.suit]}
-                      </span>
-                    </div>
+                  {/* Display all drawn cards - original detailed style */}
+                  {currentCards.map((card, index) => (
+                    <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <div
+                        style={{
+                          position: 'relative',
+                          background: 'white',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                          padding: '16px',
+                          border: `3px solid ${card.color === "red" ? '#ef4444' : '#111827'}`,
+                          width: '140px',
+                          height: '196px',
+                          aspectRatio: '2.5/3.5',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {/* Top-left corner */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          left: '8px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          lineHeight: 1,
+                          color: card.color === "red" ? '#dc2626' : '#111827'
+                        }}>
+                          <span style={{ fontSize: '20px', fontWeight: '900' }}>
+                            {card.value}
+                          </span>
+                          <span style={{ fontSize: '24px' }}>
+                            {SUIT_SYMBOLS[card.suit]}
+                          </span>
+                        </div>
 
-                    <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: currentCard.color === "red" ? '#dc2626' : '#111827'
-                    }}>
-                      <span style={{ fontSize: '48px' }}>
-                        {SUIT_SYMBOLS[currentCard.suit]}
-                      </span>
-                    </div>
+                        {/* Center symbol */}
+                        <div style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: card.color === "red" ? '#dc2626' : '#111827'
+                        }}>
+                          <span style={{ fontSize: '48px' }}>
+                            {SUIT_SYMBOLS[card.suit]}
+                          </span>
+                        </div>
 
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '8px',
-                      right: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      transform: 'rotate(180deg)',
-                      lineHeight: 1,
-                      color: currentCard.color === "red" ? '#dc2626' : '#111827'
-                    }}>
-                      <span style={{ fontSize: '20px', fontWeight: '900' }}>
-                        {currentCard.value}
-                      </span>
-                      <span style={{ fontSize: '24px' }}>
-                        {SUIT_SYMBOLS[currentCard.suit]}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Meaning & Warning */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flex: 1,
-                    gap: '12px',
-                    minWidth: 0
-                  }}>
-                    <div style={{
-                      padding: '12px',
-                      background: 'linear-gradient(90deg, #dbeafe 0%, #fae8ff 100%)',
-                      border: '2px solid #bfdbfe',
-                      borderRadius: '12px',
-                      width: '100%'
-                    }}>
-                      <p style={{
-                        fontSize: '12px',
-                        color: '#1e3a8a',
-                        fontWeight: '700',
-                        textAlign: 'center'
+                        {/* Bottom-right corner */}
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '8px',
+                          right: '8px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          transform: 'rotate(180deg)',
+                          lineHeight: 1,
+                          color: card.color === "red" ? '#dc2626' : '#111827'
+                        }}>
+                          <span style={{ fontSize: '20px', fontWeight: '900' }}>
+                            {card.value}
+                          </span>
+                          <span style={{ fontSize: '24px' }}>
+                            {SUIT_SYMBOLS[card.suit]}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Card Meaning Hint */}
+                      <div style={{
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: isDark ? '#9ca3af' : '#4b5563',
+                        textAlign: 'center',
+                        maxWidth: '140px',
+                        minHeight: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        {getCardMeaning(currentCard)}
-                      </p>
+                        {getCardMeaning(card)}
+                      </div>
                     </div>
-
-                    {noValidCard && (
-                      <AnimatePresence>
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.8 }}
-                          style={{ textAlign: 'center' }}
-                        >
-                          <p style={{
-                            display: 'inline-block',
-                            fontSize: '12px',
-                            color: '#dc2626',
-                            fontWeight: '700',
-                            background: '#fef2f2',
-                            border: '2px solid #fecaca',
-                            borderRadius: '9999px',
-                            padding: '8px 16px'
-                          }}>
-                            ⚠️ No valid moves
-                          </p>
-                        </motion.div>
-                      </AnimatePresence>
-                    )}
-                  </div>
+                  ))}
                 </motion.div>
               ) : (
                 <motion.div
@@ -530,6 +508,36 @@ export function CompactGameControls({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
+          {/* Cards to Draw Display (Read-only) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '10px 16px',
+            background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)',
+            borderRadius: '12px',
+            border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'}`
+          }}>
+            <span style={{
+              fontSize: '12px',
+              fontWeight: '600',
+              color: isDark ? '#d8b4fe' : '#7c3aed',
+            }}>
+              📋 Cards per turn:
+            </span>
+            <span style={{
+              fontSize: '14px',
+              fontWeight: '700',
+              color: isDark ? '#d8b4fe' : '#6d28d9',
+              background: isDark ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.1)',
+              padding: '4px 10px',
+              borderRadius: '8px'
+            }}>
+              {cardsToDrawCount}
+            </span>
+          </div>
+
           <button
             onClick={onDrawCard}
             disabled={!canDrawCard}
@@ -568,7 +576,7 @@ export function CompactGameControls({
               {userColor === currentPlayer ?
                 canDrawCard ? (
                   <>
-                    <Play style={{ width: '20px', height: '20px' }} /> Draw Card
+                    <Play style={{ width: '20px', height: '20px' }} /> Draw {cardsToDrawCount > 1 ? `${cardsToDrawCount} Cards` : 'Card'}
                   </>
                 ) : (
                   "Make Your Move"

@@ -12,7 +12,8 @@ const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 export interface GameState {
   deck: PlayingCard[];
-  currentCard: PlayingCard | null;
+  currentCards: PlayingCard[]; // Array of multiple cards
+  cardsToDrawCount: number; // How many cards to draw (1-5)
   currentPlayer: "white" | "black";
   userColor: "white" | "black";
   isPlayerInGame: boolean;
@@ -107,6 +108,29 @@ function getAnyValidMoveForSelectedCard(game: Chess, card: PlayingCard) {
   });
 }
 
+// Get valid moves for ANY of the multiple cards
+function getValidMovesForMultipleCards(game: Chess, cards: PlayingCard[]) {
+  if (!cards || cards.length === 0) return [] as Move[];
+  const allMoves = game.moves({ verbose: true }) as Move[];
+  const validMovesSet = new Set<string>();
+
+  // For each card, find valid moves and add them to set
+  for (const card of cards) {
+    const movesForCard = allMoves.filter((move) => {
+      if (!move) return false;
+      const sideToMove = game.turn();
+      if (move.color !== sideToMove) return false;
+      return checkMove(move, card);
+    });
+    movesForCard.forEach((move) => {
+      validMovesSet.add(`${move.from}${move.to}`);
+    });
+  }
+
+  // Return unique moves
+  return allMoves.filter((move) => validMovesSet.has(`${move.from}${move.to}`));
+}
+
 export function useCardChess(
   game: ChessGame | null,
   options: UseCardChessOptions
@@ -119,7 +143,8 @@ export function useCardChess(
   const versionRef = useRef(game?.version || 0);
   const [gameState, setGameState] = useState<GameState>(() => ({
     deck: game?.game_state?.cards_deck || createDeck(),
-    currentCard: game?.game_state?.current_card || null,
+    currentCards: game?.game_state?.current_cards || [],
+    cardsToDrawCount: game?.cards_to_draw || 1,
     currentPlayer: "white",
     userColor: "white",
     isPlayerInGame: game
@@ -154,10 +179,11 @@ export function useCardChess(
         game.player_white === userId || game.player_black === userId;
       const isInCheck = gameRef.current.inCheck();
       let moves: Move[] = [];
-      if (game.game_state.current_card) {
-        moves = getAnyValidMoveForSelectedCard(
+      if (game.game_state.current_cards && game.game_state.current_cards.length > 0) {
+        // Get valid moves for ANY of the current cards
+        moves = getValidMovesForMultipleCards(
           gameRef.current,
-          game.game_state.current_card
+          game.game_state.current_cards
         );
       }
       setGameState((prev) => ({
@@ -174,7 +200,8 @@ export function useCardChess(
         version: newGameVersion,
         userColor: game.player_white === userId ? "white" : "black",
         isPlayerInGame,
-        currentCard: game.game_state.current_card || null,
+        currentCards: game.game_state.current_cards || [],
+        cardsToDrawCount: game.cards_to_draw || 1,
         cardsRemaining: (game.game_state.cards_deck || []).length,
         validMoves: moves,
       }));
@@ -187,7 +214,7 @@ export function useCardChess(
     async (
       fen: string,
       turn: "white" | "black",
-      current_card: PlayingCard | null,
+      current_cards: PlayingCard[] | null,
       cards_deck: PlayingCard[] | null,
       check_attempts: number,
       moves: MoveHistory[],
@@ -203,7 +230,7 @@ export function useCardChess(
           {
             fen,
             turn,
-            current_card,
+            current_cards,
             cards_deck: cards_deck == null ? undefined : cards_deck,
             check_attempts,
             moves,
@@ -215,13 +242,13 @@ export function useCardChess(
         const responseGame = response.data.data;
         if (responseGame.version > versionRef.current) {
           versionRef.current = responseGame.version;
-          const backendCard = responseGame.game_state.current_card;
+          const backendCards = responseGame.game_state.current_cards || [];
           gameRef.current.load(responseGame.game_state.fen);
           let moves = [] as Move[];
-          if (backendCard) {
-            moves = getAnyValidMoveForSelectedCard(
+          if (backendCards.length > 0) {
+            moves = getValidMovesForMultipleCards(
               gameRef.current,
-              backendCard
+              backendCards
             );
           }
           setGameState((prev) => ({
@@ -230,7 +257,7 @@ export function useCardChess(
             isInCheck: gameRef.current.inCheck(),
             currentPlayer: responseGame.game_state.turn,
             moveHistory: responseGame.game_state.moves || [],
-            currentCard: backendCard || null,
+            currentCards: backendCards,
             fromMoveSelected: null,
             validMoves: moves,
             deck: responseGame.game_state.cards_deck || [],
@@ -248,11 +275,11 @@ export function useCardChess(
 
   useEffect(() => {
     if (
-      gameState.currentCard
+      gameState.currentCards && gameState.currentCards.length > 0
     ) {
-      const moves = getAnyValidMoveForSelectedCard(
+      const moves = getValidMovesForMultipleCards(
         gameRef.current,
-        gameState.currentCard
+        gameState.currentCards
       );
       setGameState((prev) => ({
         ...prev,
@@ -260,18 +287,18 @@ export function useCardChess(
         noValidCard: moves.length === 0,
       }));
     }
-  }, [gameState.currentCard, gameState.userColor, gameState.currentPlayer]);
+  }, [gameState.currentCards, gameState.userColor, gameState.currentPlayer]);
 
   useEffect(() => {
-    if (gameState.deck.length < 5) {
+    if (gameState.deck.length < 10) {
       const shuffled = shuffleDeck(createDeck());
       setGameState((prev) => ({ ...prev, deck: [...prev.deck, ...shuffled] }));
     }
   }, [gameState.deck]);
 
-  // Helper function to check if current card allows any valid moves
+  // Helper function to check if any of the drawn cards allow valid moves
   const checkForValidMoves = useCallback(
-    (card: PlayingCard, player: "white" | "black") => {
+    (cards: PlayingCard[], player: "white" | "black") => {
       const game = gameRef.current;
       const pieces = game
         .board()
@@ -280,11 +307,14 @@ export function useCardChess(
           (piece) => piece && piece.color === (player === "white" ? "w" : "b")
         );
 
+      // Check if ANY piece can make a move with ANY of the cards
       for (const piece of pieces) {
         if (piece && piece.square) {
-          const moves = getValidMovesForCard(game, piece.square, card, player);
-          if (moves.length > 0) {
-            return true;
+          for (const card of cards) {
+            const moves = getValidMovesForCard(game, piece.square, card, player);
+            if (moves.length > 0) {
+              return true;
+            }
           }
         }
       }
@@ -294,28 +324,41 @@ export function useCardChess(
   );
 
   const drawCard = useCallback(() => {
-    if (gameState.deck.length === 0 || gameState.gameOver) return;
+    if (gameState.gameOver) return;
+    if (gameState.deck.length < gameState.cardsToDrawCount) return;
 
     const newDeck = [...gameState.deck];
-    const card = newDeck.pop();
-    if (card) {
-      setGameState((prev) => ({ ...prev, currentCard: card, deck: newDeck }));
+    const drawnCards: PlayingCard[] = [];
+    
+    // Draw X cards
+    for (let i = 0; i < gameState.cardsToDrawCount; i++) {
+      const card = newDeck.pop();
+      if (card) {
+        drawnCards.push(card);
+      }
+    }
 
-      const hasValidMoves = checkForValidMoves(card, gameState.currentPlayer);
+    if (drawnCards.length > 0) {
+      setGameState((prev) => ({ ...prev, currentCards: drawnCards, deck: newDeck }));
+
+      const hasValidMoves = checkForValidMoves(drawnCards, gameState.currentPlayer);
       let newAttempts = gameState.checkAttempts;
       let newMoveHistory = [...gameState.moveHistory];
       let winner: "white" | "black" | "draw" | null = null;
+      
       if (!hasValidMoves) {
         setGameState((prev) => ({ ...prev, noValidCard: true }));
         newMoveHistory = [
           ...newMoveHistory,
           {
-            card: card,
+            cards: drawnCards,
+            usedCard: drawnCards[0],
             player: gameState.currentPlayer,
             isFailedAttempt: true,
           },
         ];
         setGameState((prev) => ({ ...prev, moveHistory: newMoveHistory }));
+        
         if (
           gameState.isInCheck &&
           gameState.checkAttempts < MAX_CHECK_ATTEMPTS
@@ -337,7 +380,7 @@ export function useCardChess(
       syncWithBackend(
         gameRef.current.fen(),
         gameState.currentPlayer,
-        card,
+        drawnCards,
         newDeck,
         newAttempts,
         newMoveHistory,
@@ -354,6 +397,7 @@ export function useCardChess(
     gameState.checkAttempts,
     gameState.moveHistory,
     gameState.version,
+    gameState.cardsToDrawCount,
     syncWithBackend,
     checkForValidMoves,
   ]);
@@ -364,7 +408,7 @@ export function useCardChess(
   }, []);
 
   const updateMove = useCallback(
-    (card: PlayingCard, move: Move) => {
+    (usedCard: PlayingCard, move: Move) => {
       if (gameState.gameOver) return;
 
       const newMoveHistory = [
@@ -375,7 +419,8 @@ export function useCardChess(
             to: move.to,
             piece: move.piece,
           },
-          card: card,
+          cards: gameState.currentCards,
+          usedCard: usedCard,
           player: gameState.currentPlayer,
         },
       ];
@@ -403,7 +448,7 @@ export function useCardChess(
         checkAttempts: 0,
         fromMoveSelected: null,
         validMoves: [],
-        currentCard: null,
+        currentCards: [],
         moveHistory: newMoveHistory,
         isInCheck: opponentInCheck,
         currentPlayer: nextPlayer,
@@ -433,7 +478,7 @@ export function useCardChess(
   );
 
   const chessMakeMove = useCallback(
-    (fromSquare: Square, toSquare: Square, promotion: string) => {
+    (fromSquare: Square, toSquare: Square, promotion: string, usedCard: PlayingCard) => {
       try {
         const mv = gameRef.current.move({
           from: fromSquare,
@@ -441,38 +486,59 @@ export function useCardChess(
           promotion,
         });
 
-        if (!gameState.currentCard) {
-          console.error("Current Card is not selected");
+        if (!gameState.currentCards || gameState.currentCards.length === 0) {
+          console.error("No current cards selected");
           return false;
         }
 
-        updateMove(gameState.currentCard, mv);
+        updateMove(usedCard, mv);
         return true;
       } catch (e) {
         console.error("Invalid move attempt:", e);
         return false;
       }
     },
-    [gameState.currentCard, updateMove, gameState.isInCheck]
+    [gameState.currentCards, updateMove, gameState.isInCheck]
   );
 
   const handleSquareClick = useCallback(
     (square: Square, piece: any | null) => {
-      if (gameState.gameOver || !gameState.currentCard) return;
+      if (gameState.gameOver || !gameState.currentCards || gameState.currentCards.length === 0) return;
 
       if (gameState.fromMoveSelected) {
-        const validMovesForSelection = getValidMovesForCard(
-          gameRef.current,
-          gameState.fromMoveSelected,
-          gameState.currentCard,
-          gameState.currentPlayer
-        );
+        // Find which card allows this move
+        let validCard: PlayingCard | null = null;
+        
+        for (const card of gameState.currentCards) {
+          const validMovesForSelection = getValidMovesForCard(
+            gameRef.current,
+            gameState.fromMoveSelected,
+            card,
+            gameState.currentPlayer
+          );
 
-        const found = validMovesForSelection.some(
-          (m) => m.from === gameState.fromMoveSelected && m.to === square
-        );
-        if (found) {
-          chessMakeMove(gameState.fromMoveSelected, square, "q");
+          const found = validMovesForSelection.some(
+            (m) => m.from === gameState.fromMoveSelected && m.to === square
+          );
+          if (found) {
+            validCard = card;
+            break;
+          }
+        }
+
+        if (validCard) {
+          chessMakeMove(gameState.fromMoveSelected, square, "q", validCard);
+          return;
+        } else {
+          const moves = getValidMovesForMultipleCards(
+            gameRef.current,
+            gameState.currentCards
+          );
+          setGameState((prev) => ({
+            ...prev,
+            fromMoveSelected: null,
+            validMoves: moves,
+          }));
           return;
         }
       }
@@ -485,11 +551,9 @@ export function useCardChess(
         : null;
       if (clickedPiece && clickedColor === gameState.currentPlayer) {
         setGameState((prev) => ({ ...prev, fromMoveSelected: square }));
-        const moves = getValidMovesForCard(
+        const moves = getValidMovesForMultipleCards(
           gameRef.current,
-          square,
-          gameState.currentCard,
-          gameState.currentPlayer
+          gameState.currentCards
         );
         setGameState((prev) => ({
           ...prev,
@@ -506,7 +570,7 @@ export function useCardChess(
     },
     [
       gameState.fromMoveSelected,
-      gameState.currentCard,
+      gameState.currentCards,
       gameState.currentPlayer,
       gameState.gameOver,
       chessMakeMove,
@@ -515,20 +579,27 @@ export function useCardChess(
 
   const onDrop = useCallback(
     (fromSquare: Square, toSquare: Square) => {
-      if (!gameState.currentCard || gameState.gameOver) return false;
+      if (!gameState.currentCards || gameState.currentCards.length === 0 || gameState.gameOver) return false;
+      
       try {
-        const validMovesForSelection = getValidMovesForCard(
-          gameRef.current,
-          fromSquare,
-          gameState.currentCard,
-          gameState.currentPlayer
-        );
-        const found = validMovesForSelection.some(
-          (m) => m.from === fromSquare && m.to === toSquare
-        );
-        if (found) {
-          return chessMakeMove(fromSquare, toSquare, "q");
+        // Find which card allows this move
+        for (const card of gameState.currentCards) {
+          const validMovesForSelection = getValidMovesForCard(
+            gameRef.current,
+            fromSquare,
+            card,
+            gameState.currentPlayer
+          );
+          
+          const found = validMovesForSelection.some(
+            (m) => m.from === fromSquare && m.to === toSquare
+          );
+          
+          if (found) {
+            return chessMakeMove(fromSquare, toSquare, "q", card);
+          }
         }
+        
         return false;
       } catch (err) {
         console.error("Invalid drop move:", err);
@@ -536,7 +607,7 @@ export function useCardChess(
       }
     },
     [
-      gameState.currentCard,
+      gameState.currentCards,
       gameState.gameOver,
       chessMakeMove,
       gameState.currentPlayer,
@@ -544,11 +615,11 @@ export function useCardChess(
   );
 
   const playRandomValidMove = useCallback(() => {
-    if (!gameState.currentCard || gameState.gameOver) return false;
+    if (!gameState.currentCards || gameState.currentCards.length === 0 || gameState.gameOver) return false;
 
-    const possibleMoves = getAnyValidMoveForSelectedCard(
+    const possibleMoves = getValidMovesForMultipleCards(
       gameRef.current,
-      gameState.currentCard
+      gameState.currentCards
     );
 
     if (possibleMoves.length === 0) return false;
@@ -556,8 +627,26 @@ export function useCardChess(
     const randomMove =
       possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
-    return chessMakeMove(randomMove.from as Square, randomMove.to as Square, "q");
-  }, [gameState.currentCard, gameState.gameOver, chessMakeMove]);
+    // Find which card allows this move
+    for (const card of gameState.currentCards) {
+      const validMovesForCard = getValidMovesForCard(
+        gameRef.current,
+        randomMove.from as Square,
+        card,
+        gameState.currentPlayer
+      );
+      
+      const found = validMovesForCard.some(
+        (m) => m.from === randomMove.from && m.to === randomMove.to
+      );
+      
+      if (found) {
+        return chessMakeMove(randomMove.from as Square, randomMove.to as Square, "q", card);
+      }
+    }
+    
+    return false;
+  }, [gameState.currentCards, gameState.gameOver, chessMakeMove, gameState.currentPlayer]);
 
   useEffect(() => {
     if (!gameId || !userId) return;
@@ -573,14 +662,14 @@ export function useCardChess(
         
         if (versionChanged || statusChanged) {
           versionRef.current = latestGame.version;
-          const backendCard = latestGame.game_state.current_card;
+          const backendCards = latestGame.game_state.current_cards || [];
           
           gameRef.current.load(latestGame.game_state.fen);
           let moves = [] as Move[];
-          if (backendCard) {
-            moves = getAnyValidMoveForSelectedCard(
+          if (backendCards.length > 0) {
+            moves = getValidMovesForMultipleCards(
               gameRef.current,
-              backendCard
+              backendCards
             );
           }
           
@@ -591,7 +680,7 @@ export function useCardChess(
             isInCheck: gameRef.current.inCheck(),
             currentPlayer: latestGame.game_state.turn,
             moveHistory: latestGame.game_state.moves || [],
-            currentCard: backendCard || null,
+            currentCards: backendCards,
             fromMoveSelected: null,
             validMoves: moves,
             deck: latestGame.game_state.cards_deck || [],
@@ -625,7 +714,7 @@ export function useCardChess(
     const canDraw =
       gameState.isPlayerInGame &&
       gameState.userColor === gameState.currentPlayer &&
-      (!gameState.currentCard || gameState.noValidCard) &&
+      (gameState.currentCards.length === 0 || gameState.noValidCard) &&
       !gameState.gameOver &&
       gameState.gameStatus === "active";
     setGameState((prev) => ({ ...prev, canDrawCard: canDraw }));
@@ -633,7 +722,7 @@ export function useCardChess(
     gameState.currentPlayer,
     gameState.userColor,
     gameState.isPlayerInGame,
-    gameState.currentCard,
+    gameState.currentCards,
     gameState.noValidCard,
     gameState.gameOver,
     gameState.gameStatus,

@@ -29,6 +29,7 @@ export interface ChessGame {
   player_black: string;
   is_vs_bot?: boolean;
   version: number;
+  cards_to_draw: number; // Number of cards to draw (1-5)
   game_state: {
     fen: string;
     pgn?: string;
@@ -37,7 +38,7 @@ export interface ChessGame {
     winner?: 'white' | 'black' | 'draw';
     moves: MoveHistory[];
     check_attempts?: number;
-    current_card?: PlayingCard;
+    current_cards?: PlayingCard[]; // Array of currently held cards
     cards_deck?: PlayingCard[];
   };
   createdAt?: string;
@@ -48,6 +49,7 @@ export interface ChessGame {
 export interface CreateGameRequest {
   color: 'white' | 'black';
   is_vs_bot?: boolean;
+  cards_to_draw?: number; // 1-5, default 1
 }
 
 export interface UpdateGameStateRequest {
@@ -57,7 +59,7 @@ export interface UpdateGameStateRequest {
   status?: 'active' | 'completed' | 'abandoned';
   winner?: 'white' | 'black' | 'draw';
   moves?: MoveHistory[];
-  current_card: PlayingCard | null;
+  current_cards: PlayingCard[] | null;
   cards_deck?: PlayingCard[];
   check_attempts?: number;
   is_in_check?: boolean;
@@ -302,12 +304,12 @@ export const logout = async () => {
 // Chess API functions with enhanced error handling and loading states
 export class ChessAPI {
   // Create a new chess game
-  static async createGame(color: 'white' | 'black', isVsBot: boolean = false): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+  static async createGame(color: 'white' | 'black', isVsBot: boolean = false, cardsToDrawCount: number = 1): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
       const appStore = useAppStore.getState();
       appStore.setLoading(true, 'Creating game...');
 
-      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { color, is_vs_bot: isVsBot });
+      const response = await api.post<ApiResponse<ChessGame>>('/chess/create', { color, is_vs_bot: isVsBot, cards_to_draw: cardsToDrawCount });
 
       appStore.setLoading(false);
       appStore.addNotification({

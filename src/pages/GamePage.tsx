@@ -251,7 +251,8 @@ export const GamePage: React.FC = () => {
       if (!stillBotTurn) return;
 
       if (
-        !gameState.currentCard ||
+        !gameState.currentCards ||
+        gameState.currentCards.length === 0 ||
         gameState.noValidCard ||
         gameState.validMoves.length === 0
       ) {
@@ -276,7 +277,7 @@ export const GamePage: React.FC = () => {
     gameState.gameOver,
     gameState.currentPlayer,
     gameState.userColor,
-    gameState.currentCard,
+    gameState.currentCards,
     gameState.noValidCard,
     gameState.validMoves.length,
     drawCard,
@@ -761,7 +762,7 @@ export const GamePage: React.FC = () => {
                 onSquareClick={handleSquareClick}
                 currentPlayer={gameState.currentPlayer}
                 canMove={
-                  gameState.currentCard !== null &&
+                  gameState.currentCards.length > 0 &&
                   gameState.gameOver === false &&
                   isPlayerInGame === true &&
                   gameState.currentPlayer === gameState.userColor
@@ -811,7 +812,8 @@ export const GamePage: React.FC = () => {
               }}
             >
               <CompactGameControls
-                currentCard={gameState.currentCard}
+                currentCards={gameState.currentCards}
+                cardsToDrawCount={gameState.cardsToDrawCount}
                 cardsRemaining={gameState.cardsRemaining}
                 isInCheck={gameState.isInCheck}
                 checkAttempts={gameState.checkAttempts}
