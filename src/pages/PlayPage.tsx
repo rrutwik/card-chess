@@ -15,13 +15,14 @@ import { ChessAPI, ChessGame } from "../services/api";
 import { Header } from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { getSessionIdentity } from "../utils/sessionIdentity";
+import { getSessionIdentity, SessionIdentity } from "../utils/sessionIdentity";
 import { logger } from "../utils/logger";
 
 export const PlayPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const sessionIdentity = getSessionIdentity(user);
+  const [sessionIdentity, setSessionIdentity] =
+    useState<SessionIdentity | null>(null);
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
   const [games, setGames] = useState<ChessGame[]>([]);
@@ -38,6 +39,18 @@ export const PlayPage: React.FC = () => {
     logger.info("PlayPage: Mounted");
     loadGames();
   }, []);
+
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        const sessionIdentity = await getSessionIdentity(user);
+        setSessionIdentity(sessionIdentity);
+      } catch (err) {
+        logger.error("Failed to initialize session identity:", err);
+      }
+    };
+    initializeSession();
+  }, [user]);
 
   const loadGames = async () => {
     try {
@@ -61,12 +74,14 @@ export const PlayPage: React.FC = () => {
   const handleCreateGame = async () => {
     try {
       const isBotMode = selectedMode === "bot";
+      if (!sessionIdentity) {
+        return;
+      }
       await new Promise(async (resolve) => {
-        const temp = await sessionIdentity;
         logger.info("PlayPage: Creating new game", {
           color: selectedColor,
           mode: selectedMode,
-          sessionType: temp.type,
+          sessionType: sessionIdentity.type,
         });
         resolve(true);
       });
@@ -74,7 +89,11 @@ export const PlayPage: React.FC = () => {
       setCreatingGame(true);
 
       // Create game with current user and selected color
-      const response = await ChessAPI.createGame(selectedColor, isBotMode, cardsToDraw);
+      const response = await ChessAPI.createGame(
+        selectedColor,
+        isBotMode,
+        cardsToDraw,
+      );
 
       if (response.data?.data?.game_id) {
         const gameUrl = `${window.location.origin}/game/${response.data.data.game_id}`;
@@ -845,7 +864,8 @@ export const PlayPage: React.FC = () => {
                             : "transparent",
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                        transform: cardsToDraw === count ? "scale(1.05)" : "scale(1)",
+                        transform:
+                          cardsToDraw === count ? "scale(1.05)" : "scale(1)",
                         boxShadow:
                           cardsToDraw === count
                             ? "0 4px 12px rgba(102, 126, 234, 0.3)"
@@ -853,7 +873,8 @@ export const PlayPage: React.FC = () => {
                       }}
                       onMouseEnter={(e) => {
                         if (cardsToDraw !== count) {
-                          e.currentTarget.style.borderColor = "rgba(102, 126, 234, 0.5)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(102, 126, 234, 0.5)";
                           e.currentTarget.style.background = isDark
                             ? "rgba(102, 126, 234, 0.05)"
                             : "rgba(102, 126, 234, 0.05)";
@@ -894,7 +915,8 @@ export const PlayPage: React.FC = () => {
                     marginTop: "6px",
                   }}
                 >
-                  Players draw {cardsToDraw} card{cardsToDraw > 1 ? "s" : ""} per turn and can play any move from the drawn cards
+                  Players draw {cardsToDraw} card{cardsToDraw > 1 ? "s" : ""}{" "}
+                  per turn and can play any move from the drawn cards
                 </p>
               </div>
 
@@ -1009,327 +1031,333 @@ export const PlayPage: React.FC = () => {
             </motion.div>
 
             {/* Join Existing Games */}
-            {user && <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              style={{
-                background: isDark
-                  ? "rgba(255, 255, 255, 0.05)"
-                  : "rgba(255, 255, 255, 0.9)",
-                backdropFilter: "blur(10px)",
-                borderRadius: "24px",
-                boxShadow: isDark
-                  ? "0 8px 32px rgba(0, 0, 0, 0.3)"
-                  : "0 8px 32px rgba(168, 85, 247, 0.15)",
-                border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(168, 85, 247, 0.2)"}`,
-                padding: "24px",
-                width: "100%",
-              }}
-            >
-              <div
+            {user && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "24px",
+                  background: isDark
+                    ? "rgba(255, 255, 255, 0.05)"
+                    : "rgba(255, 255, 255, 0.9)",
+                  backdropFilter: "blur(10px)",
+                  borderRadius: "24px",
+                  boxShadow: isDark
+                    ? "0 8px 32px rgba(0, 0, 0, 0.3)"
+                    : "0 8px 32px rgba(168, 85, 247, 0.15)",
+                  border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(168, 85, 247, 0.2)"}`,
+                  padding: "24px",
+                  width: "100%",
                 }}
               >
-                <Users
-                  style={{ width: "32px", height: "32px", color: "#a855f7" }}
-                />
-                <h2
+                <div
                   style={{
-                    fontSize: "24px",
-                    fontWeight: "700",
-                    color: isDark ? "#f9fafb" : "#1f2937",
-                    margin: 0,
-                  }}
-                >
-                  Join Game
-                </h2>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }}
-              >
-                {waitingGames.length === 0 && activeGames.length === 0 ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "32px 0",
-                    }}
-                  >
-                    <GamepadIcon
-                      style={{
-                        width: "64px",
-                        height: "64px",
-                        color: isDark ? "#4b5563" : "#9ca3af",
-                        margin: "0 auto 16px",
-                      }}
-                    />
-                    <p
-                      style={{
-                        color: isDark ? "#9ca3af" : "#6b7280",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      No games available to join
-                    </p>
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: isDark ? "#6b7280" : "#9ca3af",
-                        margin: 0,
-                      }}
-                    >
-                      Create a game above and share the link!
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    {waitingGames.length > 0 && (
-                      <>
-                        <h3
-                          style={{
-                            fontWeight: "600",
-                            color: isDark ? "#f9fafb" : "#1f2937",
-                            marginBottom: "12px",
-                            fontSize: "16px",
-                          }}
-                        >
-                          Waiting for Players
-                        </h3>
-                        {waitingGames.slice(0, 3).map((game) => (
-                          <div
-                            key={game._id}
-                            onClick={() => handleJoinGame(game.game_id)}
-                            style={{
-                              padding: "16px",
-                              borderRadius: "16px",
-                              border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
-                              background: "transparent",
-                              cursor: "pointer",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor =
-                                "rgba(102, 126, 234, 0.5)";
-                              e.currentTarget.style.background = isDark
-                                ? "rgba(102, 126, 234, 0.05)"
-                                : "rgba(102, 126, 234, 0.05)";
-                              e.currentTarget.style.transform =
-                                "translateX(4px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = isDark
-                                ? "rgba(255, 255, 255, 0.1)"
-                                : "#e5e7eb";
-                              e.currentTarget.style.background = "transparent";
-                              e.currentTarget.style.transform = "translateX(0)";
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              <h4
-                                style={{
-                                  fontWeight: "700",
-                                  color: isDark ? "#f9fafb" : "#1f2937",
-                                  margin: 0,
-                                  fontSize: "15px",
-                                }}
-                              >
-                                Game {game.game_id.slice(0, 8)}
-                              </h4>
-                              <div
-                                style={{
-                                  padding: "4px 12px",
-                                  borderRadius: "12px",
-                                  fontSize: "12px",
-                                  fontWeight: "500",
-                                  background: isDark
-                                    ? "rgba(34, 197, 94, 0.2)"
-                                    : "rgba(34, 197, 94, 0.1)",
-                                  color: isDark ? "#86efac" : "#16a34a",
-                                }}
-                              >
-                                Waiting
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                color: isDark ? "#9ca3af" : "#6b7280",
-                                marginBottom: "4px",
-                              }}
-                            >
-                              Created by {game.player_white}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                color: isDark ? "#9ca3af" : "#6b7280",
-                              }}
-                            >
-                              Created{" "}
-                              {new Date(
-                                game.createdAt || "",
-                              ).toLocaleDateString()}
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                    {activeGames.length > 0 && (
-                      <>
-                        <h3
-                          style={{
-                            fontWeight: "600",
-                            color: isDark ? "#f9fafb" : "#1f2937",
-                            marginBottom: "12px",
-                            fontSize: "16px",
-                            marginTop: waitingGames.length > 0 ? "8px" : "0",
-                          }}
-                        >
-                          Active Games
-                        </h3>
-                        {activeGames.slice(0, 5).map((game) => (
-                          <div
-                            key={game._id}
-                            onClick={() => handleJoinGame(game.game_id)}
-                            style={{
-                              padding: "16px",
-                              borderRadius: "16px",
-                              border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
-                              background: "transparent",
-                              cursor: "pointer",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor =
-                                "rgba(168, 85, 247, 0.5)";
-                              e.currentTarget.style.background = isDark
-                                ? "rgba(168, 85, 247, 0.05)"
-                                : "rgba(168, 85, 247, 0.05)";
-                              e.currentTarget.style.transform =
-                                "translateX(4px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = isDark
-                                ? "rgba(255, 255, 255, 0.1)"
-                                : "#e5e7eb";
-                              e.currentTarget.style.background = "transparent";
-                              e.currentTarget.style.transform = "translateX(0)";
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              <h4
-                                style={{
-                                  fontWeight: "700",
-                                  color: isDark ? "#f9fafb" : "#1f2937",
-                                  margin: 0,
-                                  fontSize: "15px",
-                                }}
-                              >
-                                Game {game.game_id.slice(0, 8)}
-                              </h4>
-                              <div
-                                style={{
-                                  padding: "4px 12px",
-                                  borderRadius: "12px",
-                                  fontSize: "12px",
-                                  fontWeight: "500",
-                                  background: isDark
-                                    ? "rgba(59, 130, 246, 0.2)"
-                                    : "rgba(59, 130, 246, 0.1)",
-                                  color: isDark ? "#93c5fd" : "#2563eb",
-                                }}
-                              >
-                                Active
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                color: isDark ? "#9ca3af" : "#6b7280",
-                                marginBottom: "4px",
-                              }}
-                            >
-                              {game.player_white} vs {game.player_black}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                color: isDark ? "#9ca3af" : "#6b7280",
-                              }}
-                            >
-                              Current turn: {game.game_state.turn}
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {multiplayerGames.length > 5 && (
-                <button
-                  onClick={() => navigate("/games")}
-                  style={{
-                    width: "100%",
-                    marginTop: "16px",
-                    background: isDark
-                      ? "rgba(168, 85, 247, 0.15)"
-                      : "rgba(168, 85, 247, 0.1)",
-                    color: isDark ? "#f9fafb" : "#1f2937",
-                    padding: "12px 32px",
-                    borderRadius: "12px",
-                    border: `1px solid ${isDark ? "rgba(168, 85, 247, 0.3)" : "rgba(168, 85, 247, 0.2)"}`,
-                    cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = isDark
-                      ? "rgba(168, 85, 247, 0.2)"
-                      : "rgba(168, 85, 247, 0.15)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = isDark
-                      ? "rgba(168, 85, 247, 0.15)"
-                      : "rgba(168, 85, 247, 0.1)";
-                    e.currentTarget.style.transform = "translateY(0)";
+                    gap: "12px",
+                    marginBottom: "24px",
                   }}
                 >
-                  <Search style={{ width: "16px", height: "16px" }} />
-                  <span>View All Games</span>
-                </button>
-              )}
-            </motion.div> }
+                  <Users
+                    style={{ width: "32px", height: "32px", color: "#a855f7" }}
+                  />
+                  <h2
+                    style={{
+                      fontSize: "24px",
+                      fontWeight: "700",
+                      color: isDark ? "#f9fafb" : "#1f2937",
+                      margin: 0,
+                    }}
+                  >
+                    Join Game
+                  </h2>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                  }}
+                >
+                  {waitingGames.length === 0 && activeGames.length === 0 ? (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "32px 0",
+                      }}
+                    >
+                      <GamepadIcon
+                        style={{
+                          width: "64px",
+                          height: "64px",
+                          color: isDark ? "#4b5563" : "#9ca3af",
+                          margin: "0 auto 16px",
+                        }}
+                      />
+                      <p
+                        style={{
+                          color: isDark ? "#9ca3af" : "#6b7280",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        No games available to join
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          color: isDark ? "#6b7280" : "#9ca3af",
+                          margin: 0,
+                        }}
+                      >
+                        Create a game above and share the link!
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {waitingGames.length > 0 && (
+                        <>
+                          <h3
+                            style={{
+                              fontWeight: "600",
+                              color: isDark ? "#f9fafb" : "#1f2937",
+                              marginBottom: "12px",
+                              fontSize: "16px",
+                            }}
+                          >
+                            Waiting for Players
+                          </h3>
+                          {waitingGames.slice(0, 3).map((game) => (
+                            <div
+                              key={game._id}
+                              onClick={() => handleJoinGame(game.game_id)}
+                              style={{
+                                padding: "16px",
+                                borderRadius: "16px",
+                                border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
+                                background: "transparent",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor =
+                                  "rgba(102, 126, 234, 0.5)";
+                                e.currentTarget.style.background = isDark
+                                  ? "rgba(102, 126, 234, 0.05)"
+                                  : "rgba(102, 126, 234, 0.05)";
+                                e.currentTarget.style.transform =
+                                  "translateX(4px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = isDark
+                                  ? "rgba(255, 255, 255, 0.1)"
+                                  : "#e5e7eb";
+                                e.currentTarget.style.background =
+                                  "transparent";
+                                e.currentTarget.style.transform =
+                                  "translateX(0)";
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  marginBottom: "8px",
+                                }}
+                              >
+                                <h4
+                                  style={{
+                                    fontWeight: "700",
+                                    color: isDark ? "#f9fafb" : "#1f2937",
+                                    margin: 0,
+                                    fontSize: "15px",
+                                  }}
+                                >
+                                  Game {game.game_id.slice(0, 8)}
+                                </h4>
+                                <div
+                                  style={{
+                                    padding: "4px 12px",
+                                    borderRadius: "12px",
+                                    fontSize: "12px",
+                                    fontWeight: "500",
+                                    background: isDark
+                                      ? "rgba(34, 197, 94, 0.2)"
+                                      : "rgba(34, 197, 94, 0.1)",
+                                    color: isDark ? "#86efac" : "#16a34a",
+                                  }}
+                                >
+                                  Waiting
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "14px",
+                                  color: isDark ? "#9ca3af" : "#6b7280",
+                                  marginBottom: "4px",
+                                }}
+                              >
+                                Created by {game.player_white}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "14px",
+                                  color: isDark ? "#9ca3af" : "#6b7280",
+                                }}
+                              >
+                                Created{" "}
+                                {new Date(
+                                  game.createdAt || "",
+                                ).toLocaleDateString()}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {activeGames.length > 0 && (
+                        <>
+                          <h3
+                            style={{
+                              fontWeight: "600",
+                              color: isDark ? "#f9fafb" : "#1f2937",
+                              marginBottom: "12px",
+                              fontSize: "16px",
+                              marginTop: waitingGames.length > 0 ? "8px" : "0",
+                            }}
+                          >
+                            Active Games
+                          </h3>
+                          {activeGames.slice(0, 5).map((game) => (
+                            <div
+                              key={game._id}
+                              onClick={() => handleJoinGame(game.game_id)}
+                              style={{
+                                padding: "16px",
+                                borderRadius: "16px",
+                                border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
+                                background: "transparent",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor =
+                                  "rgba(168, 85, 247, 0.5)";
+                                e.currentTarget.style.background = isDark
+                                  ? "rgba(168, 85, 247, 0.05)"
+                                  : "rgba(168, 85, 247, 0.05)";
+                                e.currentTarget.style.transform =
+                                  "translateX(4px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = isDark
+                                  ? "rgba(255, 255, 255, 0.1)"
+                                  : "#e5e7eb";
+                                e.currentTarget.style.background =
+                                  "transparent";
+                                e.currentTarget.style.transform =
+                                  "translateX(0)";
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  marginBottom: "8px",
+                                }}
+                              >
+                                <h4
+                                  style={{
+                                    fontWeight: "700",
+                                    color: isDark ? "#f9fafb" : "#1f2937",
+                                    margin: 0,
+                                    fontSize: "15px",
+                                  }}
+                                >
+                                  Game {game.game_id.slice(0, 8)}
+                                </h4>
+                                <div
+                                  style={{
+                                    padding: "4px 12px",
+                                    borderRadius: "12px",
+                                    fontSize: "12px",
+                                    fontWeight: "500",
+                                    background: isDark
+                                      ? "rgba(59, 130, 246, 0.2)"
+                                      : "rgba(59, 130, 246, 0.1)",
+                                    color: isDark ? "#93c5fd" : "#2563eb",
+                                  }}
+                                >
+                                  Active
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "14px",
+                                  color: isDark ? "#9ca3af" : "#6b7280",
+                                  marginBottom: "4px",
+                                }}
+                              >
+                                {game.player_white} vs {game.player_black}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "14px",
+                                  color: isDark ? "#9ca3af" : "#6b7280",
+                                }}
+                              >
+                                Current turn: {game.game_state.turn}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {multiplayerGames.length > 5 && (
+                  <button
+                    onClick={() => navigate("/games")}
+                    style={{
+                      width: "100%",
+                      marginTop: "16px",
+                      background: isDark
+                        ? "rgba(168, 85, 247, 0.15)"
+                        : "rgba(168, 85, 247, 0.1)",
+                      color: isDark ? "#f9fafb" : "#1f2937",
+                      padding: "12px 32px",
+                      borderRadius: "12px",
+                      border: `1px solid ${isDark ? "rgba(168, 85, 247, 0.3)" : "rgba(168, 85, 247, 0.2)"}`,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = isDark
+                        ? "rgba(168, 85, 247, 0.2)"
+                        : "rgba(168, 85, 247, 0.15)";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isDark
+                        ? "rgba(168, 85, 247, 0.15)"
+                        : "rgba(168, 85, 247, 0.1)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <Search style={{ width: "16px", height: "16px" }} />
+                    <span>View All Games</span>
+                  </button>
+                )}
+              </motion.div>
+            )}
           </div>
         </div>
       </main>

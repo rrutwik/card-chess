@@ -17,23 +17,9 @@ export type SessionIdentity = {
   isGuest: boolean;
 };
 
-function getUserIdFromStorage(): string | null {
-  if (typeof window === "undefined") return null;
-
-  const rawUser = localStorage.getItem(USER_DATA_STORAGE_KEY);
-  if (!rawUser) return null;
-
-  try {
-    const parsed = JSON.parse(rawUser) as { _id?: string };
-    return parsed?._id || null;
-  } catch {
-    return null;
-  }
-}
-
 export function getAuthenticatedUserId(user: UserLike): string | null {
   if (user?._id) return user._id;
-  return getUserIdFromStorage();
+  return null;
 }
 
 
@@ -45,6 +31,8 @@ export function getGuestToken(): string | null {
 export async function getSessionIdentity(user: UserLike): Promise<SessionIdentity> {
   const authUserId = getAuthenticatedUserId(user);
   if (authUserId) {
+    sessionStorage.removeItem(GUEST_TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(GUEST_USER_ID);
     return {
       id: authUserId,
       type: "auth",

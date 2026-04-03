@@ -5,6 +5,7 @@ import { createDeck, shuffleDeck } from "../utils/deckUtils";
 import { CardChessMap } from "../constants/chess";
 import { clearGameState } from "../utils/storage";
 import { ChessAPI, ChessGame } from "../services/api";
+import { useChessSocket } from "./useChessSocket";
 
 export const MAX_CHECK_ATTEMPTS = 5;
 
@@ -649,68 +650,110 @@ export function useCardChess(
     return false;
   }, [gameState.currentCards, gameState.gameOver, chessMakeMove, gameState.currentPlayer]);
 
-  useEffect(() => {
-    if (!gameId || !userId) return;
+  const handleSocketUpdate = useCallback((updatedGame: ChessGame) => {
+  if (updatedGame.version <= versionRef.current) return;
 
-    const pollForUpdates = async () => {
-      try {
-        const response = await ChessAPI.getGame(gameId);
-        const latestGame = response.data.data;
+  versionRef.current = updatedGame.version;
+
+  const backendCards = updatedGame.game_state.current_cards || [];
+
+  gameRef.current.load(updatedGame.game_state.fen);
+
+  let moves: Move[] = [];
+  if (backendCards.length > 0) {
+    moves = getValidMovesForMultipleCards(
+      gameRef.current,
+      backendCards
+    );
+  }
+
+  setGameState((prev) => ({
+    ...prev,
+    version: updatedGame.version,
+    isInCheck: gameRef.current.inCheck(),
+    currentPlayer: updatedGame.game_state.turn,
+    moveHistory: updatedGame.game_state.moves || [],
+    currentCards: backendCards,
+    fromMoveSelected: null,
+    validMoves: moves,
+    deck: updatedGame.game_state.cards_deck || [],
+    cardsRemaining: (updatedGame.game_state.cards_deck || []).length,
+    checkAttempts: updatedGame.game_state.check_attempts || 0,
+    gameStatus: updatedGame.game_state.status,
+    gameOver: updatedGame.game_state.status === "completed",
+    winner: updatedGame.game_state.winner || null,
+  }));
+
+  options.onGameStateChanged?.(updatedGame);
+}, [options]);
+
+
+  const chessSocket = useChessSocket({
+    gameId,
+    onGameUpdate: handleSocketUpdate
+  });
+  // useEffect(() => {
+  //   if (!gameId || !userId) return;
+
+  //   const pollForUpdates = async () => {
+  //     try {
+  //       const response = await ChessAPI.getGame(gameId);
+  //       const latestGame = response.data.data;
         
-        // Only update if version changed OR status changed
-        const versionChanged = latestGame.version > versionRef.current;
-        const statusChanged = gameState.gameStatus !== latestGame.game_state.status;
+  //       // Only update if version changed OR status changed
+  //       const versionChanged = latestGame.version > versionRef.current;
+  //       const statusChanged = gameState.gameStatus !== latestGame.game_state.status;
         
-        if (versionChanged || statusChanged) {
-          versionRef.current = latestGame.version;
-          const backendCards = latestGame.game_state.current_cards || [];
+  //       if (versionChanged || statusChanged) {
+  //         versionRef.current = latestGame.version;
+  //         const backendCards = latestGame.game_state.current_cards || [];
           
-          gameRef.current.load(latestGame.game_state.fen);
-          let moves = [] as Move[];
-          if (backendCards.length > 0) {
-            moves = getValidMovesForMultipleCards(
-              gameRef.current,
-              backendCards
-            );
-          }
+  //         gameRef.current.load(latestGame.game_state.fen);
+  //         let moves = [] as Move[];
+  //         if (backendCards.length > 0) {
+  //           moves = getValidMovesForMultipleCards(
+  //             gameRef.current,
+  //             backendCards
+  //           );
+  //         }
           
-          // Update game state
-          setGameState((prev) => ({
-            ...prev,
-            version: latestGame.version,
-            isInCheck: gameRef.current.inCheck(),
-            currentPlayer: latestGame.game_state.turn,
-            moveHistory: latestGame.game_state.moves || [],
-            currentCards: backendCards,
-            fromMoveSelected: null,
-            validMoves: moves,
-            deck: latestGame.game_state.cards_deck || [],
-            cardsRemaining: (latestGame.game_state.cards_deck || []).length,
-            checkAttempts: latestGame.game_state.check_attempts || 0,
-            gameStatus: latestGame.game_state.status,
-            gameOver: latestGame.game_state.status === "completed",
-          }));
+  //         // Update game state
+  //         setGameState((prev) => ({
+  //           ...prev,
+  //           version: latestGame.version,
+  //           isInCheck: gameRef.current.inCheck(),
+  //           currentPlayer: latestGame.game_state.turn,
+  //           moveHistory: latestGame.game_state.moves || [],
+  //           currentCards: backendCards,
+  //           fromMoveSelected: null,
+  //           validMoves: moves,
+  //           deck: latestGame.game_state.cards_deck || [],
+  //           cardsRemaining: (latestGame.game_state.cards_deck || []).length,
+  //           checkAttempts: latestGame.game_state.check_attempts || 0,
+  //           gameStatus: latestGame.game_state.status,
+  //           gameOver: latestGame.game_state.status === "completed",
+  //         }));
           
-          // Notify parent component if status changed (e.g., opponent joined)
-          if (statusChanged) {
-            options.onGameStateChanged(latestGame);
-          }
-        }
-      } catch (error) {
-        console.error("Error polling for game updates:", error);
-      }
-    };
+  //         // Notify parent component if status changed (e.g., opponent joined)
+  //         if (statusChanged) {
+  //           options.onGameStateChanged(latestGame);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error polling for game updates:", error);
+  //     }
+  //   };
     
-    let intervalId = null as unknown as NodeJS.Timeout;
-    if (gameState.gameStatus === "waiting_for_opponent" || gameState.gameStatus === "active") {
-      intervalId = setInterval(pollForUpdates, 2000);
-    }
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [gameId, userId, gameState.gameStatus, options]);
+  //   let intervalId = null as unknown as NodeJS.Timeout;
+  //   if (gameState.gameStatus === "waiting_for_opponent" || gameState.gameStatus === "active") {
+  //     intervalId = setInterval(pollForUpdates, 2000);
+  //   }
+  //   return () => {
+  //     if (intervalId) {
+  //       clearInterval(intervalId);
+  //     }
+  //   };
+  // }, [gameId, userId, gameState.gameStatus, options]);
 
   useEffect(() => {
     const canDraw =
