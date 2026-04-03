@@ -1,4 +1,3 @@
-// hooks/useChessSocket.ts
 import { useEffect, useRef } from "react";
 import { ChessSocket } from "../services/socket";
 import { getGuestToken } from "../utils/sessionIdentity";
@@ -9,35 +8,37 @@ interface Props {
   onGameUpdate: (game: ChessGame) => void;
 }
 
-export function useChessSocket({
-  gameId,
-  onGameUpdate
-}: Props) {
-    
+export function useChessSocket({ gameId, onGameUpdate }: Props) {
   const socketRef = useRef<ChessSocket | null>(null);
+  const callbackRef = useRef(onGameUpdate);
+
+  // Always keep latest callback (prevents stale closure)
+  useEffect(() => {
+    callbackRef.current = onGameUpdate;
+  }, [onGameUpdate]);
 
   useEffect(() => {
-    if (!gameId || socketRef.current != null) return;
+    if (!gameId) return;
+
     const token = localStorage.getItem("authToken");
     const guestToken = getGuestToken();
+
     const socket = new ChessSocket(token ?? undefined, guestToken ?? undefined);
     socketRef.current = socket;
 
-    // Join room
     socket.joinGame(gameId);
 
-    // Rejoin on reconnect
-    socket.reconnectJoin(gameId);
-
-    // Listen for game updates
-    socket.onGameState(onGameUpdate);
+    socket.onGameState((data) => {
+      callbackRef.current(data);
+    });
 
     return () => {
       socket.leaveGame(gameId);
-      socket.offGameState(onGameUpdate);
+      socket.offGameState();
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, [gameId, onGameUpdate]);
+  }, [gameId]);
 
   return socketRef.current;
 }

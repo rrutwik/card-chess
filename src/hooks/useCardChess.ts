@@ -651,9 +651,11 @@ export function useCardChess(
   }, [gameState.currentCards, gameState.gameOver, chessMakeMove, gameState.currentPlayer]);
 
   const handleSocketUpdate = useCallback((updatedGame: ChessGame) => {
+    console.log("Update Game", updatedGame);
   const statusChanged = gameState.gameStatus !== updatedGame.game_state.status;
+  console.log(updatedGame.version <= versionRef.current && !statusChanged, updatedGame.version, versionRef.current, !statusChanged, gameState.gameStatus, updatedGame.game_state.status);
   if (updatedGame.version <= versionRef.current && !statusChanged) return;
-
+    console.log("Updating game");
   versionRef.current = updatedGame.version;
 
   const backendCards = updatedGame.game_state.current_cards || [];
@@ -686,7 +688,7 @@ export function useCardChess(
   }));
 
   options.onGameStateChanged?.(updatedGame);
-}, [options]);
+}, [options, gameState.gameStatus]);
 
 
   const chessSocket = useChessSocket({

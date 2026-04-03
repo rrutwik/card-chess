@@ -1,4 +1,3 @@
-// services/socket.ts
 import { io, Socket } from "socket.io-client";
 import { ChessGame } from "./api";
 
@@ -8,23 +7,39 @@ const API_BASE_URL =
 
 export class ChessSocket {
   private socket: Socket;
+  private gameUpdateHandler?: (data: any) => void;
+  private currentGameId?: string;
 
   constructor(token?: string, guestToken?: string) {
-    console.log("🔌 Initializing ChessSocket with:", 
-        token ? { token: "****" } : undefined, 
-        guestToken ? { guestToken: "****" } : undefined);
+    console.log(
+      "🔌 Initializing ChessSocket",
+      token ? { token: "****" } : undefined,
+      guestToken ? { guestToken: "****" } : undefined
+    );
+
     this.socket = io(API_BASE_URL, {
-      auth: { "x-guest-token": `${guestToken}`, "Authorization": `Bearer ${token}` },
-      extraHeaders: { "x-guest-token": `${guestToken}`, "Authorization": `Bearer ${token}` },
+      auth: {
+        "x-guest-token": `${guestToken}`,
+        Authorization: `Bearer ${token}`,
+      },
+      extraHeaders: {
+        "x-guest-token": `${guestToken}`,
+        Authorization: `Bearer ${token}`,
+      },
       transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       autoConnect: false,
     });
-    
+
     this.socket.on("connect", () => {
       console.log("✅ Socket connected:", this.socket.id);
+
+      // Rejoin automatically on reconnect
+      if (this.currentGameId) {
+        this.joinGame(this.currentGameId);
+      }
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -39,33 +54,38 @@ export class ChessSocket {
   }
 
   joinGame(gameId: string) {
+    this.currentGameId = gameId;
     this.socket.emit("join_game", { gameId });
   }
 
   leaveGame(gameId: string) {
     this.socket.emit("leave_game", { gameId });
+    this.currentGameId = undefined;
   }
 
   onGameState(callback: (data: ChessGame) => void) {
-    this.socket.on("game_updated", (data: {gameId: string, data: ChessGame}) => {
-      console.log(`📨 Received game update for gameId ${data.gameId}:`, data.data);
+    this.gameUpdateHandler = (data: { gameId: string; data: ChessGame }) => {
+      console.log(
+        `📨 Received game update for gameId ${data.gameId}:`,
+        data.data
+      );
       callback(data.data);
-    });
+    };
+
+    this.socket.on("game_updated", this.gameUpdateHandler);
   }
 
-  offGameState(callback: (data: ChessGame) => void) {
-    this.socket.off("game_updated", callback);
-  }
-
-  reconnectJoin(gameId: string) {
-    this.socket.on("connect", () => {
-      this.joinGame(gameId);
-    });
+  offGameState() {
+    if (this.gameUpdateHandler) {
+      this.socket.off("game_updated", this.gameUpdateHandler);
+      this.gameUpdateHandler = undefined;
+    }
   }
 
   disconnect() {
+    this.socket.removeAllListeners(); // 🔥 prevents ghost listeners
     if (!this.socket.disconnected) {
-        this.socket.disconnect();
+      this.socket.disconnect();
     }
   }
 }
