@@ -103,7 +103,7 @@ export function CompactGameControls({
         position: "relative",
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
+        gap: "8px",
         height: "100%",
         width: "100%",
       }}
@@ -147,7 +147,7 @@ export function CompactGameControls({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "12px",
+                  gap: "8px",
                   marginBottom: "12px",
                 }}
               >
@@ -195,7 +195,7 @@ export function CompactGameControls({
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "12px",
+          gap: "8px",
           flex: 1,
           minWidth: 0,
           minHeight: 0,
@@ -206,7 +206,7 @@ export function CompactGameControls({
         <div
           style={{
             borderRadius: "12px",
-            padding: "16px",
+            padding: "6px 8px",
             border: "2px solid",
             borderColor:
               currentPlayer === "white"
@@ -265,9 +265,9 @@ export function CompactGameControls({
         <AnimatePresence mode="wait">
           {isInCheck && checkAttempts >= 0 && !gameOver && (
             <motion.div
-              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              initial={{ opacity: 0, height: 0, scale: 0.60 }}
               animate={{ opacity: 1, height: "auto", scale: 1 }}
-              exit={{ opacity: 0, height: 0, scale: 0.95 }}
+              exit={{ opacity: 0, height: 0, scale: 0.60 }}
               style={{ overflow: "hidden", flexShrink: 0 }}
             >
               <motion.div
@@ -281,7 +281,7 @@ export function CompactGameControls({
                 transition={{ duration: 2, repeat: Infinity }}
                 style={{
                   borderRadius: "12px",
-                  padding: "16px",
+                  padding: "10px",
                   border: "2px solid",
                   borderColor: attemptsRemaining <= 2 ? "#ef4444" : "#f97316",
                   boxShadow: isDark
@@ -323,7 +323,7 @@ export function CompactGameControls({
                   <div style={{ flex: 1 }}>
                     <p
                       style={{
-                        fontWeight: "900",
+                        fontWeight: "500",
                         color: attemptsRemaining <= 2 ? "#7f1d1d" : "#7c2d12",
                       }}
                     >
@@ -331,7 +331,7 @@ export function CompactGameControls({
                     </p>
                     <p
                       style={{
-                        fontSize: "12px",
+                        fontSize: "10px",
                         color: attemptsRemaining <= 2 ? "#b91c1c" : "#c2410c",
                       }}
                     >
@@ -352,12 +352,12 @@ export function CompactGameControls({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      fontSize: "12px",
+                      fontSize: "10px",
                     }}
                   >
                     <span
                       style={{
-                        fontWeight: "700",
+                        fontWeight: "500",
                         color: attemptsRemaining <= 2 ? "#991b1b" : "#9a3412",
                       }}
                     >
@@ -365,8 +365,8 @@ export function CompactGameControls({
                     </span>
                     <span
                       style={{
-                        fontWeight: "900",
-                        fontSize: "18px",
+                        fontWeight: "600",
+                        fontSize: "15px",
                         color: attemptsRemaining <= 2 ? "#dc2626" : "#ea580c",
                       }}
                     >
@@ -390,7 +390,7 @@ export function CompactGameControls({
                       }}
                       style={{
                         height: "100%",
-                        borderRadius: "9999px",
+                        borderRadius: "99px",
                         background:
                           attemptsRemaining <= 2
                             ? "linear-gradient(90deg, #dc2626 0%, #ef4444 100%)"
@@ -442,7 +442,7 @@ export function CompactGameControls({
             boxShadow: isDark
               ? "0 10px 25px -5px rgba(0, 0, 0, 0.3)"
               : "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-            border: `2px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
+            border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "#e5e7eb"}`,
             overflow: "hidden",
             flex: 1,
             minHeight: 0,
@@ -453,7 +453,7 @@ export function CompactGameControls({
           <div
             style={{
               background: "linear-gradient(90deg, #3b82f6 0%, #9333ea 100%)",
-              padding: "12px 16px",
+              padding: "8px 14px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -468,7 +468,7 @@ export function CompactGameControls({
           </div>
           <div
             style={{
-              padding: "16px",
+              padding: "10px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -493,7 +493,7 @@ export function CompactGameControls({
                     gap: "16px",
                     width: "100%",
                     overflowX: "auto",
-                    paddingBottom: "8px",
+                    paddingBottom: "4px",
                   }}
                 >
                   {/* Display all drawn cards - original detailed style */}
@@ -513,10 +513,10 @@ export function CompactGameControls({
                           background: "white",
                           borderRadius: "12px",
                           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                          padding: "16px",
+                          padding: "10px",
                           border: `3px solid ${card.color === "red" ? "#ef4444" : "#111827"}`,
-                          width: "140px",
-                          height: "196px",
+                          width: "110px",
+                          height: "154px",
                           aspectRatio: "2.5/3.5",
                           flexShrink: 0,
                           display: "flex",
@@ -590,7 +590,7 @@ export function CompactGameControls({
                           fontWeight: "600",
                           color: isDark ? "#9ca3af" : "#4b5563",
                           textAlign: "center",
-                          maxWidth: "140px",
+                          maxWidth: "110px",
                           minHeight: "24px",
                           display: "flex",
                           alignItems: "center",
@@ -624,7 +624,7 @@ export function CompactGameControls({
                         "linear-gradient(135deg, #2563eb 0%, #9333ea 50%, #4338ca 100%)",
                       borderRadius: "12px",
                       boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                      padding: "16px",
+                      padding: "10px",
                       overflow: "hidden",
                       width: "140px",
                       height: "196px",
@@ -668,7 +668,7 @@ export function CompactGameControls({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: "8px",
             flexShrink: 0,
           }}
         >
@@ -679,7 +679,7 @@ export function CompactGameControls({
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
-              padding: "10px 16px",
+              padding: "8px 12px",
               background: isDark
                 ? "rgba(139, 92, 246, 0.1)"
                 : "rgba(139, 92, 246, 0.05)",
