@@ -651,7 +651,8 @@ export function useCardChess(
   }, [gameState.currentCards, gameState.gameOver, chessMakeMove, gameState.currentPlayer]);
 
   const handleSocketUpdate = useCallback((updatedGame: ChessGame) => {
-  if (updatedGame.version <= versionRef.current) return;
+  const statusChanged = gameState.gameStatus !== updatedGame.game_state.status;
+  if (updatedGame.version <= versionRef.current && !statusChanged) return;
 
   versionRef.current = updatedGame.version;
 
