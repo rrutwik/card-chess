@@ -78,12 +78,12 @@ export function CompactGameControls({
       userColor === currentPlayer &&
       !isInCheck &&
       canDrawCard &&
-      currentCards.length === 0 &&
+      (currentCards.length === 0 || noValidCard) &&
       !gameOver
     ) {
       const timer = setTimeout(() => {
         onDrawCard();
-      }, 500);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [
