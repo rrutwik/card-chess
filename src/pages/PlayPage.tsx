@@ -54,6 +54,9 @@ export const PlayPage: React.FC = () => {
 
   const loadGames = async () => {
     try {
+      if (!user) {
+        return;
+      }
       logger.info("PlayPage: Loading active games");
       setLoading(true);
       setError(null);
