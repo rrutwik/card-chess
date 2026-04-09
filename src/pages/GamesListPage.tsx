@@ -47,8 +47,8 @@ export const GamesListPage: React.FC = () => {
 
     if (status === "completed") {
       return `Finished - ${game.game_state.winner === "draw"
-          ? "Draw"
-          : `${game.game_state.winner} wins`
+        ? "Draw"
+        : `${game.game_state.winner} wins`
         }`;
     }
     if (status === "abandoned") {

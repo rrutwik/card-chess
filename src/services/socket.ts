@@ -11,12 +11,6 @@ export class ChessSocket {
   private currentGameId?: string;
 
   constructor(token?: string, guestToken?: string) {
-    console.log(
-      "🔌 Initializing ChessSocket",
-      token ? { token: "****" } : undefined,
-      guestToken ? { guestToken: "****" } : undefined
-    );
-
     this.socket = io(API_BASE_URL, {
       auth: {
         "x-guest-token": `${guestToken}`,
@@ -65,10 +59,6 @@ export class ChessSocket {
 
   onGameState(callback: (data: ChessGame) => void) {
     this.gameUpdateHandler = (data: { gameId: string; data: ChessGame }) => {
-      console.log(
-        `📨 Received game update for gameId ${data.gameId}:`,
-        data.data
-      );
       callback(data.data);
     };
 

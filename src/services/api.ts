@@ -262,7 +262,7 @@ export async function getOrCreateGuest(data: any): Promise<{
 
   const existingToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
   const existingUserId = sessionStorage.getItem(GUEST_USER_ID);
-  if (existingToken && existingUserId)  {
+  if (existingToken && existingUserId) {
     return {
       _id: existingUserId,
       token: existingToken
