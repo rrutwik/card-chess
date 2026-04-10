@@ -30,6 +30,11 @@ export interface GameState {
   cardsRemaining: number;
   gameStatus?: "active" | "completed" | "abandoned" | "waiting_for_opponent";
   version: number;
+  pendingPromotion: {
+    fromSquare: Square;
+    toSquare: Square;
+    card: PlayingCard;
+  } | null;
 }
 
 interface UseCardChessOptions {
@@ -159,6 +164,7 @@ export function useCardChess(
     gameStatus: game?.game_state?.status || "active",
     cardsRemaining: (game?.game_state?.cards_deck || createDeck()).length,
     version: game?.version || 0,
+    pendingPromotion: null,
   }));
 
   useEffect(() => {
@@ -195,6 +201,7 @@ export function useCardChess(
         cardsToDrawCount: game.cards_to_draw || 1,
         cardsRemaining: (game.game_state.cards_deck || []).length,
         validMoves: moves,
+        pendingPromotion: null,
       }));
       versionRef.current = newGameVersion;
     }
@@ -232,6 +239,7 @@ export function useCardChess(
         );
         const responseGame = response.data.data;
         if (responseGame.version > versionRef.current) {
+          console.log("Sync with backend", responseGame.version, versionRef.current);
           versionRef.current = responseGame.version;
           const backendCards = responseGame.game_state.current_cards || [];
           gameRef.current.load(responseGame.game_state.fen);
@@ -256,6 +264,7 @@ export function useCardChess(
             checkAttempts: responseGame.game_state.check_attempts || 0,
             gameStatus: responseGame.game_state.status,
             gameOver: responseGame.game_state.status === "completed",
+            pendingPromotion: null,
           }));
         }
       } catch (error) {
@@ -446,6 +455,7 @@ export function useCardChess(
         currentPlayer: nextPlayer,
         gameOver,
         winner,
+        pendingPromotion: null,
       }));
 
       syncWithBackend(
@@ -500,6 +510,7 @@ export function useCardChess(
       if (gameState.fromMoveSelected) {
         // Find which card allows this move
         let validCard: PlayingCard | null = null;
+        let selectedMoves: Move[] = [];
 
         for (const card of gameState.currentCards) {
           const validMovesForSelection = getValidMovesForCard(
@@ -514,11 +525,26 @@ export function useCardChess(
           );
           if (found) {
             validCard = card;
+            selectedMoves = validMovesForSelection;
             break;
           }
         }
 
         if (validCard) {
+          const isPromotion = selectedMoves.some(
+            (m) => m.from === gameState.fromMoveSelected && m.to === square && m.promotion
+          );
+          if (isPromotion) {
+            setGameState((prev) => ({
+              ...prev,
+              pendingPromotion: {
+                fromSquare: gameState.fromMoveSelected as Square,
+                toSquare: square as Square,
+                card: validCard as PlayingCard,
+              },
+            }));
+            return;
+          }
           chessMakeMove(gameState.fromMoveSelected, square, "q", validCard);
           return;
         } else {
@@ -588,6 +614,20 @@ export function useCardChess(
           );
 
           if (found) {
+            const isPromotion = validMovesForSelection.some(
+              (m) => m.from === fromSquare && m.to === toSquare && m.promotion
+            );
+            if (isPromotion) {
+              setGameState((prev) => ({
+                ...prev,
+                pendingPromotion: {
+                  fromSquare,
+                  toSquare,
+                  card,
+                },
+              }));
+              return true;
+            }
             return chessMakeMove(fromSquare, toSquare, "q", card);
           }
         }
@@ -618,7 +658,7 @@ export function useCardChess(
     const bestMove = getBestMove(gameRef.current, possibleMoves);
 
     if (bestMove) {
-      return chessMakeMove(bestMove.from, bestMove.to, "q", bestMove.card);
+      return chessMakeMove(bestMove.from, bestMove.to, bestMove.promotion || "q", bestMove.card);
     }
     return false;
   }, [
@@ -643,12 +683,24 @@ export function useCardChess(
     const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
     if (!randomMove.card) return false;
-    return chessMakeMove(randomMove.from as Square, randomMove.to as Square, "q", randomMove.card);
-  }, [gameState.currentCards, gameState.gameOver, chessMakeMove, gameState.currentPlayer]);
+    return chessMakeMove(randomMove.from as Square, randomMove.to as Square, randomMove.promotion || "q", randomMove.card);
+  }, [gameState.currentCards, gameState.gameOver, chessMakeMove, gameState.currentPlayer, playSmartValidMove]);
+
+  const resolvePromotion = useCallback((piece: string) => {
+    if (!gameState.pendingPromotion) return;
+    const { fromSquare, toSquare, card } = gameState.pendingPromotion;
+    chessMakeMove(fromSquare, toSquare, piece, card);
+    setGameState((prev) => ({ ...prev, pendingPromotion: null, validMoves: [], fromMoveSelected: null }));
+  }, [gameState.pendingPromotion, chessMakeMove]);
+
+  const cancelPromotion = useCallback(() => {
+    setGameState((prev) => ({ ...prev, pendingPromotion: null, fromMoveSelected: null }));
+  }, []);
 
   const handleSocketUpdate = useCallback((updatedGame: ChessGame) => {
     const statusChanged = gameState.gameStatus !== updatedGame.game_state.status;
     if (updatedGame.version <= versionRef.current && !statusChanged) return;
+    console.log("Socket Update", updatedGame.version, versionRef.current);
     versionRef.current = updatedGame.version;
 
     const backendCards = updatedGame.game_state.current_cards || [];
@@ -678,6 +730,7 @@ export function useCardChess(
       gameStatus: updatedGame.game_state.status,
       gameOver: updatedGame.game_state.status === "completed",
       winner: updatedGame.game_state.winner || null,
+      pendingPromotion: null,
     }));
 
     options.onGameStateChanged?.(updatedGame);
@@ -779,5 +832,7 @@ export function useCardChess(
     reshuffleDeck,
     // newGame,
     isInCheck: gameRef.current.inCheck(),
+    resolvePromotion,
+    cancelPromotion
   } as const;
 }

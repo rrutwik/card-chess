@@ -126,7 +126,7 @@ api.interceptors.request.use(
         }
       }
     }
-    logger.info(`API Request: ${config.method?.toUpperCase()} ${config.url}`, { params: config.params });
+    // logger.info(`API Request: ${config.method?.toUpperCase()} ${config.url}`, { params: config.params });
     return config;
   },
   (error) => {
@@ -138,7 +138,7 @@ api.interceptors.request.use(
 // Response interceptor to handle common errors and retries
 api.interceptors.response.use(
   (response) => {
-    logger.info(`API Response: ${response.status} ${response.config.url}`);
+    // logger.info(`API Response: ${response.status} ${response.config.url}`);
     return response;
   },
   async (error: AxiosError) => {

@@ -15,6 +15,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { Link2, Check, Users } from "lucide-react";
 import { logger } from "../utils/logger";
 import { getSessionIdentity } from "../utils/sessionIdentity";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -192,6 +198,8 @@ export const GamePage: React.FC = () => {
     playRandomValidMove,
     // newGame,
     handleSquareClick,
+    resolvePromotion,
+    cancelPromotion,
   } = useCardChess(currentGame, {
     userId: identityId!,
     onGameStateChanged: (updatedGame) => {
@@ -833,6 +841,104 @@ export const GamePage: React.FC = () => {
           </aside>
         </div>
       </main>
+
+      {/* Pawn Promotion Dialog */}
+      {!!gameState.pendingPromotion && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div style={{
+            background: isDark ? '#1e293b' : '#ffffff',
+            color: isDark ? '#f8fafc' : '#0f172a',
+            border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+            borderRadius: '24px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            position: 'relative'
+          }}>
+            <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>
+              Choose Promotion
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '16px'
+            }}>
+              {[
+                { id: 'q', name: 'Queen', icon: '♕' },
+                { id: 'r', name: 'Rook', icon: '♖' },
+                { id: 'n', name: 'Knight', icon: '♘' },
+                { id: 'b', name: 'Bishop', icon: '♗' }
+              ].map((piece) => (
+                <button
+                  key={piece.id}
+                  onClick={() => resolvePromotion(piece.id)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '24px',
+                    background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+                    borderRadius: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    color: isDark ? '#fff' : '#000',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05)';
+                    e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+                  }}
+                >
+                  <span style={{ fontSize: '48px', lineHeight: '1', marginBottom: '8px' }}>
+                    {piece.icon}
+                  </span>
+                  <span style={{ fontSize: '16px', fontWeight: '500' }}>
+                    {piece.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => cancelPromotion()}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'transparent',
+                border: 'none',
+                color: isDark ? '#94a3b8' : '#64748b',
+                cursor: 'pointer',
+                fontSize: '24px',
+                lineHeight: 1,
+                padding: '4px'
+              }}
+              title="Cancel"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Move History Footer */}
       {gameState.gameOver && <MoveHistoryFooter moveHistory={gameState.moveHistory} />}
