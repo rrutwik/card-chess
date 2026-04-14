@@ -9,6 +9,7 @@ import { GamesListPage } from './pages/GamesListPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { GamePage } from './pages/GamePage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/games" element={<ProtectedRoute><GamesListPage /></ProtectedRoute>} />
             <Route path="/game/:gameId" element={<GamePage />} />
             <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             {/* Add more routes as needed */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
