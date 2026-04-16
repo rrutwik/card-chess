@@ -746,7 +746,7 @@ export const GamePage: React.FC = () => {
         <StatusStrip minimal />
         {/* Board — takes all remaining height above bottom panel */}
         <div className="game-board-area" style={{ flexDirection: "column" }}>
-          <div style={{ width: "min(100cqmin, 840px)", display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div style={{ width: "100%", maxWidth: "min(840px, calc(100vh - var(--cc-bottom-panel-h, 0px) - 180px))", display: "flex", flexDirection: "column", gap: "6px" }}>
             <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).w : getCapturedPieces(chessGame.fen()).b} align="left" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -792,7 +792,7 @@ export const GamePage: React.FC = () => {
       <div className="game-main-desktop">
         {/* Board area */}
         <div className="game-board-area" style={{ flex: 1, flexDirection: "column" }}>
-          <div style={{ width: "min(100cqmin, 840px)", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ width: "100%", maxWidth: "min(840px, calc(100vh - 180px))", display: "flex", flexDirection: "column", gap: "8px" }}>
             <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).w : getCapturedPieces(chessGame.fen()).b} align="left" />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
