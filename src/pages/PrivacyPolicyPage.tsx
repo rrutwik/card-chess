@@ -77,12 +77,12 @@ export const PrivacyPolicyPage: React.FC = () => {
             <p style={{ marginBottom: '16px' }}><strong>Last Updated: {new Date().toLocaleDateString()}</strong></p>
 
             <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>1. Introduction</h2>
-            <p style={{ marginBottom: '16px' }}>This Privacy Policy applies to the "Card Chess" application (the "App") available on the Google Play Store. We are committed to protecting your privacy and ensuring you have a positive experience on our App.</p>
+            <p style={{ marginBottom: '16px' }}>This Privacy Policy applies to the "Card Chess" website and mobile applications (collectively, the "Services"). We are committed to protecting your privacy and ensuring you have a positive experience across our Services.</p>
 
             <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>2. Information We Collect</h2>
             <p style={{ marginBottom: '16px' }}><strong>a. Account Information:</strong> To provide features such as online multiplayer, we collect information when you authenticate, which may include details provided via OAuth like your profile name and avatar context.</p>
             <p style={{ marginBottom: '16px' }}><strong>b. Gameplay Data:</strong> We may process data related to your in-game activity to maintain synchronization among participants and power the gameplay mechanics.</p>
-            <p style={{ marginBottom: '16px' }}><strong>c. Device & Usage Analytics:</strong> We might track usage analytics or application crash reports to refine experience, detect game anomalies, and improve general app stability.</p>
+            <p style={{ marginBottom: '16px' }}><strong>c. Device & Usage Analytics:</strong> We might track usage analytics or crash reports to refine the experience, detect game anomalies, and improve general stability across our Services.</p>
 
             <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>3. How We Use Your Information</h2>
             <ul style={{ listStyleType: 'disc', paddingLeft: '24px', marginBottom: '16px' }}>
@@ -95,10 +95,10 @@ export const PrivacyPolicyPage: React.FC = () => {
             <p style={{ marginBottom: '16px' }}>We aim to deploy reliable security practices to securely process the telemetry and essential information transmitted by interacting with our platform, guarding against unsanctioned access, leaks, and misappropriation of user data.</p>
 
             <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>5. Third-Party Services</h2>
-            <p style={{ marginBottom: '16px' }}>Certain backend systems supporting this application may rely on third-party frameworks. They govern the data they collect according to their respective guidelines, independent of this policy.</p>
+            <p style={{ marginBottom: '16px' }}>Certain backend systems supporting our Services may rely on third-party frameworks. They govern the data they collect according to their respective guidelines, independent of this policy.</p>
 
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>6. Children's Privacy</h2>
-            <p style={{ marginBottom: '16px' }}>The app content complies with relevant app distributor safety benchmarks. We typically restrict data collection pertaining directly to users under the designated regional limit, e.g. 13 years locally.</p>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>6. All Ages Welcome</h2>
+            <p style={{ marginBottom: '16px' }}>Card Chess is built for everyone and has no age restrictions. We welcome players of all ages to enjoy the game. We are committed to protecting the privacy of all our users, including younger players, in accordance with applicable platform policies.</p>
 
             <h2 style={{ fontSize: '20px', fontWeight: '700', color: isDark ? '#f9fafb' : '#1f2937', marginTop: '24px', marginBottom: '12px' }}>7. Changes to this document</h2>
             <p style={{ marginBottom: '16px' }}>This text may undergo updates in alignment with progressing platform features. Adjustments take effect right as they reflect on this hosted page. Check occasionally to note potential revisions regarding personal data policies.</p>

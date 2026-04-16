@@ -2,11 +2,16 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { visualizer } from 'rollup-plugin-visualizer';
+import viteAudioTransform from 'vite-audio-transform';
 
 export default defineConfig({
   plugins: [
     react(),
-    visualizer({ open: true, gzipSize: true, brotliSize: true })
+    visualizer({ open: false, gzipSize: true, brotliSize: true }),
+    viteAudioTransform({
+      type: 'mp3',
+      quality: 3
+    })
   ],
   define: {
     "process.env": {},
@@ -116,7 +121,7 @@ export default defineConfig({
             "sonner",
           ],
 
-          "sentry" : ["@sentry/react"],
+          "sentry": ["@sentry/react"],
         },
       },
     },

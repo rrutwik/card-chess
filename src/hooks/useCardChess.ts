@@ -6,6 +6,7 @@ import { CardChessMap } from "../constants/chess";
 import { ChessAPI, ChessGame } from "../services/api";
 import { useChessSocket } from "./useChessSocket";
 import { CardChessMove, getBestMove } from "../utils/bot";
+import { playSound } from "../utils/sounds";
 
 export const MAX_CHECK_ATTEMPTS = 5;
 
@@ -338,8 +339,11 @@ export function useCardChess(
         drawnCards.push(card);
       }
     }
-
+    console.log({
+      drawnCards
+    })
     if (drawnCards.length > 0) {
+      playSound('cardDraw');
       setGameState((prev) => ({ ...prev, currentCards: drawnCards, deck: newDeck, cardsRemaining: newDeck.length }));
 
       const hasValidMoves = checkForValidMoves(drawnCards, gameState.currentPlayer);
@@ -385,7 +389,7 @@ export function useCardChess(
         newDeck,
         newAttempts,
         newMoveHistory,
-        gameState.version,
+        versionRef.current,
         winner ? "completed" : "active",
         winner || undefined
       );
@@ -397,7 +401,6 @@ export function useCardChess(
     gameState.isInCheck,
     gameState.checkAttempts,
     gameState.moveHistory,
-    gameState.version,
     gameState.cardsToDrawCount,
     syncWithBackend,
     checkForValidMoves,
@@ -434,6 +437,7 @@ export function useCardChess(
       if (gameRef.current.isCheckmate()) {
         gameOver = true;
         winner = gameState.currentPlayer;
+        playSound('checkmate');
       } else if (
         gameRef.current.isStalemate() ||
         gameRef.current.isDraw() ||
@@ -441,6 +445,13 @@ export function useCardChess(
       ) {
         gameOver = true;
         winner = "draw";
+        playSound('draw');
+      } else if (opponentInCheck) {
+        playSound('check');
+      } else if (move.captured) {
+        playSound('capture');
+      } else {
+        playSound('move');
       }
 
       // Single batched state update
@@ -465,7 +476,7 @@ export function useCardChess(
         null,
         0,
         newMoveHistory,
-        gameState.version,
+        versionRef.current,
         gameOver ? "completed" : "active",
         winner || undefined
       );
@@ -473,7 +484,6 @@ export function useCardChess(
     [
       gameState.currentPlayer,
       gameState.gameOver,
-      gameState.version,
       gameState.moveHistory,
       syncWithBackend,
     ]

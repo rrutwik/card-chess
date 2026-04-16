@@ -34,6 +34,28 @@ export function ChessBoard({
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
 
+  // ── Measure the wrapper so Chessboard always gets a real boardWidth ──
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  const [boardWidth, setBoardWidth] = React.useState(0);
+
+  React.useLayoutEffect(() => {
+    if (!wrapperRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        if (width > 0) setBoardWidth(width);
+      }
+    });
+    observer.observe(wrapperRef.current);
+
+    // Seed immediately in case ResizeObserver fires asynchronously
+    const initial = wrapperRef.current.getBoundingClientRect().width;
+    if (initial > 0) setBoardWidth(initial);
+
+    return () => observer.disconnect();
+  }, []);
+
   const handleSquareClick = ({
     square,
     piece,
@@ -132,36 +154,46 @@ export function ChessBoard({
       }}
     >
       <div
+        ref={wrapperRef}
         style={{
           position: "relative",
           background: isDark ? "#1e293b" : "#374151",
           borderRadius: "16px",
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-          padding: "clamp(12px, 2vw, 16px)",
+          padding: "8px",
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxSizing: "border-box",
         }}
       >
-        <Chessboard
-          options={{
-            position: game.fen(),
-            onSquareClick: handleSquareClick,
-            onPieceDrop: handleDrop,
-            boardOrientation:
-              orientation === "auto"
-                ? currentPlayer === "white"
-                  ? "white"
-                  : "black"
-                : orientation,
-            boardStyle: {
-              cursor: "default",
-              borderRadius: "2px",
-              boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
-            },
-            darkSquareStyle: { backgroundColor: "#769656" },
-            lightSquareStyle: { backgroundColor: "#eeeed2" },
-            squareStyles: customSquareStyles,
-            arrows: arrows,
-          }}
-        />
+        {/* Only render once we have a real width to avoid "Square width not found" */}
+        {boardWidth > 0 && (
+          <Chessboard
+            options={{
+              position: game.fen(),
+              onSquareClick: handleSquareClick,
+              onPieceDrop: handleDrop,
+              boardOrientation:
+                orientation === "auto"
+                  ? currentPlayer === "white"
+                    ? "white"
+                    : "black"
+                  : orientation,
+              boardStyle: {
+                cursor: "default",
+                borderRadius: "2px",
+                boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
+              },
+              darkSquareStyle: { backgroundColor: "#769656" },
+              lightSquareStyle: { backgroundColor: "#eeeed2" },
+              squareStyles: customSquareStyles,
+              arrows: arrows,
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { History, ChevronUp, X } from 'lucide-react';
 import { MoveHistory } from '../types/game';
 import { useTheme } from '../contexts/ThemeContext';
 
+import { PlayingCard as PlayingCardComponent } from './PlayingCard';
+
 interface MoveHistoryFooterProps {
   moveHistory: MoveHistory[];
 }
@@ -29,7 +31,7 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
               position: 'fixed',
               inset: 0,
               background: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 40
+              zIndex: 9999998
             }}
           />
         )}
@@ -44,7 +46,7 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
           bottom: 0,
           left: 0,
           right: 0,
-          zIndex: 50
+          zIndex: 9999999
         }}
       >
         <AnimatePresence>
@@ -183,29 +185,22 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                         </p>
                         <div style={{
                           display: 'flex',
-                          gap: '4px',
+                          gap: '6px',
                           flexWrap: 'wrap'
                         }}>
                           {move.cards?.map((card, idx) => (
-                            <span
-                              key={idx}
-                              style={{
-                                background: card.color === 'red' ? '#fee2e2' : '#f3f4f6',
-                                color: card.color === 'red' ? '#dc2626' : '#1f2937',
-                                padding: '3px 8px',
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                border: move.usedCard === card ? `2px solid ${card.color === 'red' ? '#dc2626' : '#1f2937'}` : 'none'
-                              }}
-                            >
-                              {card.value} {card.suit[0].toUpperCase()}
-                            </span>
+                            <PlayingCardComponent 
+                              key={idx} 
+                              card={card} 
+                              isDark={isDark} 
+                              variant="mini" 
+                              isSelected={move.usedCard === card}
+                            />
                           ))}
                         </div>
                       </div>
 
-                      {/* Used Card */}
+                      {/* Used Card specific label (optional since we're highlighting the drawn card now, but keeping for clarity) */}
                       {move.usedCard && (
                         <div style={{ marginBottom: '8px' }}>
                           <p style={{
@@ -216,18 +211,9 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
                           }}>
                             Used Card:
                           </p>
-                          <span style={{
-                            background: '#f3f4f6',
-                            color: '#1f2937',
-                            padding: '4px 10px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            display: 'inline-block',
-                            border: `2px solid #4f46e5`
-                          }}>
-                            {move.usedCard.value} {move.usedCard.suit[0].toUpperCase()}
-                          </span>
+                          <div style={{ display: 'inline-block' }}>
+                            <PlayingCardComponent card={move.usedCard} isDark={isDark} variant="mini" />
+                          </div>
                         </div>
                       )}
 

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { ChessBoard } from "../components/ChessBoard";
 import { CompactGameControls } from "../components/CompactGameControls";
 import { CollapsibleRulesSidebar } from "../components/CollapsibleRulesSidebar";
@@ -12,25 +12,160 @@ import { useGameStore } from "../stores/gameStore";
 import { useAppStore } from "../stores/appStore";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { Link2, Check, Users } from "lucide-react";
+import { Link2, Check, Users, Trophy } from "lucide-react";
 import { logger } from "../utils/logger";
 import { getSessionIdentity } from "../utils/sessionIdentity";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../components/ui/dialog";
+import { CardChessMove } from "../utils/bot";
+
+// ── Captured Pieces Helper ─────────────────────────────────────────────
+const PIECE_ICONS: Record<string, string> = {
+  p: "♟", n: "♞", b: "♝", r: "♜", q: "♛",
+  P: "♙", N: "♘", B: "♗", R: "♖", Q: "♕"
+};
+
+const getCapturedPieces = (fen: string) => {
+  const startingCounts: Record<string, number> = {
+    P: 8, N: 2, B: 2, R: 2, Q: 1,
+    p: 8, n: 2, b: 2, r: 2, q: 1
+  };
+  const currentCounts: Record<string, number> = {
+    P: 0, N: 0, B: 0, R: 0, Q: 0,
+    p: 0, n: 0, b: 0, r: 0, q: 0
+  };
+  const boardPart = fen.split(' ')[0];
+  for (const char of boardPart) {
+    if (currentCounts[char] !== undefined) currentCounts[char]++;
+  }
+  const capturedW: string[] = []; // White pieces captured by Black
+  const capturedB: string[] = []; // Black pieces captured by White
+  ['q', 'r', 'b', 'n', 'p'].forEach(p => {
+    const P = p.toUpperCase();
+    for (let i = 0; i < startingCounts[P] - currentCounts[P]; i++) capturedW.push(P);
+    for (let i = 0; i < startingCounts[p] - currentCounts[p]; i++) capturedB.push(p);
+  });
+  return { w: capturedW, b: capturedB };
+};
+
+const CapturedPiecesList = ({ pieces, align }: { pieces: string[], align: 'left' | 'right' }) => {
+  return (
+    <div style={{
+      display: 'flex',
+      gap: '2px',
+      minHeight: '28px',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: align === 'left' ? 'flex-start' : 'flex-end',
+      padding: '0 4px',
+      opacity: pieces.length ? 1 : 0.4
+    }}>
+      {pieces.length === 0 ? (
+        <span style={{ fontSize: '12px', fontStyle: 'italic' }} className="opacity-50">No captures</span>
+      ) : (
+        pieces.map((p, i) => (
+          <span key={i} style={{
+            fontSize: '22px',
+            lineHeight: 1,
+            color: p === p.toLowerCase() ? '#000000' : '#ffffff',
+            WebkitTextStroke: p === p.toLowerCase() ? '1px rgba(255,255,255,0.2)' : '1px rgba(0,0,0,0.8)',
+            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
+            marginRight: '-4px'
+          }}>
+            {PIECE_ICONS[p]}
+          </span>
+        ))
+      )}
+    </div>
+  );
+};
+
+// ── Responsive hook ───────────────────────────────────────────────────
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < breakpoint
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+  return isMobile;
+}
 
 export const GamePage: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { addNotification, showRules, setShowRules } = useAppStore();
   const { actualTheme } = useTheme();
-  const isDark = actualTheme === 'dark';
+  const isDark = actualTheme === "dark";
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+
   const [identityId, setIdentityId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
+
+  const [autoDrawEnabled, setAutoDrawEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("cardChess_autoDraw");
+    return stored ? JSON.parse(stored) : false;
+  });
+
+  const toggleAutoDraw = () => {
+    const newValue = !autoDrawEnabled;
+    setAutoDrawEnabled(newValue);
+    localStorage.setItem("cardChess_autoDraw", JSON.stringify(newValue));
+  };
+
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("cc_sidebar_w");
+    return saved ? parseInt(saved, 10) : 340;
+  });
+
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(() => {
+    const saved = localStorage.getItem("cc_bottom_h");
+    return saved ? parseInt(saved, 10) : 188;
+  });
+
+  useEffect(() => localStorage.setItem("cc_sidebar_w", sidebarWidth.toString()), [sidebarWidth]);
+  useEffect(() => localStorage.setItem("cc_bottom_h", bottomPanelHeight.toString()), [bottomPanelHeight]);
+
+  const handleDesktopResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidth;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      let newW = startW + (startX - moveEvent.clientX);
+      setSidebarWidth(Math.max(260, Math.min(newW, window.innerWidth * 0.8)));
+    };
+    const onPointerUp = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      document.body.style.cursor = "";
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    document.body.style.cursor = "col-resize";
+  };
+
+  const handleMobileResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = bottomPanelHeight;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      let newH = startH + (startY - moveEvent.clientY);
+      setBottomPanelHeight(Math.max(140, Math.min(newH, window.innerHeight * 0.7)));
+    };
+    const onPointerUp = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      document.body.style.cursor = "";
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    document.body.style.cursor = "row-resize";
+  };
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -59,63 +194,39 @@ export const GamePage: React.FC = () => {
 
   const isBotGame = Boolean(currentGame?.is_vs_bot);
 
-  // Handle copy game link
+  // Copy game link
   const handleCopyLink = () => {
     const gameLink = `${window.location.origin}/game/${gameId}`;
     navigator.clipboard
       .writeText(gameLink)
       .then(() => {
         setLinkCopied(true);
-        addNotification({
-          type: "success",
-          title: "Link Copied!",
-          message: "Game link copied to clipboard",
-          duration: 2000,
-        });
+        addNotification({ type: "success", title: "Link Copied!", message: "Game link copied to clipboard", duration: 2000 });
         setTimeout(() => setLinkCopied(false), 2000);
       })
-      .catch((err) => {
-        logger.error("Failed to copy link:", err);
-        addNotification({
-          type: "error",
-          title: "Failed to copy",
-          message: "Could not copy link to clipboard",
-          duration: 3000,
-        });
+      .catch(() => {
+        addNotification({ type: "error", title: "Failed to copy", message: "Could not copy link to clipboard", duration: 3000 });
       });
   };
 
-  // Load game data from backend if gameId is provided
+  // Load game
   useEffect(() => {
     let ignore = false;
-
     const loadGame = async () => {
       if (!gameId) {
-        addNotification({
-          type: "info",
-          title: "No Game Found",
-          message: "No game ID provided. Redirecting to home.",
-          duration: 5000,
-        });
+        addNotification({ type: "info", title: "No Game Found", message: "No game ID provided. Redirecting to home.", duration: 5000 });
         navigate("/play");
         return;
       }
       setLoading(true);
       setError(null);
-      logger.info(`GamePage: Loading game ${gameId}`)
-      if (!identityId) {
-        return; // Wait for identity to initialize
-      }
-
-      // Clear stale game from a previous navigation so isBotGame / hook
-      // don't briefly inherit the wrong game's data.
+      logger.info(`GamePage: Loading game ${gameId}`);
+      if (!identityId) return;
       setCurrentGame(null);
-
       try {
         logger.info(`GamePage: Loading game ${gameId}`);
         setError(null);
         const response = await ChessAPI.getGame(gameId);
-        // Guard against stale response if gameId/identityId changed mid-flight
         if (!ignore) {
           setCurrentGame(response.data.data);
           logger.info(`GamePage: Game loaded`, { gameId });
@@ -123,69 +234,31 @@ export const GamePage: React.FC = () => {
       } catch (err) {
         if (!ignore) {
           logger.error("Error loading game:", err);
-          const errorMessage =
-            err instanceof ApiError ? err.message : "Failed to load game";
+          const errorMessage = err instanceof ApiError ? err.message : "Failed to load game";
           setError(errorMessage);
-          addNotification({
-            type: "error",
-            title: "Failed to load game",
-            message: errorMessage,
-            duration: 5000,
-          });
+          addNotification({ type: "error", title: "Failed to load game", message: errorMessage, duration: 5000 });
         }
       } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
+        if (!ignore) setLoading(false);
       }
     };
-
     loadGame();
-    return () => {
-      ignore = true;
-    };
-  }, [
-    gameId,
-    identityId,
-    setCurrentGame,
-    setLoading,
-    setError,
-    addNotification,
-    navigate,
-  ]);
+    return () => { ignore = true; };
+  }, [gameId, identityId, setCurrentGame, setLoading, setError, addNotification, navigate]);
 
-  // Handle opponent registration when joining a game
+  // Join game as opponent
   const handleJoinGameAsOpponent = async () => {
     if (!gameId || !currentGame || isBotGame) return;
-
     try {
       logger.info(`GamePage: Joining game ${gameId}`);
       await ChessAPI.joinGame(gameId);
-
-      // Reload the game to get updated state
       const response = await ChessAPI.getGame(gameId);
       setCurrentGame(response.data.data);
       setLoading(false);
-
-      addNotification({
-        type: "success",
-        title: "Joined Game",
-        message: "You have successfully joined the game!",
-        duration: 3000,
-      });
-      logger.info(`GamePage: Joined game successfully`, {
-        gameId,
-        userId: identityId,
-      });
-    } catch (err) {
-      logger.error("Error joining game:", err);
+      addNotification({ type: "success", title: "Joined Game", message: "You have successfully joined the game!", duration: 3000 });
+    } catch {
       setLoading(false);
-      addNotification({
-        type: "error",
-        title: "Failed to join game",
-        message: "Could not join the game.",
-        duration: 5000,
-      });
+      addNotification({ type: "error", title: "Failed to join game", message: "Could not join the game.", duration: 5000 });
     }
   };
 
@@ -196,41 +269,78 @@ export const GamePage: React.FC = () => {
     reshuffleDeck,
     onDrop,
     playRandomValidMove,
-    // newGame,
     handleSquareClick,
     resolvePromotion,
     cancelPromotion,
   } = useCardChess(currentGame, {
     userId: identityId!,
-    onGameStateChanged: (updatedGame) => {
-      setCurrentGame(updatedGame);
-    },
+    onGameStateChanged: (updatedGame) => setCurrentGame(updatedGame),
   });
 
   const isPlayerInGame = Boolean(
     currentGame &&
-    (currentGame.player_white === identityId ||
-      currentGame.player_black === identityId),
+    (currentGame.player_white === identityId || currentGame.player_black === identityId)
   );
   const canJoinGame = Boolean(
     currentGame &&
     !isBotGame &&
     ((!currentGame.player_black && currentGame.player_white !== identityId) ||
-      (!currentGame.player_white && currentGame.player_black !== identityId)),
+      (!currentGame.player_white && currentGame.player_black !== identityId))
   );
   const isWaitingForOpponent = Boolean(
-    currentGame &&
-    !isBotGame &&
-    isPlayerInGame &&
-    gameState.gameStatus === "waiting_for_opponent",
+    currentGame && !isBotGame && isPlayerInGame && gameState.gameStatus === "waiting_for_opponent"
   );
 
+  // Reset card selection when cards change
+  useEffect(() => {
+    setSelectedCardIndex(null);
+  }, [gameState.currentCards]);
+
+  useEffect(() => {
+    if (
+      autoDrawEnabled &&
+      gameState.userColor === gameState.currentPlayer &&
+      !gameState.isInCheck &&
+      gameState.canDrawCard &&
+      (gameState.currentCards.length === 0 || gameState.noValidCard) &&
+      !gameState.gameOver
+    ) {
+      const timer = setTimeout(() => {
+        drawCard();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    autoDrawEnabled,
+    gameState.userColor,
+    gameState.currentPlayer,
+    gameState.isInCheck,
+    gameState.canDrawCard,
+    gameState.currentCards.length,
+    gameState.noValidCard,
+    gameState.gameOver,
+    isBotGame,
+    drawCard,
+  ]);
+
+  // Filter valid moves by selected card
+  const filteredValidMoves = useMemo(() => {
+    if (selectedCardIndex === null || !gameState.currentCards[selectedCardIndex]) {
+      return gameState.validMoves;
+    }
+    const selectedCard = gameState.currentCards[selectedCardIndex];
+    return gameState.validMoves.filter((move) => {
+      const cardMove = move as unknown as CardChessMove;
+      if (!cardMove.card) return false;
+      return cardMove.card.suit === selectedCard.suit && cardMove.card.value === selectedCard.value;
+    });
+  }, [selectedCardIndex, gameState.validMoves, gameState.currentCards]);
+
+  // Bot auto-play
   useEffect(() => {
     const shouldBotPlay =
-      isBotGame &&
-      isPlayerInGame &&
-      gameState.gameStatus === "active" &&
-      !gameState.gameOver &&
+      isBotGame && isPlayerInGame &&
+      gameState.gameStatus === "active" && !gameState.gameOver &&
       gameState.currentPlayer !== gameState.userColor;
 
     if (!shouldBotPlay) {
@@ -241,33 +351,20 @@ export const GamePage: React.FC = () => {
       botActionInFlightRef.current = false;
       return;
     }
-
     if (botActionInFlightRef.current) return;
-
     botActionInFlightRef.current = true;
     botTurnTimeoutRef.current = window.setTimeout(() => {
       botTurnTimeoutRef.current = null;
       botActionInFlightRef.current = false;
-
-      const stillBotTurn =
-        isBotGame &&
-        isPlayerInGame &&
-        gameState.gameStatus === "active" &&
-        !gameState.gameOver &&
+      const stillBotTurn = isBotGame && isPlayerInGame &&
+        gameState.gameStatus === "active" && !gameState.gameOver &&
         gameState.currentPlayer !== gameState.userColor;
-
       if (!stillBotTurn) return;
-
-      if (
-        !gameState.currentCards ||
-        gameState.currentCards.length === 0 ||
-        gameState.noValidCard ||
-        gameState.validMoves.length === 0
-      ) {
+      if (!gameState.currentCards || gameState.currentCards.length === 0 ||
+        gameState.noValidCard || gameState.validMoves.length === 0) {
         drawCard();
         return;
       }
-
       playRandomValidMove();
     }, 2000);
 
@@ -278,173 +375,103 @@ export const GamePage: React.FC = () => {
       }
       botActionInFlightRef.current = false;
     };
-  }, [
-    isBotGame,
-    isPlayerInGame,
-    gameState.gameStatus,
-    gameState.gameOver,
-    gameState.currentPlayer,
-    gameState.userColor,
-    gameState.currentCards,
-    gameState.noValidCard,
-    gameState.validMoves.length,
-    drawCard,
-    playRandomValidMove,
-  ]);
+  }, [isBotGame, isPlayerInGame, gameState.gameStatus, gameState.gameOver,
+    gameState.currentPlayer, gameState.userColor, gameState.currentCards,
+    gameState.noValidCard, gameState.validMoves.length, drawCard, playRandomValidMove]);
 
+  // ── Theme vars ─────────────────────────────────────────────────────
+  const bg = isDark
+    ? "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)"
+    : "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%)";
+
+  const sidebarBg = isDark
+    ? "linear-gradient(180deg, rgba(15,23,42,0.97) 0%, rgba(30,41,59,0.97) 100%)"
+    : "linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(248,250,252,0.97) 100%)";
+
+  const bottomPanelBg = isDark ? "rgba(13,19,33,0.98)" : "rgba(248,250,252,0.98)";
+
+  const isMyTurn = gameState.userColor === gameState.currentPlayer;
+  const turnLabel = isMyTurn ? "Your turn" : "Opponent's turn";
+  const turnDotColor = isMyTurn ? "#10b981" : isDark ? "#6b7280" : "#9ca3af";
+
+  // ── Shared board props ─────────────────────────────────────────────
+  const boardOrientation = currentGame?.player_white === identityId
+    ? "white"
+    : currentGame?.player_black === identityId
+      ? "black"
+      : "white";
+
+  const canMove =
+    gameState.currentCards.length > 0 &&
+    !gameState.gameOver &&
+    isPlayerInGame &&
+    gameState.currentPlayer === gameState.userColor;
+
+  const sharedControlProps = {
+    currentCards: gameState.currentCards,
+    cardsToDrawCount: gameState.cardsToDrawCount,
+    cardsRemaining: gameState.cardsRemaining,
+    isInCheck: gameState.isInCheck,
+    checkAttempts: gameState.checkAttempts,
+    onDrawCard: drawCard,
+    noValidCard: gameState.noValidCard,
+    onReshuffle: reshuffleDeck,
+    canDrawCard: gameState.canDrawCard,
+    currentPlayer: gameState.currentPlayer,
+    userColor: gameState.userColor,
+    gameOver: gameState.gameOver,
+    winner: gameState.winner,
+    showMoves,
+    handleShowMoveButton: setShowMoves,
+    selectedCardIndex,
+    onCardSelect: setSelectedCardIndex,
+    autoDrawEnabled,
+    onToggleAutoDraw: toggleAutoDraw,
+  };
+
+  // ── Loading state ──────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: isDark
-            ? "linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)"
-            : "linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)",
-          color: isDark ? "#f9fafb" : "#1f2937",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        }}
-      >
+      <div className="game-shell" style={{ background: bg, color: isDark ? "#f9fafb" : "#1f2937" }}>
         <Header />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "calc(100vh - 64px)",
-          }}
-        >
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ textAlign: "center" }}>
-            <div
-              style={{
-                width: "64px",
-                height: "64px",
-                border: `4px solid ${isDark ? "#667eea" : "#667eea"}`,
-                borderTopColor: "transparent",
-                borderRadius: "50%",
-                margin: "0 auto 24px",
-                animation: "spin 1s linear infinite",
-              }}
-            ></div>
-            <style>{`
-              @keyframes spin {
-                to { transform: rotate(360deg); }
-              }
-            `}</style>
-            <p
-              style={{
-                color: isDark ? "#9ca3af" : "#6b7280",
-                fontSize: "18px",
-              }}
-            >
-              Loading game...
-            </p>
+            <div style={{
+              width: 52, height: 52,
+              border: "4px solid #667eea", borderTopColor: "transparent",
+              borderRadius: "50%", margin: "0 auto 20px",
+              animation: "spin 1s linear infinite",
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
+            <p style={{ color: isDark ? "#9ca3af" : "#6b7280", fontSize: 16 }}>Loading game…</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Error state ────────────────────────────────────────────────────
   if (error) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: isDark
-            ? "linear-gradient(180deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%)"
-            : "linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f8f9ff 100%)",
-          color: isDark ? "#f9fafb" : "#1f2937",
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        }}
-      >
+      <div className="game-shell" style={{ background: bg, color: isDark ? "#f9fafb" : "#1f2937" }}>
         <Header />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "calc(100vh - 64px)",
-            padding: "16px",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              background: isDark
-                ? "rgba(255, 255, 255, 0.05)"
-                : "rgba(255, 255, 255, 0.9)",
-              backdropFilter: "blur(10px)",
-              padding: "40px",
-              borderRadius: "24px",
-              boxShadow: isDark
-                ? "0 8px 32px rgba(0, 0, 0, 0.3)"
-                : "0 8px 32px rgba(0, 0, 0, 0.1)",
-              maxWidth: "448px",
-              width: "100%",
-              border: `1px solid ${isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}`,
-            }}
-          >
-            <div
-              style={{
-                width: "80px",
-                height: "80px",
-                background: isDark
-                  ? "rgba(239, 68, 68, 0.2)"
-                  : "rgba(239, 68, 68, 0.1)",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 24px",
-              }}
-            >
-              <span style={{ fontSize: "40px" }}>⚠️</span>
-            </div>
-            <h2
-              style={{
-                fontSize: "32px",
-                fontWeight: "700",
-                color: "#ef4444",
-                marginBottom: "16px",
-              }}
-            >
-              Error
-            </h2>
-            <p
-              style={{
-                color: isDark ? "#9ca3af" : "#6b7280",
-                marginBottom: "32px",
-                fontSize: "18px",
-                lineHeight: "1.5",
-              }}
-            >
-              {error}
-            </p>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{
+            textAlign: "center", maxWidth: 400, width: "100%",
+            background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.9)",
+            backdropFilter: "blur(10px)", borderRadius: 24, padding: "36px 24px",
+            boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.3)" : "0 8px 32px rgba(0,0,0,0.1)",
+          }}>
+            <span style={{ fontSize: 48 }}>⚠️</span>
+            <h2 style={{ fontSize: 28, fontWeight: 700, color: "#ef4444", margin: "16px 0 8px" }}>Error</h2>
+            <p style={{ color: isDark ? "#9ca3af" : "#6b7280", marginBottom: 24, lineHeight: 1.5 }}>{error}</p>
             <button
               onClick={() => navigate("/")}
               style={{
                 background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                padding: "16px 32px",
-                borderRadius: "16px",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "16px",
-                fontWeight: "600",
-                boxShadow: "0 4px 16px rgba(102, 126, 234, 0.4)",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform =
-                  "translateY(-2px) scale(1.05)";
-                e.currentTarget.style.boxShadow =
-                  "0 8px 24px rgba(102, 126, 234, 0.5)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0) scale(1)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 16px rgba(102, 126, 234, 0.4)";
+                color: "white", padding: "14px 28px", borderRadius: 16,
+                border: "none", cursor: "pointer", fontSize: 15, fontWeight: 600,
+                boxShadow: "0 4px 16px rgba(102,126,234,0.4)",
               }}
             >
               Go Home
@@ -455,482 +482,240 @@ export const GamePage: React.FC = () => {
     );
   }
 
-  return (
-    <div style={{
-      height: '100vh',
-      width: '100vw',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      background: isDark
-        ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
-        : 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+  // ── Shared banners ─────────────────────────────────────────────────
+  const JoinBanner = () => (
+    <div className="cc-banner" style={{
+      background: isDark ? "rgba(102,126,234,0.1)" : "rgba(102,126,234,0.08)",
+      borderBottom: `1px solid rgba(102,126,234,0.2)`,
     }}>
-      <CollapsibleRulesSidebar
-        isOpen={showRules}
-        onClose={() => setShowRules(false)}
-      />
+      <div>
+        <p style={{ fontWeight: 700, color: "#667eea", fontSize: 14, marginBottom: 2 }}>Join This Game?</p>
+        <p style={{ color: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}>
+          This game is waiting for a second player.
+        </p>
+      </div>
+      <button
+        onClick={handleJoinGameAsOpponent}
+        style={{
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white", padding: "10px 20px", borderRadius: 12,
+          border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+          boxShadow: "0 4px 14px rgba(102,126,234,0.4)", whiteSpace: "nowrap",
+          flexShrink: 0,
+        }}
+      >
+        Join Game
+      </button>
+    </div>
+  );
 
-      {/* Header */}
-      <Header showBackButton={true} backTo="/" />
-
-      {/* {isBotGame && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '14px 16px',
-          background: isDark
-            ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(16, 185, 129, 0.18) 100%)'
-            : 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%)',
-          borderBottom: `1px solid ${isDark ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.25)'}`,
-        }}>
-          <p style={{
-            margin: 0,
-            fontSize: '14px',
-            fontWeight: '600',
-            color: isDark ? '#bfdbfe' : '#1e3a8a',
-          }}>
-            {isPlayerInGame
-              ? "Bot match active: the bot will play automatically on its turn."
-              : "This is a private bot game and cannot be joined."}
+  const WaitingBanner = () => (
+    <motion.div
+      initial={{ opacity: 0, y: -16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="cc-banner"
+      style={{
+        background: isDark
+          ? "linear-gradient(135deg, rgba(168,85,247,0.12) 0%, rgba(236,72,153,0.12) 100%)"
+          : "linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(236,72,153,0.08) 100%)",
+        borderBottom: `1px solid rgba(168,85,247,0.2)`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <Users style={{ width: 18, height: 18, color: "#a855f7" }} />
+        </motion.div>
+        <div>
+          <p style={{ fontWeight: 700, color: isDark ? "#f9fafb" : "#1f2937", fontSize: 13, marginBottom: 2 }}>
+            Waiting for Opponent
           </p>
+          <p style={{ color: isDark ? "#d1d5db" : "#6b7280", fontSize: 12 }}>Share the link to invite someone</p>
         </div>
-      )} */}
+      </div>
+      <button
+        onClick={handleCopyLink}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          background: linkCopied
+            ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            : "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)",
+          color: "white", padding: "9px 16px", borderRadius: 12,
+          border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+          boxShadow: linkCopied ? "0 4px 14px rgba(16,185,129,0.4)" : "0 4px 14px rgba(168,85,247,0.4)",
+          transition: "all 0.3s", whiteSpace: "nowrap", flexShrink: 0,
+        }}
+      >
+        {linkCopied ? (
+          <><Check style={{ width: 14, height: 14 }} /> Copied!</>
+        ) : (
+          <><Link2 style={{ width: 14, height: 14 }} /> Copy Link</>
+        )}
+      </button>
+    </motion.div>
+  );
 
-      {/* Join Game Prompt - Show if user can join but hasn't yet */}
-      {!isBotGame && canJoinGame && !isPlayerInGame && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-          background: isDark
-            ? 'rgba(102, 126, 234, 0.1)'
-            : 'rgba(102, 126, 234, 0.1)',
-          borderBottom: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.2)'}`
+  // ── Status strip ───────────────────────────────────────────────────
+  const StatusStrip = ({ minimal = false }: { minimal?: boolean }) => (
+    <div
+      className="game-status-strip"
+      style={{
+        background: isDark
+          ? currentGame?.game_state?.turn === "white"
+            ? "rgba(249,250,251,0.05)"
+            : "rgba(17,24,39,0.4)"
+          : currentGame?.game_state?.turn === "white"
+            ? "rgba(255,255,255,0.7)"
+            : "rgba(30,41,59,0.08)",
+        borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        <div className="game-status-dot" style={{ background: turnDotColor, boxShadow: isMyTurn ? `0 0 6px ${turnDotColor}` : "none" }} />
+        <span style={{
+          fontSize: minimal ? 12 : 13, fontWeight: 600,
+          color: isDark ? "#f9fafb" : "#1f2937", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
+          {gameState.gameOver ? (
+            gameState.winner === "draw" ? "Game drawn 🤝" :
+              gameState.winner === gameState.userColor ? "You won! 🎉" : "You lost 😔"
+          ) : turnLabel}
+        </span>
+        {gameState.isInCheck && !gameState.gameOver && (
+          <motion.span
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+            style={{
+              fontSize: 10, fontWeight: 800, color: "#ef4444",
+              background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)",
+              borderRadius: 6, padding: "1px 6px", flexShrink: 0,
+            }}
+          >
+            CHECK
+          </motion.span>
+        )}
+      </div>
+      {!minimal && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 11, color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)", fontWeight: 600 }}>
+            {gameState.cardsRemaining} cards left
+          </span>
           <div style={{
-            textAlign: 'center',
-            maxWidth: '448px',
-            margin: '0 auto'
+            fontSize: 11, padding: "2px 8px", borderRadius: 12,
+            background: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+            color: isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.5)", fontWeight: 700,
+            textTransform: "capitalize",
           }}>
-            <h3 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#667eea',
-              marginBottom: '8px'
-            }}>
-              Join This Game?
-            </h3>
-            <p style={{
-              color: isDark ? '#9ca3af' : '#6b7280',
-              marginBottom: '16px',
-              fontSize: '14px'
-            }}>
-              This game is waiting for a second player. Click below to join!
+            {gameState.currentPlayer}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Game Over overlay ──────────────────────────────────────────────
+  const GameOverOverlay = () => (
+    <AnimatePresence>
+      {gameState.gameOver && (
+        <div className="cc-gameover-overlay">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: "spring", damping: 20, stiffness: 260 }}
+            className="cc-gameover-card"
+            style={{
+              background: "linear-gradient(135deg, #fbbf24 0%, #f97316 50%, #ef4444 100%)",
+              border: "2px solid #fcd34d",
+            }}
+          >
+            <motion.div
+              animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2.5 }}
+              style={{ display: "inline-block", marginBottom: 12 }}
+            >
+              <Trophy style={{ width: 44, height: 44, color: "white" }} />
+            </motion.div>
+            <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>
+              {gameState.winner === "draw" ? "Draw!" :
+                gameState.winner === gameState.userColor ? "Victory!" : "Defeat!"}
+            </h2>
+            <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 20 }}>
+              {gameState.winner === "draw" ? "The game is tied! 🤝" :
+                gameState.winner === gameState.userColor ? "You Won! 🎉" :
+                  gameState.winner ? "You Lost! 😔" : "Game Over"}
             </p>
             <button
-              onClick={handleJoinGameAsOpponent}
+              onClick={() => navigate("/play")}
               style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '16px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = '0 4px 16px rgba(102, 126, 234, 0.4)';
+                background: "rgba(255,255,255,0.25)", color: "white",
+                border: "2px solid rgba(255,255,255,0.5)", borderRadius: 14,
+                padding: "12px 28px", fontWeight: 700, fontSize: 15,
+                cursor: "pointer", backdropFilter: "blur(4px)",
               }}
             >
-              Join Game
+              Play Again
             </button>
-          </div>
+          </motion.div>
         </div>
       )}
+    </AnimatePresence>
+  );
 
-      {/* Waiting for Opponent - Show if player is in game but waiting for opponent */}
-      {!isBotGame && isWaitingForOpponent && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-            background: isDark
-              ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%)'
-              : 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%)',
-            borderBottom: `1px solid ${isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)'}`,
-            backdropFilter: 'blur(10px)'
-          }}
-        >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            maxWidth: '800px',
-            width: '100%',
-            gap: '16px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              flex: '1 1 auto'
-            }}>
-              <motion.div
-                animate={{
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <Users style={{
-                  width: '24px',
-                  height: '24px',
-                  color: '#a855f7'
-                }} />
-              </motion.div>
-              <div>
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: isDark ? '#f9fafb' : '#1f2937',
-                  marginBottom: '4px'
-                }}>
-                  Waiting for Opponent
-                </h3>
-                <p style={{
-                  color: isDark ? '#d1d5db' : '#6b7280',
-                  fontSize: '13px',
-                  margin: 0
-                }}>
-                  Share the link below to invite someone to play
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleCopyLink}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: linkCopied
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-                color: 'white',
-                padding: '10px 20px',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600',
-                boxShadow: linkCopied
-                  ? '0 4px 16px rgba(16, 185, 129, 0.4)'
-                  : '0 4px 16px rgba(168, 85, 247, 0.4)',
-                transition: 'all 0.3s ease',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseEnter={(e) => {
-                if (!linkCopied) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(168, 85, 247, 0.5)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!linkCopied) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(168, 85, 247, 0.4)';
-                }
-              }}
-            >
-              {linkCopied ? (
-                <>
-                  <Check style={{ width: '16px', height: '16px' }} />
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Link2 style={{ width: '16px', height: '16px' }} />
-                  <span>Copy Game Link</span>
-                </>
-              )}
-            </button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Main Game Layout */}
-      <main style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'stretch',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        padding: '24px 16px',
-        minHeight: 0
-      }}>
-        {/* Background decorative elements */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: 'hidden',
-          pointerEvents: 'none',
-          zIndex: 0
-        }}>
-          <div style={{
-            position: 'absolute',
-            top: '15%',
-            left: '5%',
-            width: '400px',
-            height: '400px',
-            background: isDark
-              ? 'radial-gradient(circle, rgba(102, 126, 234, 0.12) 0%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%)',
-            borderRadius: '50%',
-            filter: 'blur(60px)'
-          }}></div>
-          <div style={{
-            position: 'absolute',
-            bottom: '15%',
-            right: '5%',
-            width: '350px',
-            height: '350px',
-            background: isDark
-              ? 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)'
-              : 'radial-gradient(circle, rgba(139, 92, 246, 0.08) 0%, transparent 70%)',
-            borderRadius: '50%',
-            filter: 'blur(60px)'
-          }}></div>
-        </div>
-
-        {/* Main Content Container with Max Width */}
-        <div style={{
-          width: '100%',
-          maxWidth: '1400px',
-          height: '100%',
-          display: 'flex',
-          position: 'relative',
-          zIndex: 1,
-          gap: '24px'
-        }}>
-          {/* Chess Board Area */}
-          <div style={{
-            flex: '1 1 60%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0',
-            minWidth: 0
-          }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              style={{
-                width: '100%',
-                maxWidth: 'min(700px, 100%)',
-                aspectRatio: '1',
-                boxShadow: isDark
-                  ? '0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)'
-                  : '0 30px 60px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-                borderRadius: '20px',
-                overflow: 'hidden'
-              }}
-            >
-              <ChessBoard
-                game={chessGame}
-                fromMoveSelected={gameState.fromMoveSelected}
-                validMoves={gameState.validMoves}
-                showMoves={showMoves}
-                onDrop={onDrop}
-                onSquareClick={handleSquareClick}
-                currentPlayer={gameState.currentPlayer}
-                canMove={
-                  gameState.currentCards.length > 0 &&
-                  gameState.gameOver === false &&
-                  isPlayerInGame === true &&
-                  gameState.currentPlayer === gameState.userColor
-                }
-                orientation={
-                  currentGame?.player_white === identityId
-                    ? "white"
-                    : currentGame?.player_black === identityId
-                      ? "black"
-                      : "white"
-                }
-              />
-            </motion.div>
-          </div>
-
-          {/* Game Controls Sidebar */}
-          <aside style={{
-            flex: '1 1 40%',
-            background: isDark
-              ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)'
-              : 'linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
-            backdropFilter: 'blur(20px)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            position: 'relative',
-            zIndex: 1,
-            borderRadius: '20px',
-            border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}`,
-            boxShadow: isDark
-              ? '0 20px 40px -12px rgba(0, 0, 0, 0.5)'
-              : '0 20px 40px -12px rgba(0, 0, 0, 0.15)',
-            minWidth: 0,
-            maxWidth: '480px'
-          }}>
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                padding: '20px',
-                minHeight: 0
-              }}
-            >
-              <CompactGameControls
-                currentCards={gameState.currentCards}
-                cardsToDrawCount={gameState.cardsToDrawCount}
-                cardsRemaining={gameState.cardsRemaining}
-                isInCheck={gameState.isInCheck}
-                checkAttempts={gameState.checkAttempts}
-                onDrawCard={drawCard}
-                noValidCard={gameState.noValidCard}
-                onReshuffle={reshuffleDeck}
-                canDrawCard={gameState.canDrawCard}
-                currentPlayer={gameState.currentPlayer}
-                userColor={gameState.userColor}
-                gameOver={gameState.gameOver}
-                winner={gameState.winner}
-                // onNewGame={newGame}
-                showMoves={showMoves}
-                handleShowMoveButton={setShowMoves}
-              />
-            </motion.div>
-          </aside>
-        </div>
-      </main>
-
-      {/* Pawn Promotion Dialog */}
+  // ── Promotion dialog ───────────────────────────────────────────────
+  const PromotionDialog = () => (
+    <>
       {!!gameState.pendingPromotion && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(4px)',
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '16px',
-          animation: 'fadeIn 0.2s ease-out'
+          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)",
+          backdropFilter: "blur(4px)", zIndex: 999999,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
         }}>
           <div style={{
-            background: isDark ? '#1e293b' : '#ffffff',
-            color: isDark ? '#f8fafc' : '#0f172a',
-            border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
-            borderRadius: '24px',
-            padding: '32px',
-            maxWidth: '400px',
-            width: '100%',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            position: 'relative'
+            background: isDark ? "#1e293b" : "#ffffff",
+            color: isDark ? "#f8fafc" : "#0f172a",
+            border: isDark ? "1px solid #334155" : "1px solid #e2e8f0",
+            borderRadius: 24, padding: "32px 24px",
+            maxWidth: 380, width: "100%",
+            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", position: "relative",
           }}>
-            <h2 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>
+            <h2 style={{ textAlign: "center", fontSize: 22, fontWeight: 700, marginBottom: 20 }}>
               Choose Promotion
             </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '16px'
-            }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
               {[
-                { id: 'q', name: 'Queen', icon: '♕' },
-                { id: 'r', name: 'Rook', icon: '♖' },
-                { id: 'n', name: 'Knight', icon: '♘' },
-                { id: 'b', name: 'Bishop', icon: '♗' }
+                { id: "q", name: "Queen", icon: "♕" },
+                { id: "r", name: "Rook", icon: "♖" },
+                { id: "n", name: "Knight", icon: "♘" },
+                { id: "b", name: "Bishop", icon: "♗" },
               ].map((piece) => (
                 <button
                   key={piece.id}
                   onClick={() => resolvePromotion(piece.id)}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '24px',
-                    background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-                    borderRadius: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    color: isDark ? '#fff' : '#000',
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    padding: "20px 12px",
+                    background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                    border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`,
+                    borderRadius: 16, cursor: "pointer", transition: "all 0.2s",
+                    color: isDark ? "#fff" : "#000",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
-                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.06)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
                 >
-                  <span style={{ fontSize: '48px', lineHeight: '1', marginBottom: '8px' }}>
-                    {piece.icon}
-                  </span>
-                  <span style={{ fontSize: '16px', fontWeight: '500' }}>
-                    {piece.name}
-                  </span>
+                  <span style={{ fontSize: 42, lineHeight: 1, marginBottom: 6 }}>{piece.icon}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{piece.name}</span>
                 </button>
               ))}
             </div>
             <button
               onClick={() => cancelPromotion()}
               style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'transparent',
-                border: 'none',
-                color: isDark ? '#94a3b8' : '#64748b',
-                cursor: 'pointer',
-                fontSize: '24px',
-                lineHeight: 1,
-                padding: '4px'
+                position: "absolute", top: 14, right: 14, background: "transparent",
+                border: "none", color: isDark ? "#94a3b8" : "#64748b",
+                cursor: "pointer", fontSize: 24, lineHeight: 1, padding: 4,
               }}
               title="Cancel"
             >
@@ -939,8 +724,133 @@ export const GamePage: React.FC = () => {
           </div>
         </div>
       )}
+    </>
+  );
 
-      {/* Move History Footer */}
+  // ── Main render ────────────────────────────────────────────────────
+  return (
+    <div className="game-shell" style={{
+      background: bg, color: isDark ? "#f9fafb" : "#1f2937",
+      "--cc-sidebar-w": `${sidebarWidth}px`,
+      "--cc-bottom-panel-h": `${bottomPanelHeight}px`,
+    } as React.CSSProperties}>
+      <CollapsibleRulesSidebar isOpen={showRules} onClose={() => setShowRules(false)} />
+      <Header />
+
+      {/* Banners */}
+      {!isBotGame && canJoinGame && !isPlayerInGame && <JoinBanner />}
+      {!isBotGame && isWaitingForOpponent && <WaitingBanner />}
+
+      {/* ── MOBILE layout ── */}
+      <div className="game-main-mobile">
+        <StatusStrip minimal />
+        {/* Board — takes all remaining height above bottom panel */}
+        <div className="game-board-area" style={{ flexDirection: "column" }}>
+          <div style={{ width: "min(100cqmin, 840px)", display: "flex", flexDirection: "column", gap: "6px" }}>
+            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).w : getCapturedPieces(chessGame.fen()).b} align="left" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="game-board-inner"
+              style={{
+                boxShadow: isDark
+                  ? "0 24px 48px -10px rgba(0,0,0,0.7)"
+                  : "0 24px 48px -10px rgba(0,0,0,0.2)",
+                width: "100%", height: "auto", aspectRatio: 1
+              }}
+            >
+              <ChessBoard
+                game={chessGame}
+                fromMoveSelected={gameState.fromMoveSelected}
+                validMoves={filteredValidMoves}
+                showMoves={showMoves}
+                onDrop={onDrop}
+                onSquareClick={handleSquareClick}
+                currentPlayer={gameState.currentPlayer}
+                canMove={canMove}
+                orientation={boardOrientation}
+              />
+            </motion.div>
+            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).b : getCapturedPieces(chessGame.fen()).w} align="left" />
+          </div>
+        </div>
+        {/* Mobile Resizer */}
+        <div
+          onPointerDown={handleMobileResize}
+          style={{ height: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "row-resize", background: bottomPanelBg, borderTop: "1px solid rgba(255,255,255,0.05)" }}
+        >
+          <div style={{ width: "40px", height: "4px", borderRadius: "2px", background: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)" }} />
+        </div>
+        {/* Bottom panel — cards + draw button */}
+        <div className="game-bottom-panel" style={{ background: bottomPanelBg, borderTop: "none" }}>
+          <CompactGameControls {...sharedControlProps} isMobile={true} />
+        </div>
+      </div>
+
+      {/* ── DESKTOP layout ── */}
+      <div className="game-main-desktop">
+        {/* Board area */}
+        <div className="game-board-area" style={{ flex: 1, flexDirection: "column" }}>
+          <div style={{ width: "min(100cqmin, 840px)", display: "flex", flexDirection: "column", gap: "8px" }}>
+            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).w : getCapturedPieces(chessGame.fen()).b} align="left" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="game-board-inner"
+              style={{
+                boxShadow: isDark
+                  ? "0 30px 60px -12px rgba(0,0,0,0.8)"
+                  : "0 30px 60px -12px rgba(0,0,0,0.22)",
+                width: "100%", height: "auto", aspectRatio: 1
+              }}
+            >
+              <ChessBoard
+                game={chessGame}
+                fromMoveSelected={gameState.fromMoveSelected}
+                validMoves={filteredValidMoves}
+                showMoves={showMoves}
+                onDrop={onDrop}
+                onSquareClick={handleSquareClick}
+                currentPlayer={gameState.currentPlayer}
+                canMove={canMove}
+                orientation={boardOrientation}
+              />
+            </motion.div>
+            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).b : getCapturedPieces(chessGame.fen()).w} align="left" />
+          </div>
+        </div>
+
+        {/* Desktop Resizer */}
+        <div
+          onPointerDown={handleDesktopResize}
+          style={{ width: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "col-resize", background: sidebarBg, borderLeft: "1px solid rgba(255,255,255,0.05)", zIndex: 10 }}
+        >
+          <div style={{ height: "40px", width: "4px", borderRadius: "2px", background: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)" }} />
+        </div>
+
+        {/* Sidebar */}
+        <aside className="game-sidebar" style={{ background: sidebarBg, backdropFilter: "blur(20px)", borderLeft: "none" }}>
+          <StatusStrip />
+          <div className="game-sidebar-scroll">
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.45, delay: 0.15 }}
+              style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}
+            >
+              <CompactGameControls {...sharedControlProps} isMobile={false} />
+            </motion.div>
+          </div>
+        </aside>
+      </div>
+
+      {/* Global overlays */}
+      <GameOverOverlay />
+      <PromotionDialog />
+
+      {/* Move History Footer (game over only) */}
       {gameState.gameOver && <MoveHistoryFooter moveHistory={gameState.moveHistory} />}
     </div>
   );

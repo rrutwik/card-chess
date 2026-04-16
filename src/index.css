@@ -1,7 +1,11 @@
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
-    *, :before, :after, ::backdrop {
+
+    *,
+    :before,
+    :after,
+    ::backdrop {
       --tw-scale-x: 1;
       --tw-scale-y: 1;
       --tw-scale-z: 1;
@@ -51,7 +55,9 @@
 }
 
 @layer theme {
-  :root, :host {
+
+  :root,
+  :host {
     /* Fallback values to prevent white flash */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -168,7 +174,8 @@
   }
 
   /* Light theme overrides */
-  .light, :host(.light) {
+  .light,
+  :host(.light) {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -191,7 +198,8 @@
   }
 
   /* Dark theme overrides */
-  .dark, :host(.dark) {
+  .dark,
+  :host(.dark) {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -299,7 +307,11 @@
 }
 
 @layer base {
-  *, :after, :before, ::backdrop {
+
+  *,
+  :after,
+  :before,
+  ::backdrop {
     box-sizing: border-box;
     border: 0 solid;
     margin: 0;
@@ -313,7 +325,8 @@
     padding: 0;
   }
 
-  html, :host {
+  html,
+  :host {
     -webkit-text-size-adjust: 100%;
     tab-size: 4;
     line-height: 1.5;
@@ -338,7 +351,12 @@
     text-decoration: underline dotted;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-size: inherit;
     font-weight: inherit;
   }
@@ -350,11 +368,15 @@
     text-decoration: inherit;
   }
 
-  b, strong {
+  b,
+  strong {
     font-weight: bolder;
   }
 
-  code, kbd, samp, pre {
+  code,
+  kbd,
+  samp,
+  pre {
     font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
     font-variation-settings: var(--default-mono-font-variation-settings, normal);
@@ -365,7 +387,8 @@
     font-size: 80%;
   }
 
-  sub, sup {
+  sub,
+  sup {
     vertical-align: baseline;
     font-size: 75%;
     line-height: 0;
@@ -398,21 +421,35 @@
     display: list-item;
   }
 
-  ol, ul, menu {
+  ol,
+  ul,
+  menu {
     list-style: none;
   }
 
-  img, svg, video, canvas, audio, iframe, embed, object {
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
     vertical-align: middle;
     display: block;
   }
 
-  img, video {
+  img,
+  video {
     max-width: 100%;
     height: auto;
   }
 
-  button, input, select, optgroup, textarea {
+  button,
+  input,
+  select,
+  optgroup,
+  textarea {
     font: inherit;
     font-feature-settings: inherit;
     font-variation-settings: inherit;
@@ -518,7 +555,8 @@
     box-shadow: none;
   }
 
-  button, input:where([type="button"], [type="reset"], [type="submit"]) {
+  button,
+  input:where([type="button"], [type="reset"], [type="submit"]) {
     appearance: button;
   }
 
@@ -595,7 +633,8 @@
     line-height: 1.5;
   }
 
-  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) label, :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) button {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) label,
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) button {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
@@ -677,31 +716,31 @@
     width: 100%;
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .container {
       max-width: 40rem;
     }
   }
 
-  @media (width >= 48rem) {
+  @media (width >=48rem) {
     .container {
       max-width: 48rem;
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .container {
       max-width: 64rem;
     }
   }
 
-  @media (width >= 80rem) {
+  @media (width >=80rem) {
     .container {
       max-width: 80rem;
     }
   }
 
-  @media (width >= 96rem) {
+  @media (width >=96rem) {
     .container {
       max-width: 96rem;
     }
@@ -945,11 +984,11 @@
   }
 
   .rounded-md {
-    border-radius: calc(var(--radius)  - 2px);
+    border-radius: calc(var(--radius) - 2px);
   }
 
   .rounded-xl {
-    border-radius: calc(var(--radius)  + 4px);
+    border-radius: calc(var(--radius) + 4px);
   }
 
   .border {
@@ -1681,162 +1720,162 @@
     scale: var(--tw-scale-x) var(--tw-scale-y);
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:block {
       display: block;
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:inline {
       display: inline;
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:h-5 {
       height: calc(var(--spacing) * 5);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:w-5 {
       width: calc(var(--spacing) * 5);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:w-24 {
       width: calc(var(--spacing) * 24);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:gap-3 {
       gap: calc(var(--spacing) * 3);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:gap-6 {
       gap: calc(var(--spacing) * 6);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:px-4 {
       padding-inline: calc(var(--spacing) * 4);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:py-4 {
       padding-block: calc(var(--spacing) * 4);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:py-6 {
       padding-block: calc(var(--spacing) * 6);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:text-2xl {
       font-size: var(--text-2xl);
       line-height: var(--tw-leading, var(--text-2xl--line-height));
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:text-3xl {
       font-size: var(--text-3xl);
       line-height: var(--tw-leading, var(--text-3xl--line-height));
     }
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .sm\:text-5xl {
       font-size: var(--text-5xl);
       line-height: var(--tw-leading, var(--text-5xl--line-height));
     }
   }
 
-  @media (width >= 48rem) {
+  @media (width >=48rem) {
     .md\:text-6xl {
       font-size: var(--text-6xl);
       line-height: var(--tw-leading, var(--text-6xl--line-height));
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:sticky {
       position: sticky;
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:top-24 {
       top: calc(var(--spacing) * 24);
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:hidden {
       display: none;
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:grid-cols-\[1fr_340px\] {
       grid-template-columns: 1fr 340px;
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:gap-8 {
       gap: calc(var(--spacing) * 8);
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:self-start {
       align-self: flex-start;
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:py-8 {
       padding-block: calc(var(--spacing) * 8);
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .lg\:text-3xl {
       font-size: var(--text-3xl);
       line-height: var(--tw-leading, var(--text-3xl--line-height));
     }
   }
 
-  @media (width >= 80rem) {
+  @media (width >=80rem) {
     .xl\:grid-cols-4 {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 80rem) {
+  @media (width >=80rem) {
     .xl\:grid-cols-\[1fr_380px\] {
       grid-template-columns: 1fr 380px;
     }
@@ -2152,18 +2191,39 @@ html {
 
 /* Custom animations and utilities for Card Chess */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+  }
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .animate-float {
@@ -2338,29 +2398,482 @@ html {
 
 /* Responsive text utilities */
 @media (max-width: 640px) {
-  .text-responsive-sm { font-size: 0.875rem; }
-  .text-responsive-base { font-size: 1rem; }
-  .text-responsive-lg { font-size: 1.125rem; }
-  .text-responsive-xl { font-size: 1.25rem; }
+  .text-responsive-sm {
+    font-size: 0.875rem;
+  }
+
+  .text-responsive-base {
+    font-size: 1rem;
+  }
+
+  .text-responsive-lg {
+    font-size: 1.125rem;
+  }
+
+  .text-responsive-xl {
+    font-size: 1.25rem;
+  }
 }
 
 @media (min-width: 641px) and (max-width: 768px) {
-  .text-responsive-sm { font-size: 1rem; }
-  .text-responsive-base { font-size: 1.125rem; }
-  .text-responsive-lg { font-size: 1.25rem; }
-  .text-responsive-xl { font-size: 1.5rem; }
+  .text-responsive-sm {
+    font-size: 1rem;
+  }
+
+  .text-responsive-base {
+    font-size: 1.125rem;
+  }
+
+  .text-responsive-lg {
+    font-size: 1.25rem;
+  }
+
+  .text-responsive-xl {
+    font-size: 1.5rem;
+  }
 }
 
 @media (min-width: 769px) {
-  .text-responsive-sm { font-size: 1.125rem; }
-  .text-responsive-base { font-size: 1.25rem; }
-  .text-responsive-lg { font-size: 1.5rem; }
-  .text-responsive-xl { font-size: 1.875rem; }
+  .text-responsive-sm {
+    font-size: 1.125rem;
+  }
+
+  .text-responsive-base {
+    font-size: 1.25rem;
+  }
+
+  .text-responsive-lg {
+    font-size: 1.5rem;
+  }
+
+  .text-responsive-xl {
+    font-size: 1.875rem;
+  }
 }
 
 /* Print styles */
 @media print {
-  .no-print { display: none !important; }
-  .print-break-inside-avoid { break-inside: avoid; }
-  .print-text-black { color: black !important; }
+  .no-print {
+    display: none !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  .print-text-black {
+    color: black !important;
+  }
+}
+
+/* ============================================================
+   CARD CHESS — COMPONENT STYLES
+   ============================================================ */
+
+/* ── Layout Tokens ────────────────────────────────────────── */
+:root {
+  --cc-header-h: 52px;
+  --cc-status-h: 38px;
+  --cc-bottom-panel-h: 188px;
+  --cc-sidebar-w: 340px;
+  --cc-board-padding: 12px;
+}
+
+/* ── Full-page game shell ─────────────────────────────────── */
+.game-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ── Status strip (turn indicator) ───────────────────────── */
+.game-status-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: var(--cc-status-h);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.game-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Board area ───────────────────────────────────────────── */
+.game-board-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;           /* fill available space in both mobile col and desktop row */
+  min-height: 0;      /* allow flex child to shrink below content size */
+  min-width: 0;
+  padding: var(--cc-board-padding);
+  overflow: hidden;
+  container-type: size;
+}
+
+.game-board-inner {
+  /* Fills the maximum square safely within the board area content box */
+  width: min(100cqmin, 840px);
+  height: min(100cqmin, 840px);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Mobile bottom panel ──────────────────────────────────── */
+.game-bottom-panel {
+  flex-shrink: 0;
+  height: var(--cc-bottom-panel-h);
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+/* ── Desktop sidebar ──────────────────────────────────────── */
+.game-sidebar {
+  width: var(--cc-sidebar-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.game-sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Card item ────────────────────────────────────────────── */
+.cc-card {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(155deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.99) 100%);
+  border: 2px solid rgba(16, 185, 129, 0.28);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 5px 6px;
+  overflow: hidden;
+  user-select: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}
+
+.cc-card--clickable {
+  cursor: pointer;
+}
+
+.cc-card--clickable:hover {
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.cc-card--selected {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.45), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.cc-card__pattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image:
+    linear-gradient(45deg, rgba(16, 185, 129, 0.4) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(16, 185, 129, 0.4) 25%, transparent 25%);
+  background-size: 8px 8px;
+  pointer-events: none;
+}
+
+.cc-card__top {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  align-self: flex-start;
+  position: relative;
+  z-index: 1;
+}
+
+.cc-card__value {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: rgba(16, 185, 129, 0.78);
+}
+
+.cc-card__suit-red {
+  color: rgba(248, 113, 113, 0.85);
+  font-size: 9px;
+}
+
+.cc-card__suit-black {
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 9px;
+}
+
+.cc-card__piece-wrap {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cc-card__piece-shadow {
+  position: absolute;
+  color: rgba(16, 185, 129, 0.22);
+  filter: blur(5px);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.cc-card__piece {
+  position: relative;
+  color: white;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+  line-height: 1;
+}
+
+.cc-card__bottom {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cc-card__name {
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(16, 185, 129, 0.9);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cc-card__sub {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 1px;
+}
+
+/* ── Card glow overlay (selected) ────────────────────────── */
+.cc-card__glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(255, 255, 255, 0.8), rgba(16, 185, 129, 0.9));
+  filter: blur(5px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Empty card placeholder ───────────────────────────────── */
+.cc-card-empty {
+  flex: 1;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 2px dashed rgba(16, 185, 129, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ── Check warning ────────────────────────────────────────── */
+.cc-check-warning {
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid transparent;
+}
+
+/* ── Draw card button ─────────────────────────────────────── */
+.cc-draw-btn {
+  width: 100%;
+  border: none;
+  font-weight: 700;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: filter 0.18s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.cc-draw-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.cc-draw-btn:disabled {
+  cursor: not-allowed;
+}
+
+/* ── Icon button ──────────────────────────────────────────── */
+.cc-icon-btn {
+  border: 1px solid;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: inherit;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+
+.cc-icon-btn--active {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: rgba(16, 185, 129, 0.9) !important;
+}
+
+/* ── Deck pill ────────────────────────────────────────────── */
+.cc-deck-pill {
+  border-radius: 12px;
+  background: rgba(139, 92, 246, 0.14);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Game over modal ──────────────────────────────────────── */
+.cc-gameover-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  padding: 16px;
+}
+
+.cc-gameover-card {
+  border-radius: 24px;
+  padding: 32px 28px;
+  color: white;
+  text-align: center;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Waiting / Join banners ───────────────────────────────── */
+.cc-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive: mobile-first ─────────────────────────────── */
+
+/* Mobile: board + bottom panel stacked */
+.game-main-mobile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Desktop: board + sidebar side by side */
+.game-main-desktop {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .game-main-desktop {
+    display: none !important;
+  }
+
+  :root {
+    --cc-bottom-panel-h: 188px;
+    --cc-board-padding: 8px;
+  }
+}
+
+@media (min-width: 768px) {
+  .game-main-mobile {
+    display: none !important;
+  }
+}
+
+/* ── Scrollbar styling in sidebar ─────────────────────────── */
+.game-sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.game-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.game-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* ── Page-level responsive helpers ───────────────────────── */
+.page-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure touch targets are at least 44px */
+button,
+[role="button"],
+a {
+  min-height: 32px;
+}
+
+@media (max-width: 767px) {
+
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+  }
 }
