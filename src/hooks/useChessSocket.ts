@@ -8,8 +8,8 @@ interface Props {
   onGameUpdate: (game: ChessGame) => void;
 }
 
-export function useChessSocket({ gameId, onGameUpdate }: Props) {
-  const socketRef = useRef<ChessSocket | null>(null);
+export function useChessSocket({ gameId, onGameUpdate }: Props): ChessSocket | null {
+  const socketRef = useRef<ChessSocket>(null);
   const callbackRef = useRef(onGameUpdate);
 
   // Always keep latest callback (prevents stale closure)

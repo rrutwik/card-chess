@@ -1,13 +1,13 @@
 import { io, Socket } from "socket.io-client";
-import { ChessGame } from "./api";
+import { ChessGame, UpdateGameStateRequest } from "./api";
 
 const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_BASE_URL ||
+  (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL ||
   "https://backend-api.techkarmic.com";
 
 export class ChessSocket {
   private socket: Socket;
-  private gameUpdateHandler?: (data: any) => void;
+  private gameUpdateHandler?: (data: { gameId: string; data: ChessGame }) => void;
   private currentGameId?: string;
 
   constructor(token?: string, guestToken?: string) {
@@ -55,6 +55,10 @@ export class ChessSocket {
   leaveGame(gameId: string) {
     this.socket.emit("leave_game", { gameId });
     this.currentGameId = undefined;
+  }
+
+  updateGameState(gameId: string, version: number, gameState: UpdateGameStateRequest) {
+    this.socket.emit("update_game_state", { gameId, version, game_state: gameState });
   }
 
   onGameState(callback: (data: ChessGame) => void) {

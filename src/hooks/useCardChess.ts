@@ -7,6 +7,7 @@ import { ChessAPI, ChessGame } from "../services/api";
 import { useChessSocket } from "./useChessSocket";
 import { CardChessMove, getBestMove } from "../utils/bot";
 import { playSound } from "../utils/sounds";
+import { ChessSocket } from "../services/socket";
 
 export const MAX_CHECK_ATTEMPTS = 5;
 
@@ -142,6 +143,7 @@ export function useCardChess(
   const gameId = game?.game_id;
 
   const gameRef = useRef(new Chess(game?.game_state?.fen || undefined));
+  const chessSocketRef = useRef<ChessSocket | null>(null);
   // Ref to track version without depending on full gameState in callbacks
   const versionRef = useRef(game?.version || 0);
   const [gameState, setGameState] = useState<GameState>(() => ({
@@ -210,7 +212,7 @@ export function useCardChess(
 
   // Sync game state with backend
   const syncWithBackend = useCallback(
-    async (
+    (
       fen: string,
       turn: "white" | "black",
       current_cards: PlayingCard[] | null,
@@ -220,12 +222,13 @@ export function useCardChess(
       currentVersion: number,
       status: "active" | "completed" | "abandoned",
       winner: "white" | "black" | "draw" | undefined = undefined
-    ): Promise<void> => {
-      if (!gameId || !userId) return;
+    ) => {
+      if (!gameId || !userId || !chessSocketRef.current) return;
 
       try {
-        const response = await ChessAPI.updateGameState(
+        chessSocketRef.current.updateGameState(
           gameId,
+          currentVersion,
           {
             fen,
             turn,
@@ -235,39 +238,8 @@ export function useCardChess(
             moves,
             status,
             winner,
-          },
-          currentVersion
-        );
-        const responseGame = response.data.data;
-        if (responseGame.version > versionRef.current) {
-          console.log("Sync with backend", responseGame.version, versionRef.current);
-          versionRef.current = responseGame.version;
-          const backendCards = responseGame.game_state.current_cards || [];
-          gameRef.current.load(responseGame.game_state.fen);
-          let moves = [] as Move[];
-          if (backendCards.length > 0) {
-            moves = getValidMovesForMultipleCards(
-              gameRef.current,
-              backendCards
-            );
           }
-          setGameState((prev) => ({
-            ...prev,
-            version: responseGame.version,
-            isInCheck: gameRef.current.inCheck(),
-            currentPlayer: responseGame.game_state.turn,
-            moveHistory: responseGame.game_state.moves || [],
-            currentCards: backendCards,
-            fromMoveSelected: null,
-            validMoves: moves,
-            deck: responseGame.game_state.cards_deck || [],
-            cardsRemaining: (responseGame.game_state.cards_deck || []).length,
-            checkAttempts: responseGame.game_state.check_attempts || 0,
-            gameStatus: responseGame.game_state.status,
-            gameOver: responseGame.game_state.status === "completed",
-            pendingPromotion: null,
-          }));
-        }
+        );
       } catch (error) {
         console.error("Failed to sync with backend:", error);
       }
@@ -751,6 +723,10 @@ export function useCardChess(
     gameId,
     onGameUpdate: handleSocketUpdate
   });
+
+  useEffect(() => {
+    chessSocketRef.current = chessSocket;
+  }, [chessSocket]);
   // useEffect(() => {
   //   if (!gameId || !userId) return;
 
