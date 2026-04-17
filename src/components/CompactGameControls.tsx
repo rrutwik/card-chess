@@ -282,9 +282,9 @@ export function CompactGameControls({
             onClick={() => handleShowMoveButton(!showMoves)}
             style={{
               padding: "0 10px", borderRadius: "12px", border: "1px solid",
-              borderColor: showMoves ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.1)",
-              background: showMoves ? "rgba(16,185,129,0.14)" : "rgba(255,255,255,0.05)",
-              color: showMoves ? "rgba(16,185,129,0.9)" : "rgba(255,255,255,0.4)",
+              borderColor: showMoves ? "rgba(16,185,129,0.4)" : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
+              background: showMoves ? "rgba(16,185,129,0.14)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+              color: showMoves ? "rgba(16,185,129,0.9)" : isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.6)",
               cursor: "pointer", display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               gap: 2, flexShrink: 0, minWidth: 40,
@@ -299,9 +299,9 @@ export function CompactGameControls({
             onClick={onToggleAutoDraw}
             style={{
               padding: "0 9px", borderRadius: "12px", border: "1px solid",
-              borderColor: autoDrawEnabled ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.1)",
-              background: autoDrawEnabled ? "rgba(16,185,129,0.14)" : "rgba(255,255,255,0.05)",
-              color: autoDrawEnabled ? "rgba(16,185,129,0.9)" : "rgba(255,255,255,0.3)",
+              borderColor: autoDrawEnabled ? "rgba(16,185,129,0.4)" : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
+              background: autoDrawEnabled ? "rgba(16,185,129,0.14)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+              color: autoDrawEnabled ? "rgba(16,185,129,0.9)" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.6)",
               cursor: "pointer", display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               gap: 2, flexShrink: 0, minWidth: 40,
