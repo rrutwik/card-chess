@@ -3,7 +3,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { getUserDetails, loginWithGoogle } from '../services/api';
 import { GoogleLoginComponent } from '../components/GoogleLogin';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Home } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { logger } from '../utils/logger';
@@ -256,19 +257,48 @@ export function LoginPage() {
 
           {/* Footer */}
           <div style={{
-            padding: '24px 32px 32px',
+            padding: '24px 32px',
             textAlign: 'center',
             borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e5e7eb',
-            transition: 'border-color 0.3s ease'
+            transition: 'border-color 0.3s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            alignItems: 'center'
           }}>
-            <p style={{
-              margin: 0,
-              fontSize: '13px',
+            <Link 
+              to="/"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                textDecoration: 'none',
+                color: isDark ? '#f9fafb' : '#374151',
+                padding: '10px 20px',
+                background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                borderRadius: '12px',
+                fontWeight: '600',
+                fontSize: '14px',
+                transition: 'all 0.2sease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+              }}
+            >
+              <Home style={{ width: '18px', height: '18px' }} />
+              Return to Home
+            </Link>
+
+            <span style={{
+              fontSize: '12px',
               color: isDark ? '#6b7280' : '#9ca3af',
               transition: 'color 0.3s ease'
             }}>
               By signing in, you agree to our Terms of Service
-            </p>
+            </span>
           </div>
         </div>
       </div>

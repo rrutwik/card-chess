@@ -23,6 +23,8 @@ export function useChessSocket({ gameId, onGameUpdate }: Props): ChessSocket | n
     const token = localStorage.getItem("authToken");
     const guestToken = getGuestToken();
 
+    if (!token && !guestToken) return;
+
     const socket = new ChessSocket(token ?? undefined, guestToken ?? undefined);
     socketRef.current = socket;
 

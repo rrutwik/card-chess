@@ -209,7 +209,7 @@ export const GamePage: React.FC = () => {
     resolvePromotion,
     cancelPromotion,
   } = useCardChess(currentGame, {
-    userId: identityId!,
+    userId: identityId,
     onGameStateChanged: (updatedGame) => setCurrentGame(updatedGame),
   });
 

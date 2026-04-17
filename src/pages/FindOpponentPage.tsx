@@ -14,7 +14,7 @@ export const FindOpponentPage: React.FC = () => {
   const navigate = useNavigate();
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
-  const { user } = useAuth();
+  const { user, sessionIdentity } = useAuth();
 
   const [state, setState] = useState<MatchmakingState>("idle");
   const [searchSeconds, setSearchSeconds] = useState(0);
@@ -31,6 +31,7 @@ export const FindOpponentPage: React.FC = () => {
     const init = async () => {
       const token = localStorage.getItem("authToken") || undefined;
       const guestToken = getGuestToken();
+      if (!token && !guestToken) return;
       const socket = new ChessSocket(token, guestToken ?? undefined);
       socketRef.current = socket;
 
@@ -68,7 +69,7 @@ export const FindOpponentPage: React.FC = () => {
       stopTimer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sessionIdentity?.id]);
 
   const stopTimer = () => {
     if (timerRef.current) {

@@ -120,7 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
     logger.debug("🔄 AuthContext: Context value computed", { isAuthenticated: !!user, isLoading });
     return computedValue;
-  }, [user, isLoading]);
+  }, [user, sessionIdentity, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
