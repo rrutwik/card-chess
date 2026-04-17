@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chess, Move, Square } from "chess.js";
 import { MoveHistory, PlayingCard } from "../types/game";
-import { createDeck, shuffleDeck } from "../utils/deckUtils";
 import { CardChessMap } from "../constants/chess";
 import { ChessAPI, ChessGame } from "../services/api";
 import { useChessSocket } from "./useChessSocket";
@@ -147,7 +146,7 @@ export function useCardChess(
   // Ref to track version without depending on full gameState in callbacks
   const versionRef = useRef(game?.version || 0);
   const [gameState, setGameState] = useState<GameState>(() => ({
-    deck: game?.game_state?.cards_deck || createDeck(),
+    deck: game?.game_state?.cards_deck || [],
     currentCards: game?.game_state?.current_cards || [],
     cardsToDrawCount: game?.cards_to_draw || 1,
     currentPlayer: "white",
@@ -165,7 +164,7 @@ export function useCardChess(
     isInCheck: false,
     canDrawCard: game?.game_state?.status === "active",
     gameStatus: game?.game_state?.status || "active",
-    cardsRemaining: (game?.game_state?.cards_deck || createDeck()).length,
+    cardsRemaining: (game?.game_state?.cards_deck || []).length,
     version: game?.version || 0,
     pendingPromotion: null,
   }));
@@ -216,7 +215,6 @@ export function useCardChess(
       fen: string,
       turn: "white" | "black",
       current_cards: PlayingCard[] | null,
-      cards_deck: PlayingCard[] | null,
       check_attempts: number,
       moves: MoveHistory[],
       currentVersion: number,
@@ -233,7 +231,6 @@ export function useCardChess(
             fen,
             turn,
             current_cards,
-            cards_deck: cards_deck == null ? undefined : cards_deck,
             check_attempts,
             moves,
             status,
@@ -255,6 +252,7 @@ export function useCardChess(
         gameRef.current,
         gameState.currentCards
       );
+      // console.log("Valid moves:", moves);
       setGameState((prev) => ({
         ...prev,
         validMoves: moves,
@@ -262,13 +260,6 @@ export function useCardChess(
       }));
     }
   }, [gameState.currentCards, gameState.userColor, gameState.currentPlayer]);
-
-  useEffect(() => {
-    if (gameState.deck.length < 10) {
-      const shuffled = shuffleDeck(createDeck());
-      setGameState((prev) => ({ ...prev, deck: [...prev.deck, ...shuffled] }));
-    }
-  }, [gameState.deck]);
 
   // Helper function to check if any of the drawn cards allow valid moves
   const checkForValidMoves = useCallback(
@@ -299,89 +290,15 @@ export function useCardChess(
 
   const drawCard = useCallback(() => {
     if (gameState.gameOver) return;
-    if (gameState.deck.length < gameState.cardsToDrawCount) return;
-
-    const newDeck = [...gameState.deck];
-    const drawnCards: PlayingCard[] = [];
-
-    // Draw X cards
-    for (let i = 0; i < gameState.cardsToDrawCount; i++) {
-      const card = newDeck.pop();
-      if (card) {
-        drawnCards.push(card);
-      }
-    }
-    console.log({
-      drawnCards
-    })
-    if (drawnCards.length > 0) {
-      playSound('cardDraw');
-      setGameState((prev) => ({ ...prev, currentCards: drawnCards, deck: newDeck, cardsRemaining: newDeck.length }));
-
-      const hasValidMoves = checkForValidMoves(drawnCards, gameState.currentPlayer);
-      let newAttempts = gameState.checkAttempts;
-      let newMoveHistory = [...gameState.moveHistory];
-      let winner: "white" | "black" | "draw" | null = null;
-
-      if (!hasValidMoves) {
-        setGameState((prev) => ({ ...prev, noValidCard: true }));
-        newMoveHistory = [
-          ...newMoveHistory,
-          {
-            cards: drawnCards,
-            usedCard: drawnCards[0],
-            player: gameState.currentPlayer,
-            isFailedAttempt: true,
-          },
-        ];
-        setGameState((prev) => ({ ...prev, moveHistory: newMoveHistory }));
-
-        if (
-          gameState.isInCheck &&
-          gameState.checkAttempts < MAX_CHECK_ATTEMPTS
-        ) {
-          newAttempts = gameState.checkAttempts + 1;
-          setGameState((prev) => ({ ...prev, checkAttempts: newAttempts }));
-          // If this was the 5th failed attempt, end the game
-          if (newAttempts >= MAX_CHECK_ATTEMPTS) {
-            winner = gameState.currentPlayer === "white" ? "black" : "white";
-            setGameState((prev) => ({
-              ...prev,
-              gameOver: true,
-              winner,
-            }));
-          }
-        }
-      }
-
-      syncWithBackend(
-        gameRef.current.fen(),
-        gameState.currentPlayer,
-        drawnCards,
-        newDeck,
-        newAttempts,
-        newMoveHistory,
-        versionRef.current,
-        winner ? "completed" : "active",
-        winner || undefined
-      );
-    }
+    if (!gameId || !chessSocketRef.current) return;
+    // Emit to backend — backend pops cards from its deck, saves, then broadcasts game_updated to the room
+    playSound('cardDraw');
+    setGameState((prev) => ({ ...prev, canDrawCard: false, noValidCard: false }));
+    chessSocketRef.current.drawCard(gameId);
   }, [
-    gameState.deck,
     gameState.gameOver,
-    gameState.currentPlayer,
-    gameState.isInCheck,
-    gameState.checkAttempts,
-    gameState.moveHistory,
-    gameState.cardsToDrawCount,
-    syncWithBackend,
-    checkForValidMoves,
+    gameId,
   ]);
-
-  const reshuffleDeck = useCallback(() => {
-    const newDeck = shuffleDeck(createDeck());
-    setGameState((prev) => ({ ...prev, deck: newDeck, cardsRemaining: newDeck.length, checkAttempts: 0 }));
-  }, []);
 
   const updateMove = useCallback(
     (usedCard: PlayingCard, move: Move) => {
@@ -444,7 +361,6 @@ export function useCardChess(
       syncWithBackend(
         gameRef.current.fen(),
         nextPlayer,
-        null,
         null,
         0,
         newMoveHistory,
@@ -682,7 +598,7 @@ export function useCardChess(
   const handleSocketUpdate = useCallback((updatedGame: ChessGame) => {
     const statusChanged = gameState.gameStatus !== updatedGame.game_state.status;
     if (updatedGame.version <= versionRef.current && !statusChanged) return;
-    console.log("Socket Update", updatedGame.version, versionRef.current);
+    // console.log("Socket Update", updatedGame.version, versionRef.current);
     versionRef.current = updatedGame.version;
 
     const backendCards = updatedGame.game_state.current_cards || [];
@@ -815,7 +731,6 @@ export function useCardChess(
     handleSquareClick,
     onDrop,
     playRandomValidMove,
-    reshuffleDeck,
     // newGame,
     isInCheck: gameRef.current.inCheck(),
     resolvePromotion,

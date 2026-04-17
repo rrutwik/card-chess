@@ -27,6 +27,8 @@ export interface ChessGame {
   game_id: string;
   player_white: string;
   player_black: string;
+  player_white_name?: string;
+  player_black_name?: string;
   is_vs_bot?: boolean;
   version: number;
   cards_to_draw: number; // Number of cards to draw (1-5)
@@ -60,7 +62,6 @@ export interface UpdateGameStateRequest {
   winner?: 'white' | 'black' | 'draw';
   moves?: MoveHistory[];
   current_cards: PlayingCard[] | null;
-  cards_deck?: PlayingCard[];
   check_attempts?: number;
   is_in_check?: boolean;
   player_black?: string;
@@ -251,30 +252,39 @@ export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<AxiosRe
   }
 };
 
+const GUEST_DISPLAY_NAME_KEY = "guest_display_name";
+
 export async function getOrCreateGuest(data: any): Promise<{
   _id: string;
   token: string;
+  display_name: string;
 }> {
   if (typeof window === "undefined") return {
     _id: '',
-    token: ''
+    token: '',
+    display_name: '',
   };
 
   const existingToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
   const existingUserId = sessionStorage.getItem(GUEST_USER_ID);
+  const existingName = sessionStorage.getItem(GUEST_DISPLAY_NAME_KEY) || '';
   if (existingToken && existingUserId) {
     return {
       _id: existingUserId,
-      token: existingToken
+      token: existingToken,
+      display_name: existingName,
     };
   }
   try {
     const response = await api.post("/guest-session", data);
+    const displayName = response.data.display_name || '';
     sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, response.data.token);
     sessionStorage.setItem(GUEST_USER_ID, response.data._id);
+    sessionStorage.setItem(GUEST_DISPLAY_NAME_KEY, displayName);
     return {
       _id: response.data._id,
-      token: response.data.token
+      token: response.data.token,
+      display_name: displayName,
     };
   } catch (error) {
     logger.error('Failed to create guest token:', error);

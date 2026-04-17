@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Play, Users, Crown, Swords, Zap, Trophy } from 'lucide-react';
+import { Play, Users, Crown, Swords, Zap, Trophy, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -209,7 +209,7 @@ export const HomePage: React.FC = () => {
         {/* Game Options */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
           gap: '20px',
           maxWidth: '800px',
           margin: '0 auto',
@@ -421,6 +421,99 @@ export const HomePage: React.FC = () => {
                 zIndex: 1
               }}>
                 Join ongoing games or continue your matches
+              </p>
+            </Link>
+          </motion.div>
+
+          {/* Find Opponent Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            style={{ position: 'relative' }}
+          >
+            <Link
+              to="/find-opponent"
+              id="find-opponent-home-btn"
+              style={{
+                display: 'block',
+                background: isDark
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)'}`,
+                borderRadius: '20px',
+                padding: '24px 20px',
+                textDecoration: 'none',
+                boxShadow: isDark
+                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 32px rgba(16, 185, 129, 0.15)',
+                transition: 'all 0.3s ease',
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = isDark
+                  ? '0 12px 48px rgba(0, 0, 0, 0.4)'
+                  : '0 12px 48px rgba(16, 185, 129, 0.25)';
+                e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = isDark
+                  ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  : '0 8px 32px rgba(16, 185, 129, 0.15)';
+                e.currentTarget.style.borderColor = isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)';
+              }}
+            >
+              {/* Live badge */}
+              <div style={{
+                position: 'absolute', top: 12, right: 12,
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '3px 10px', borderRadius: 20,
+                background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)',
+                fontSize: 10, fontWeight: 700, color: '#10b981',
+              }}>
+                <motion.div
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }}
+                />
+                LIVE
+              </div>
+
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  width: '56px', height: '56px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  borderRadius: '16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 12px',
+                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+                  position: 'relative', zIndex: 1,
+                }}
+              >
+                <Search style={{ width: '28px', height: '28px', color: 'white' }} />
+              </motion.div>
+
+              <h3 style={{
+                fontSize: '22px', fontWeight: '700',
+                color: isDark ? '#f9fafb' : '#1f2937',
+                marginBottom: '6px', textAlign: 'center',
+                position: 'relative', zIndex: 1,
+              }}>
+                Find Opponent
+              </h3>
+              <p style={{
+                fontSize: '13px',
+                color: isDark ? '#d1d5db' : '#6b7280',
+                textAlign: 'center', lineHeight: '1.4',
+                margin: 0, position: 'relative', zIndex: 1,
+              }}>
+                Quick matchmaking — guests welcome, 3 cards per turn
               </p>
             </Link>
           </motion.div>

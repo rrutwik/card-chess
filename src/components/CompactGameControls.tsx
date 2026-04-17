@@ -4,8 +4,7 @@ import {
   Trophy,
   Play,
   AlertTriangle,
-  Eye,
-  EyeOff,
+  Settings,
   Zap,
 } from "lucide-react";
 import { PlayingCard, PieceColor } from "../types/game";
@@ -22,19 +21,15 @@ export interface CompactGameControlsProps {
   checkAttempts: number;
   cardsRemaining: number;
   onDrawCard: () => void;
-  onReshuffle: () => void;
   canDrawCard: boolean;
   currentPlayer: PieceColor;
   userColor: PieceColor;
   gameOver: boolean;
-  handleShowMoveButton: (show: boolean) => void;
-  showMoves: boolean;
   winner: PieceColor | "draw" | null;
   selectedCardIndex: number | null;
   onCardSelect: (index: number | null) => void;
   isMobile?: boolean;
-  autoDrawEnabled?: boolean;
-  onToggleAutoDraw?: () => void;
+  onOpenSettings: () => void;
 }
 
 function getCardMeaning(card: PlayingCard): string {
@@ -54,13 +49,10 @@ export function CompactGameControls({
   currentPlayer,
   gameOver,
   winner,
-  handleShowMoveButton,
-  showMoves,
   selectedCardIndex,
   onCardSelect,
   isMobile = false,
-  autoDrawEnabled = false,
-  onToggleAutoDraw,
+  onOpenSettings,
 }: CompactGameControlsProps) {
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
@@ -191,6 +183,7 @@ export function CompactGameControls({
             gap: "10px",
             overflowX: "auto",
             alignItems: "center",
+            justifyContent: "center",
             paddingBottom: "4px",
           }}
         >
@@ -202,7 +195,7 @@ export function CompactGameControls({
                 animate={{ rotateY: 0, opacity: 1 }}
                 exit={{ rotateY: -90, opacity: 0 }}
                 transition={{ duration: 0.28 }}
-                style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}
+                style={{ display: "flex", gap: "10px", alignItems: "flex-start", justifyContent: "center", margin: "0 auto" }}
               >
                 {currentCards.map((card, i) => renderCard(card, i))}
               </motion.div>
@@ -277,38 +270,22 @@ export function CompactGameControls({
             <span style={{ fontSize: 7, color: "rgba(167,139,250,0.65)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>DECK</span>
           </div>
 
-          {/* Show moves */}
+          {/* Settings */}
           <button
-            onClick={() => handleShowMoveButton(!showMoves)}
-            style={{
-              padding: "0 10px", borderRadius: "12px", border: "1px solid",
-              borderColor: showMoves ? "rgba(16,185,129,0.4)" : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
-              background: showMoves ? "rgba(16,185,129,0.14)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-              color: showMoves ? "rgba(16,185,129,0.9)" : isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.6)",
-              cursor: "pointer", display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              gap: 2, flexShrink: 0, minWidth: 40,
-            }}
-          >
-            {showMoves ? <EyeOff style={{ width: 14, height: 14 }} /> : <Eye style={{ width: 14, height: 14 }} />}
-            <span style={{ fontSize: 7, fontWeight: 700 }}>MOVES</span>
-          </button>
-
-          {/* Auto draw */}
-          <button
-            onClick={onToggleAutoDraw}
+            onClick={onOpenSettings}
             style={{
               padding: "0 9px", borderRadius: "12px", border: "1px solid",
-              borderColor: autoDrawEnabled ? "rgba(16,185,129,0.4)" : isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
-              background: autoDrawEnabled ? "rgba(16,185,129,0.14)" : isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-              color: autoDrawEnabled ? "rgba(16,185,129,0.9)" : isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.6)",
+              borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
+              background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+              color: isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.6)",
               cursor: "pointer", display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              gap: 2, flexShrink: 0, minWidth: 40,
+              gap: 2, flexShrink: 0, minWidth: 48,
+              transition: "all 0.2s"
             }}
           >
-            <Zap style={{ width: 13, height: 13 }} />
-            <span style={{ fontSize: 7, fontWeight: 700 }}>AUTO</span>
+            <Settings style={{ width: 14, height: 14 }} />
+            <span style={{ fontSize: 7, fontWeight: 700 }}>OPTIONS</span>
           </button>
         </div>
       </div>
@@ -566,35 +543,6 @@ export function CompactGameControls({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Zap style={{ width: "14px", height: "14px", color: isDark ? "#d8b4fe" : "#7c3aed" }} />
-              <span style={{ fontSize: "12px", fontWeight: "600", color: isDark ? "#d8b4fe" : "#7c3aed" }}>
-                Auto Draw Cards
-              </span>
-              {/* Toggle */}
-              <div
-                onClick={onToggleAutoDraw}
-                style={{
-                  position: "relative", width: "40px", height: "22px",
-                  borderRadius: "999px", cursor: "pointer",
-                  background: autoDrawEnabled
-                    ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
-                    : isDark ? "rgba(107,114,128,0.4)" : "#d1d5db",
-                  transition: "background 0.25s ease",
-                  flexShrink: 0,
-                  boxShadow: autoDrawEnabled ? "0 0 8px rgba(16,185,129,0.4)" : "none",
-                }}
-              >
-                <div
-                  style={{
-                    position: "absolute", top: "3px",
-                    left: autoDrawEnabled ? "21px" : "3px",
-                    width: "16px", height: "16px",
-                    borderRadius: "50%", background: "white",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-                    transition: "left 0.25s ease",
-                  }}
-                />
-              </div>
             </div>
             <span style={{ fontSize: "12px", fontWeight: "600", color: isDark ? "#d8b4fe" : "#7c3aed" }}>
               📋 Cards per turn:
@@ -650,9 +598,9 @@ export function CompactGameControls({
             </div>
           </button>
 
-          {/* Show moves button */}
+          {/* Game Options button */}
           <motion.button
-            onClick={() => handleShowMoveButton(!showMoves)}
+            onClick={onOpenSettings}
             style={{
               width: "100%", padding: "12px",
               background: isDark ? "rgba(55, 65, 81, 0.8)" : "#374151",
@@ -673,11 +621,7 @@ export function CompactGameControls({
               e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            {showMoves ? (
-              <><EyeOff style={{ width: "20px", height: "20px" }} /><span>Hide Moves</span></>
-            ) : (
-              <><Eye style={{ width: "20px", height: "20px" }} /><span>Show Moves</span></>
-            )}
+            <Settings style={{ width: "20px", height: "20px" }} /><span>Game Options</span>
           </motion.button>
         </div>
       </div>

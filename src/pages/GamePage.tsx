@@ -12,71 +12,12 @@ import { useGameStore } from "../stores/gameStore";
 import { useAppStore } from "../stores/appStore";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
-import { Link2, Check, Users, Trophy } from "lucide-react";
+import { Link2, Check, Users, Trophy, Settings, Volume2, VolumeX, Eye, EyeOff, Zap, ZapOff, X } from "lucide-react";
 import { logger } from "../utils/logger";
-import { getSessionIdentity } from "../utils/sessionIdentity";
 import { CardChessMove } from "../utils/bot";
+import { isMuted, setMuted } from "../utils/sounds";
 
-// ── Captured Pieces Helper ─────────────────────────────────────────────
-const PIECE_ICONS: Record<string, string> = {
-  p: "♟", n: "♞", b: "♝", r: "♜", q: "♛",
-  P: "♙", N: "♘", B: "♗", R: "♖", Q: "♕"
-};
-
-const getCapturedPieces = (fen: string) => {
-  const startingCounts: Record<string, number> = {
-    P: 8, N: 2, B: 2, R: 2, Q: 1,
-    p: 8, n: 2, b: 2, r: 2, q: 1
-  };
-  const currentCounts: Record<string, number> = {
-    P: 0, N: 0, B: 0, R: 0, Q: 0,
-    p: 0, n: 0, b: 0, r: 0, q: 0
-  };
-  const boardPart = fen.split(' ')[0];
-  for (const char of boardPart) {
-    if (currentCounts[char] !== undefined) currentCounts[char]++;
-  }
-  const capturedW: string[] = []; // White pieces captured by Black
-  const capturedB: string[] = []; // Black pieces captured by White
-  ['q', 'r', 'b', 'n', 'p'].forEach(p => {
-    const P = p.toUpperCase();
-    for (let i = 0; i < startingCounts[P] - currentCounts[P]; i++) capturedW.push(P);
-    for (let i = 0; i < startingCounts[p] - currentCounts[p]; i++) capturedB.push(p);
-  });
-  return { w: capturedW, b: capturedB };
-};
-
-const CapturedPiecesList = ({ pieces, align }: { pieces: string[], align: 'left' | 'right' }) => {
-  return (
-    <div style={{
-      display: 'flex',
-      gap: '2px',
-      minHeight: '28px',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      justifyContent: align === 'left' ? 'flex-start' : 'flex-end',
-      padding: '0 4px',
-      opacity: pieces.length ? 1 : 0.4
-    }}>
-      {pieces.length === 0 ? (
-        <span style={{ fontSize: '12px', fontStyle: 'italic' }} className="opacity-50">No captures</span>
-      ) : (
-        pieces.map((p, i) => (
-          <span key={i} style={{
-            fontSize: '22px',
-            lineHeight: 1,
-            color: p === p.toLowerCase() ? '#000000' : '#ffffff',
-            WebkitTextStroke: p === p.toLowerCase() ? '1px rgba(255,255,255,0.2)' : '1px rgba(0,0,0,0.8)',
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)',
-            marginRight: '-4px'
-          }}>
-            {PIECE_ICONS[p]}
-          </span>
-        ))
-      )}
-    </div>
-  );
-};
+// ── Layout helpers ───────────────────────────────────────────────────
 
 // ── Responsive hook ───────────────────────────────────────────────────
 function useIsMobile(breakpoint = 768) {
@@ -97,10 +38,9 @@ export const GamePage: React.FC = () => {
   const { addNotification, showRules, setShowRules } = useAppStore();
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
-  const { user } = useAuth();
+  const { user, sessionIdentity } = useAuth();
+  const identityId = sessionIdentity?.id;
   const isMobile = useIsMobile();
-
-  const [identityId, setIdentityId] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
 
@@ -115,6 +55,15 @@ export const GamePage: React.FC = () => {
     setAutoDrawEnabled(newValue);
     localStorage.setItem("cardChess_autoDraw", JSON.stringify(newValue));
   };
+
+  const [soundEnabled, setSoundEnabled] = useState(!isMuted());
+  const toggleSound = () => {
+    const val = !soundEnabled;
+    setSoundEnabled(val);
+    setMuted(!val);
+  };
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem("cc_sidebar_w");
@@ -166,18 +115,6 @@ export const GamePage: React.FC = () => {
     window.addEventListener("pointerup", onPointerUp);
     document.body.style.cursor = "row-resize";
   };
-
-  useEffect(() => {
-    const initializeSession = async () => {
-      try {
-        const sessionIdentity = await getSessionIdentity(user);
-        setIdentityId(sessionIdentity.id);
-      } catch (err) {
-        logger.error("Failed to initialize session identity:", err);
-      }
-    };
-    initializeSession();
-  }, [user]);
 
   const botTurnTimeoutRef = useRef<number | null>(null);
   const botActionInFlightRef = useRef(false);
@@ -266,7 +203,6 @@ export const GamePage: React.FC = () => {
     game: chessGame,
     gameState,
     drawCard,
-    reshuffleDeck,
     onDrop,
     playRandomValidMove,
     handleSquareClick,
@@ -316,6 +252,7 @@ export const GamePage: React.FC = () => {
     gameState.currentPlayer,
     gameState.isInCheck,
     gameState.canDrawCard,
+    gameState.noValidCard,
     gameState.currentCards.length,
     gameState.noValidCard,
     gameState.gameOver,
@@ -390,16 +327,43 @@ export const GamePage: React.FC = () => {
 
   const bottomPanelBg = isDark ? "rgba(13,19,33,0.98)" : "rgba(248,250,252,0.98)";
 
+  const opponentName = gameState.userColor === "white"
+    ? currentGame?.player_black_name || "Opponent"
+    : currentGame?.player_white_name || "Opponent";
+
   const isMyTurn = gameState.userColor === gameState.currentPlayer;
-  const turnLabel = isMyTurn ? "Your turn" : "Opponent's turn";
+  const isBotPlaying = !isMyTurn && isBotGame;
+  const turnLabel = isMyTurn ? "Your turn" : isBotPlaying ? "Bot is playing..." : `${opponentName}'s turn`;
   const turnDotColor = isMyTurn ? "#10b981" : isDark ? "#6b7280" : "#9ca3af";
 
-  // ── Shared board props ─────────────────────────────────────────────
   const boardOrientation = currentGame?.player_white === identityId
     ? "white"
     : currentGame?.player_black === identityId
       ? "black"
       : "white";
+
+  const topPlayerName = boardOrientation === "white" ? (currentGame?.player_black_name || "Bot") : (currentGame?.player_white_name || "Bot");
+  const bottomPlayerName = boardOrientation === "white" ? currentGame?.player_white_name : currentGame?.player_black_name;
+
+  const PlayerTag = ({ name, isTop }: { name?: string, isTop?: boolean }) => (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 8, padding: "6px 12px",
+      margin: isTop ? "0 0 2px 0" : "2px 0 0 0",
+      color: isDark ? "#e5e7eb" : "#374151",
+      fontWeight: 600, fontSize: 13,
+      background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+      borderRadius: 8, alignSelf: "flex-start",
+      backdropFilter: "blur(4px)"
+    }}>
+      <div style={{
+        width: 20, height: 20, borderRadius: 4, background: isDark ? "#374151" : "#d1d5db",
+        display: "flex", alignItems: "center", justifyContent: "center", color: isDark ? "#9ca3af" : "#ffffff"
+      }}>
+        <Users size={12} />
+      </div>
+      {name || "Player"}
+    </div>
+  );
 
   const canMove =
     gameState.currentCards.length > 0 &&
@@ -415,18 +379,14 @@ export const GamePage: React.FC = () => {
     checkAttempts: gameState.checkAttempts,
     onDrawCard: drawCard,
     noValidCard: gameState.noValidCard,
-    onReshuffle: reshuffleDeck,
     canDrawCard: gameState.canDrawCard,
     currentPlayer: gameState.currentPlayer,
     userColor: gameState.userColor,
     gameOver: gameState.gameOver,
     winner: gameState.winner,
-    showMoves,
-    handleShowMoveButton: setShowMoves,
     selectedCardIndex,
     onCardSelect: setSelectedCardIndex,
-    autoDrawEnabled,
-    onToggleAutoDraw: toggleAutoDraw,
+    onOpenSettings: () => setShowSettingsModal(true),
   };
 
   // ── Loading state ──────────────────────────────────────────────────
@@ -575,13 +535,23 @@ export const GamePage: React.FC = () => {
       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
         <div className="game-status-dot" style={{ background: turnDotColor, boxShadow: isMyTurn ? `0 0 6px ${turnDotColor}` : "none" }} />
         <span style={{
-          fontSize: minimal ? 12 : 13, fontWeight: 600,
+          fontSize: minimal ? 12 : 13, fontWeight: 600, flexShrink: 1,
           color: isDark ? "#f9fafb" : "#1f2937", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
           {gameState.gameOver ? (
             gameState.winner === "draw" ? "Game drawn 🤝" :
               gameState.winner === gameState.userColor ? "You won! 🎉" : "You lost 😔"
-          ) : turnLabel}
+          ) : (
+            isBotPlaying ? (
+              <motion.span
+                animate={{ opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                style={{ display: "inline-block", color: "#6366f1" }}
+              >
+                🤖 {turnLabel}
+              </motion.span>
+            ) : turnLabel
+          )}
         </span>
         {gameState.isInCheck && !gameState.gameOver && (
           <motion.span
@@ -747,7 +717,7 @@ export const GamePage: React.FC = () => {
         {/* Board — takes all remaining height above bottom panel */}
         <div className="game-board-area" style={{ flexDirection: "column" }}>
           <div style={{ width: "100%", maxWidth: "min(840px, calc(100vh - var(--cc-bottom-panel-h, 0px) - 180px))", display: "flex", flexDirection: "column", gap: "6px" }}>
-            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).w : getCapturedPieces(chessGame.fen()).b} align="left" />
+            <PlayerTag name={topPlayerName} isTop />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -757,7 +727,7 @@ export const GamePage: React.FC = () => {
                 boxShadow: isDark
                   ? "0 24px 48px -10px rgba(0,0,0,0.7)"
                   : "0 24px 48px -10px rgba(0,0,0,0.2)",
-                width: "100%", height: "auto", aspectRatio: 1
+                width: "100%", height: "auto", aspectRatio: 1, margin: "auto"
               }}
             >
               <ChessBoard
@@ -772,7 +742,7 @@ export const GamePage: React.FC = () => {
                 orientation={boardOrientation}
               />
             </motion.div>
-            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).b : getCapturedPieces(chessGame.fen()).w} align="left" />
+            <PlayerTag name={bottomPlayerName} />
           </div>
         </div>
         {/* Mobile Resizer */}
@@ -793,7 +763,7 @@ export const GamePage: React.FC = () => {
         {/* Board area */}
         <div className="game-board-area" style={{ flex: 1, flexDirection: "column" }}>
           <div style={{ width: "100%", maxWidth: "min(840px, calc(100vh - 180px))", display: "flex", flexDirection: "column", gap: "8px" }}>
-            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).w : getCapturedPieces(chessGame.fen()).b} align="left" />
+            <PlayerTag name={topPlayerName} isTop />
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -803,14 +773,14 @@ export const GamePage: React.FC = () => {
                 boxShadow: isDark
                   ? "0 30px 60px -12px rgba(0,0,0,0.8)"
                   : "0 30px 60px -12px rgba(0,0,0,0.22)",
-                width: "100%", height: "auto", aspectRatio: 1
+                width: "100%", height: "auto", aspectRatio: 1, margin: "auto"
               }}
             >
               <ChessBoard
                 game={chessGame}
                 fromMoveSelected={gameState.fromMoveSelected}
                 validMoves={filteredValidMoves}
-                showMoves={showMoves}
+                showMoves={!!selectedCardIndex || showMoves}
                 onDrop={onDrop}
                 onSquareClick={handleSquareClick}
                 currentPlayer={gameState.currentPlayer}
@@ -818,7 +788,7 @@ export const GamePage: React.FC = () => {
                 orientation={boardOrientation}
               />
             </motion.div>
-            <CapturedPiecesList pieces={boardOrientation === 'white' ? getCapturedPieces(chessGame.fen()).b : getCapturedPieces(chessGame.fen()).w} align="left" />
+            <PlayerTag name={bottomPlayerName} />
           </div>
         </div>
 
@@ -849,6 +819,118 @@ export const GamePage: React.FC = () => {
       {/* Global overlays */}
       <GameOverOverlay />
       <PromotionDialog />
+
+      <AnimatePresence>
+        {showSettingsModal && (
+          <div className="cc-gameover-overlay" style={{ zIndex: 9999 }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                background: isDark ? "#1f2937" : "#ffffff",
+                borderRadius: "16px", padding: "24px", minWidth: "320px",
+                maxWidth: "90%", boxShadow: "0 20px 40px -10px rgba(0,0,0,0.5)",
+                border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}`
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: isDark ? "#f9fafb" : "#111827", display: "flex", alignItems: "center", gap: 8 }}>
+                  <Settings size={20} color={isDark ? "#d1d5db" : "#4b5563"} /> Game Options
+                </h3>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: isDark ? "#9ca3af" : "#6b7280" }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Sound Toggle */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", borderRadius: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ background: soundEnabled ? "rgba(59,130,246,0.15)" : (isDark ? "rgba(255,255,255,0.1)" : "#e5e7eb"), padding: 8, borderRadius: 8, color: soundEnabled ? "#3b82f6" : "#9ca3af" }}>
+                      {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: isDark ? "#f3f4f6" : "#374151" }}>Sound Effects</div>
+                      <div style={{ fontSize: 12, color: isDark ? "#9ca3af" : "#6b7280" }}>Enable game notification sounds</div>
+                    </div>
+                  </div>
+                  <div
+                    onClick={toggleSound}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", padding: 0,
+                      background: soundEnabled ? "#3b82f6" : (isDark ? "#4b5563" : "#d1d5db"), transition: "background 0.2s"
+                    }}
+                  >
+                    <div style={{ position: "absolute", top: 2, left: soundEnabled ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+                  </div>
+                </div>
+
+                {/* Show Moves Toggle */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", borderRadius: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ background: showMoves ? "rgba(16,185,129,0.15)" : (isDark ? "rgba(255,255,255,0.1)" : "#e5e7eb"), padding: 8, borderRadius: 8, color: showMoves ? "#10b981" : "#9ca3af" }}>
+                      {showMoves ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: isDark ? "#f3f4f6" : "#374151" }}>Show Valid Moves</div>
+                      <div style={{ fontSize: 12, color: isDark ? "#9ca3af" : "#6b7280" }}>Highlight squares where a piece can move</div>
+                    </div>
+                  </div>
+                  <div
+                    onClick={() => setShowMoves(!showMoves)}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", padding: 0,
+                      background: showMoves ? "#10b981" : (isDark ? "#4b5563" : "#d1d5db"), transition: "background 0.2s"
+                    }}
+                  >
+                    <div style={{ position: "absolute", top: 2, left: showMoves ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+                  </div>
+                </div>
+
+                {/* Auto Draw Toggle */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: isDark ? "rgba(255,255,255,0.05)" : "#f3f4f6", borderRadius: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ background: autoDrawEnabled ? "rgba(245,158,11,0.15)" : (isDark ? "rgba(255,255,255,0.1)" : "#e5e7eb"), padding: 8, borderRadius: 8, color: autoDrawEnabled ? "#f59e0b" : "#9ca3af" }}>
+                      {autoDrawEnabled ? <Zap size={18} /> : <ZapOff size={18} />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: isDark ? "#f3f4f6" : "#374151" }}>Auto Draw</div>
+                      <div style={{ fontSize: 12, color: isDark ? "#9ca3af" : "#6b7280" }}>Automatically draw missing cards</div>
+                    </div>
+                  </div>
+                  <div
+                    onClick={toggleAutoDraw}
+                    style={{
+                      width: 44, height: 24, borderRadius: 12, cursor: "pointer", position: "relative", padding: 0,
+                      background: autoDrawEnabled ? "#f59e0b" : (isDark ? "#4b5563" : "#d1d5db"), transition: "background 0.2s"
+                    }}
+                  >
+                    <div style={{ position: "absolute", top: 2, left: autoDrawEnabled ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 24 }}>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{
+                    width: "100%", padding: "12px", background: isDark ? "rgba(255,255,255,0.05)" : "#e5e7eb",
+                    border: "none", borderRadius: 10, cursor: "pointer",
+                    fontSize: 14, fontWeight: 700, color: isDark ? "#f3f4f6" : "#374151"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Move History Footer (game over only) */}
       {gameState.gameOver && <MoveHistoryFooter moveHistory={gameState.moveHistory} />}

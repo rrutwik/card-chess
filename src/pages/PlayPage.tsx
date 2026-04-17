@@ -15,14 +15,11 @@ import { ChessAPI, ChessGame } from "../services/api";
 import { Header } from "../components/Header";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
-import { getSessionIdentity, SessionIdentity } from "../utils/sessionIdentity";
 import { logger } from "../utils/logger";
 
 export const PlayPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [sessionIdentity, setSessionIdentity] =
-    useState<SessionIdentity | null>(null);
+  const { user, sessionIdentity } = useAuth();
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
   const [games, setGames] = useState<ChessGame[]>([]);
@@ -39,18 +36,6 @@ export const PlayPage: React.FC = () => {
     logger.info("PlayPage: Mounted");
     loadGames();
   }, []);
-
-  useEffect(() => {
-    const initializeSession = async () => {
-      try {
-        const sessionIdentity = await getSessionIdentity(user);
-        setSessionIdentity(sessionIdentity);
-      } catch (err) {
-        logger.error("Failed to initialize session identity:", err);
-      }
-    };
-    initializeSession();
-  }, [user]);
 
   const loadGames = async () => {
     try {

@@ -16,10 +16,6 @@ export function getBestMove(game: Chess, moves: CardChessMove[]): CardChessMove 
     })
     if (allMoves.length == 0) return null;
     const bestMove = allMoves.sort((a, b) => b.score - a.score)[0];
-    console.log({
-        bestMove,
-        allMoves
-    })
     return bestMove.move;
 }
 

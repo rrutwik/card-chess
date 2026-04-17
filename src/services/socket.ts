@@ -11,15 +11,17 @@ export class ChessSocket {
   private currentGameId?: string;
 
   constructor(token?: string, guestToken?: string) {
+    const authHeaders: Record<string, string> = {};
+    if (guestToken && guestToken !== "null" && guestToken !== "undefined") {
+      authHeaders["x-guest-token"] = guestToken;
+    }
+    if (token && token !== "null" && token !== "undefined") {
+      authHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
     this.socket = io(API_BASE_URL, {
-      auth: {
-        "x-guest-token": `${guestToken}`,
-        Authorization: `Bearer ${token}`,
-      },
-      extraHeaders: {
-        "x-guest-token": `${guestToken}`,
-        Authorization: `Bearer ${token}`,
-      },
+      auth: authHeaders,
+      extraHeaders: authHeaders,
       transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -29,8 +31,6 @@ export class ChessSocket {
 
     this.socket.on("connect", () => {
       console.log("✅ Socket connected:", this.socket.id);
-
-      // Rejoin automatically on reconnect
       if (this.currentGameId) {
         this.joinGame(this.currentGameId);
       }
@@ -47,6 +47,8 @@ export class ChessSocket {
     this.socket.connect();
   }
 
+  // ── Game ──────────────────────────────────────────────────────────────────
+
   joinGame(gameId: string) {
     this.currentGameId = gameId;
     this.socket.emit("join_game", { gameId });
@@ -61,11 +63,15 @@ export class ChessSocket {
     this.socket.emit("update_game_state", { gameId, version, game_state: gameState });
   }
 
+  /** Emit to backend — backend pops cards from its deck, saves, and broadcasts game_updated to the room */
+  drawCard(gameId: string) {
+    this.socket.emit("draw_card", { gameId });
+  }
+
   onGameState(callback: (data: ChessGame) => void) {
     this.gameUpdateHandler = (data: { gameId: string; data: ChessGame }) => {
       callback(data.data);
     };
-
     this.socket.on("game_updated", this.gameUpdateHandler);
   }
 
@@ -76,8 +82,52 @@ export class ChessSocket {
     }
   }
 
+  // ── Matchmaking ───────────────────────────────────────────────────────────
+
+  joinMatchmaking() {
+    this.socket.emit("join_matchmaking");
+  }
+
+  leaveMatchmaking() {
+    this.socket.emit("leave_matchmaking");
+  }
+
+  requestMatchmakingCount() {
+    this.socket.emit("get_matchmaking_count");
+  }
+
+  onMatchmakingFound(callback: (data: { gameId: string; color: "white" | "black" }) => void) {
+    this.socket.on("matchmaking_found", callback);
+  }
+
+  onMatchmakingCount(callback: (data: { count: number }) => void) {
+    this.socket.on("matchmaking_count", callback);
+  }
+
+  onMatchmakingQueued(callback: (data: { message: string }) => void) {
+    this.socket.on("matchmaking_queued", callback);
+  }
+
+  onMatchmakingTimeout(callback: (data: { message: string }) => void) {
+    this.socket.on("matchmaking_timeout", callback);
+  }
+
+  onMatchmakingCancelled(callback: () => void) {
+    this.socket.on("matchmaking_cancelled", callback);
+  }
+
+  offMatchmaking() {
+    this.socket.off("matchmaking_found");
+    this.socket.off("matchmaking_count");
+    this.socket.off("matchmaking_queued");
+    this.socket.off("matchmaking_timeout");
+    this.socket.off("matchmaking_cancelled");
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
   disconnect() {
-    this.socket.removeAllListeners(); // 🔥 prevents ghost listeners
+    this.socket.removeAllListeners();
     if (!this.socket.disconnected) {
       this.socket.disconnect();
     }

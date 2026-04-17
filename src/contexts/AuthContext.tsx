@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { logout as apiLogout, getUserDetails } from "../services/api";
 import { logger } from "../utils/logger";
+import { getSessionIdentity, SessionIdentity } from "../utils/sessionIdentity";
 
 export interface User {
   _id: string;
@@ -18,6 +19,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
+  sessionIdentity: SessionIdentity | null;
   login: (user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
@@ -42,6 +44,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [sessionIdentity, setSessionIdentity] = useState<SessionIdentity | null>(null);
 
   useEffect(() => {
     // Check for existing auth token on app start and validate it
@@ -52,6 +55,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!token) {
         logger.info("ℹ️ AuthContext: No auth token found, continuing as guest");
         setIsLoading(false);
+        const sessionIdentity = await getSessionIdentity(user);
+        setSessionIdentity(sessionIdentity);
         return;
       }
 
@@ -59,7 +64,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         // Validate the token by making an API call
         const data = await getUserDetails(true);
+        logger.info("✅ AuthContext: Token validated, user set:", data);
         setUser(data);
+        const sessionIdentity = await getSessionIdentity(data);
+        setSessionIdentity(sessionIdentity);
         setUpdateTrigger((prev) => prev + 1); // Force re-render
         logger.info("✅ AuthContext: Token validated, user set:", { userId: data._id });
       } catch (error) {
@@ -70,7 +78,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
         localStorage.removeItem("authToken");
         localStorage.removeItem("refreshToken");
-        localStorage.removeItem("userData");
+        localStorage.removeItem("userData"); // for guest token intialize
+        const sessionIdentity = await getSessionIdentity(user);
+        setSessionIdentity(sessionIdentity);
       }
 
       setIsLoading(false);
@@ -102,6 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = useMemo(() => {
     const computedValue = {
       user,
+      sessionIdentity,
       login,
       logout,
       isAuthenticated: !!user,

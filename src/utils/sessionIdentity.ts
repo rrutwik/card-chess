@@ -54,6 +54,7 @@ export async function getSessionIdentity(user: UserLike): Promise<SessionIdentit
       timezoneOffset: new Date().getTimezoneOffset(),
     }
   }
+  console.log("User is ", user, "calling create or get guest", data);
   const guestToken = await getOrCreateGuest(data);
   return {
     id: guestToken._id,
