@@ -190,7 +190,7 @@ export function useCardChess(
         currentPlayer: game.game_state.turn,
         deck: game.game_state.cards_deck || [],
         moveHistory: game.game_state.moves || [],
-        gameOver: game.game_state.status === "completed",
+        gameOver: game.game_state.status === "completed" || game.game_state.status === "abandoned",
         winner: game.game_state.winner || null,
         checkAttempts: game.game_state.check_attempts || 0,
         fromMoveSelected: null,
@@ -626,7 +626,7 @@ export function useCardChess(
       cardsRemaining: (updatedGame.game_state.cards_deck || []).length,
       checkAttempts: updatedGame.game_state.check_attempts || 0,
       gameStatus: updatedGame.game_state.status,
-      gameOver: updatedGame.game_state.status === "completed",
+      gameOver: updatedGame.game_state.status === "completed" || updatedGame.game_state.status === "abandoned",
       winner: updatedGame.game_state.winner || null,
       pendingPromotion: null,
     }));
