@@ -82,7 +82,7 @@ function checkMove(move: Move, card: PlayingCard) {
   return false;
 }
 
-function getValidMovesForCard(
+function getValidMovesFromSquareForCard(
   game: Chess,
   fromSquare: Square,
   card: PlayingCard,
@@ -101,18 +101,6 @@ function getValidMovesForCard(
   }
 
   return moves;
-}
-
-function getAnyValidMoveForSelectedCard(game: Chess, card: PlayingCard) {
-  if (!card) return [] as Move[];
-  const allMoves = game.moves({ verbose: true }) as Move[];
-
-  return allMoves.filter((move) => {
-    if (!move) return false;
-    const sideToMove = game.turn();
-    if (move.color !== sideToMove) return false;
-    return checkMove(move, card);
-  });
 }
 
 function getValidMovesForMultipleCards(game: Chess, cards: PlayingCard[]): CardChessMove[] {
@@ -261,33 +249,6 @@ export function useCardChess(
     }
   }, [gameState.currentCards, gameState.userColor, gameState.currentPlayer]);
 
-  // Helper function to check if any of the drawn cards allow valid moves
-  const checkForValidMoves = useCallback(
-    (cards: PlayingCard[], player: "white" | "black") => {
-      const game = gameRef.current;
-      const pieces = game
-        .board()
-        .flat()
-        .filter(
-          (piece) => piece && piece.color === (player === "white" ? "w" : "b")
-        );
-
-      // Check if ANY piece can make a move with ANY of the cards
-      for (const piece of pieces) {
-        if (piece && piece.square) {
-          for (const card of cards) {
-            const moves = getValidMovesForCard(game, piece.square, card, player);
-            if (moves.length > 0) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
-    },
-    []
-  );
-
   const drawCard = useCallback(() => {
     if (gameState.gameOver) return;
     if (!gameId || !chessSocketRef.current) return;
@@ -411,7 +372,7 @@ export function useCardChess(
         let selectedMoves: Move[] = [];
 
         for (const card of gameState.currentCards) {
-          const validMovesForSelection = getValidMovesForCard(
+          const validMovesForSelection = getValidMovesFromSquareForCard(
             gameRef.current,
             gameState.fromMoveSelected,
             card,
@@ -500,7 +461,7 @@ export function useCardChess(
       try {
         // Find which card allows this move
         for (const card of gameState.currentCards) {
-          const validMovesForSelection = getValidMovesForCard(
+          const validMovesForSelection = getValidMovesFromSquareForCard(
             gameRef.current,
             fromSquare,
             card,
