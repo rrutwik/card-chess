@@ -28,6 +28,9 @@ export const FindOpponentPage: React.FC = () => {
 
   // ── Initialize socket ──────────────────────────────────────────────────
   useEffect(() => {
+    // sessionIdentity loads asynchronously (null on first render). Without this guard the effect
+    // opened a socket on mount and then closed it and opened another once the identity arrived.
+    if (!sessionIdentity?.id) return;
     const init = async () => {
       const token = localStorage.getItem("authToken") || undefined;
       const guestToken = getGuestToken();
