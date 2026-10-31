@@ -12,6 +12,10 @@ export const MAX_CHECK_ATTEMPTS = 5;
 
 const DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+// The server hides the draw pile and only reports how many cards are left.
+const remainingCards = (g?: ChessGame | null): number =>
+  g?.game_state?.cards_remaining ?? (g?.game_state?.cards_deck || []).length;
+
 export interface GameState {
   deck: PlayingCard[];
   currentCards: PlayingCard[]; // Array of multiple cards
@@ -152,7 +156,7 @@ export function useCardChess(
     isInCheck: false,
     canDrawCard: game?.game_state?.status === "active",
     gameStatus: game?.game_state?.status || "active",
-    cardsRemaining: (game?.game_state?.cards_deck || []).length,
+    cardsRemaining: remainingCards(game),
     version: game?.version || 0,
     pendingPromotion: null,
   }));
@@ -189,7 +193,7 @@ export function useCardChess(
         isPlayerInGame,
         currentCards: game.game_state.current_cards || [],
         cardsToDrawCount: game.cards_to_draw || 1,
-        cardsRemaining: (game.game_state.cards_deck || []).length,
+        cardsRemaining: remainingCards(game),
         validMoves: moves,
         pendingPromotion: null,
       }));
@@ -556,9 +560,9 @@ export function useCardChess(
     setGameState((prev) => ({ ...prev, pendingPromotion: null, fromMoveSelected: null }));
   }, []);
 
-  const handleSocketUpdate = useCallback((updatedGame: ChessGame) => {
+  const applyServerGame = useCallback((updatedGame: ChessGame, force = false) => {
     const statusChanged = gameState.gameStatus !== updatedGame.game_state.status;
-    if (updatedGame.version <= versionRef.current && !statusChanged) return;
+    if (!force && updatedGame.version <= versionRef.current && !statusChanged) return;
     // console.log("Socket Update", updatedGame.version, versionRef.current);
     versionRef.current = updatedGame.version;
 
@@ -584,7 +588,7 @@ export function useCardChess(
       fromMoveSelected: null,
       validMoves: moves,
       deck: updatedGame.game_state.cards_deck || [],
-      cardsRemaining: (updatedGame.game_state.cards_deck || []).length,
+      cardsRemaining: remainingCards(updatedGame),
       checkAttempts: updatedGame.game_state.check_attempts || 0,
       gameStatus: updatedGame.game_state.status,
       gameOver: updatedGame.game_state.status === "completed" || updatedGame.game_state.status === "abandoned",
@@ -595,10 +599,34 @@ export function useCardChess(
     options.onGameStateChanged?.(updatedGame);
   }, [options, gameState.gameStatus]);
 
+  const handleSocketUpdate = useCallback(
+    (updatedGame: ChessGame) => applyServerGame(updatedGame, false),
+    [applyServerGame]
+  );
+
+  // The server rejected something we did (stale version, illegal move, not our turn...). Moves are
+  // applied to the local board optimistically, so without this the screen would keep showing a move
+  // the server never accepted. Re-fetch the real game and overwrite local state.
+  const lastResyncRef = useRef(0);
+  const handleSocketError = useCallback(async (err: { message: string }) => {
+    console.warn("Server rejected an action:", err?.message);
+    if (!gameId) return;
+    const now = Date.now();
+    if (now - lastResyncRef.current < 1000) return; // avoid error -> resync -> error loops
+    lastResyncRef.current = now;
+    try {
+      const response = await ChessAPI.getGameQuiet(gameId);
+      applyServerGame(response.data.data, true);
+    } catch (e) {
+      console.error("Failed to re-sync game after server error:", e);
+    }
+  }, [gameId, applyServerGame]);
+
 
   const chessSocket = useChessSocket({
     gameId,
-    onGameUpdate: handleSocketUpdate
+    onGameUpdate: handleSocketUpdate,
+    onError: handleSocketError,
   });
 
   useEffect(() => {

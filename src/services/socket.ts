@@ -9,6 +9,12 @@ export class ChessSocket {
   private socket: Socket;
   private gameUpdateHandler?: (data: { gameId: string; data: ChessGame }) => void;
   private currentGameId?: string;
+  private errorHandler?: (err: { message: string; gameId?: string }) => void;
+  // Remember intent so we can restore it after a reconnect (a new connection is a new socket id
+  // on the server: it has no queue entry and is not subscribed to the matchmaking count).
+  private hasConnectedOnce = false;
+  private wantsMatchmaking = false;
+  private wantsMatchmakingCount = false;
 
   constructor(token?: string, guestToken?: string) {
     const authHeaders: Record<string, string> = {};
@@ -34,6 +40,11 @@ export class ChessSocket {
       if (this.currentGameId) {
         this.joinGame(this.currentGameId);
       }
+      if (this.hasConnectedOnce) {
+        if (this.wantsMatchmakingCount) this.socket.emit("get_matchmaking_count");
+        if (this.wantsMatchmaking) this.socket.emit("join_matchmaking");
+      }
+      this.hasConnectedOnce = true;
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -68,6 +79,19 @@ export class ChessSocket {
     this.socket.emit("draw_card", { gameId });
   }
 
+  /** Server rejected an action (stale version, illegal move, not your turn...). */
+  onError(callback: (err: { message: string; gameId?: string }) => void) {
+    this.errorHandler = callback;
+    this.socket.on("error", callback);
+  }
+
+  offError() {
+    if (this.errorHandler) {
+      this.socket.off("error", this.errorHandler);
+      this.errorHandler = undefined;
+    }
+  }
+
   onGameState(callback: (data: ChessGame) => void) {
     this.gameUpdateHandler = (data: { gameId: string; data: ChessGame }) => {
       callback(data.data);
@@ -85,19 +109,25 @@ export class ChessSocket {
   // ── Matchmaking ───────────────────────────────────────────────────────────
 
   joinMatchmaking() {
+    this.wantsMatchmaking = true;
     this.socket.emit("join_matchmaking");
   }
 
   leaveMatchmaking() {
+    this.wantsMatchmaking = false;
     this.socket.emit("leave_matchmaking");
   }
 
   requestMatchmakingCount() {
+    this.wantsMatchmakingCount = true;
     this.socket.emit("get_matchmaking_count");
   }
 
   onMatchmakingFound(callback: (data: { gameId: string; color: "white" | "black" }) => void) {
-    this.socket.on("matchmaking_found", callback);
+    this.socket.on("matchmaking_found", (data) => {
+      this.wantsMatchmaking = false;
+      callback(data);
+    });
   }
 
   onMatchmakingCount(callback: (data: { count: number }) => void) {
@@ -109,7 +139,10 @@ export class ChessSocket {
   }
 
   onMatchmakingTimeout(callback: (data: { message: string }) => void) {
-    this.socket.on("matchmaking_timeout", callback);
+    this.socket.on("matchmaking_timeout", (data) => {
+      this.wantsMatchmaking = false;
+      callback(data);
+    });
   }
 
   onMatchmakingCancelled(callback: () => void) {

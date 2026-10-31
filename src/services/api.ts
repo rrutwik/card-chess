@@ -41,7 +41,10 @@ export interface ChessGame {
     moves: MoveHistory[];
     check_attempts?: number;
     current_cards?: PlayingCard[]; // Array of currently held cards
-    cards_deck?: PlayingCard[];
+    /** Hidden by the server: same length as the real pile but contains no card data. */
+    cards_deck?: (PlayingCard | null)[];
+    /** Cards left in the draw pile (authoritative; prefer this over cards_deck.length). */
+    cards_remaining?: number;
   };
   createdAt?: string;
   updatedAt?: string;
@@ -349,6 +352,11 @@ export class ChessAPI {
   }
 
   // Get a specific game
+  /** Same as getGame but without the global loading overlay (used for silent re-sync). */
+  static async getGameQuiet(gameId: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
+    return api.get<ApiResponse<ChessGame>>(`/chess/game/${gameId}`);
+  }
+
   static async getGame(gameId: string): Promise<AxiosResponse<ApiResponse<ChessGame>>> {
     try {
       const appStore = useAppStore.getState();
