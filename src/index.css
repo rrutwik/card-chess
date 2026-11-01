@@ -2474,18 +2474,37 @@ html {
 :root {
   --cc-header-h: 52px;
   --cc-status-h: 38px;
-  --cc-bottom-panel-h: 188px;
-  --cc-sidebar-w: 340px;
+  --cc-topbar-h: 44px;       /* slim game top bar (stack + rail modes) */
+  --cc-sidebar-w: 340px;     /* side mode panel (user-resizable) */
+  --cc-rail-w: clamp(250px, 36vw, 340px); /* rail mode card rail */
   --cc-board-padding: 12px;
+  --cc-board-pad: 8px;       /* padding inside the board frame */
+  --cc-board-max: 840px;     /* largest board edge */
+  --cc-tags-h: 72px;         /* 2 player tags + 2 gaps above/below the board */
+  --cc-safe-t: env(safe-area-inset-top, 0px);
+  --cc-safe-r: env(safe-area-inset-right, 0px);
+  --cc-safe-b: env(safe-area-inset-bottom, 0px);
+  --cc-safe-l: env(safe-area-inset-left, 0px);
 }
 
 /* ── Full-page game shell ─────────────────────────────────── */
 .game-shell {
   display: flex;
   flex-direction: column;
+  height: 100vh;             /* fallback for browsers without dvh */
   height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none; /* no pull-to-refresh / scroll chaining mid-game */
+  padding: var(--cc-safe-t) var(--cc-safe-r) 0 var(--cc-safe-l);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* After the game ends the move-history bar (fixed, ~64px) sits at the bottom: keep it off the controls */
+.game-shell[data-over="true"] {
+  padding-bottom: calc(64px + var(--cc-safe-b));
+}
+.game-shell[data-over="true"] .game-dock {
+  padding-bottom: 0;
 }
 
 /* ── Status strip (turn indicator) ───────────────────────── */
@@ -2507,44 +2526,123 @@ html {
 }
 
 /* ── Board area ───────────────────────────────────────────── */
+/* A size container: the board column below is sized from THIS box (cqw/cqh), so the board is always
+   min(available width, available height) and can never be clipped, whatever the screen. */
 .game-board-area {
+  grid-area: board;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;           /* fill available space in both mobile col and desktop row */
-  min-height: 0;      /* allow flex child to shrink below content size */
+  min-height: 0;
   min-width: 0;
   padding: var(--cc-board-padding);
   overflow: hidden;
   container-type: size;
 }
 
-.game-board-inner {
-  /* Fills the maximum square safely within the board area content box */
-  width: min(100cqmin, 840px);
-  height: min(100cqmin, 840px);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-/* ── Mobile bottom panel ──────────────────────────────────── */
-.game-bottom-panel {
-  flex-shrink: 0;
-  height: var(--cc-bottom-panel-h);
+.game-board-col {
+  width: min(100cqw, calc(100cqh - var(--cc-tags-h)), var(--cc-board-max));
   display: flex;
   flex-direction: column;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  overflow: hidden;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
-/* ── Desktop sidebar ──────────────────────────────────────── */
+.game-board-inner {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  overflow: hidden;
+  touch-action: none;  /* drags on the board must not scroll/zoom the page */
+}
+
+.game-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  align-self: flex-start;
+  min-width: 0;
+}
+
+.game-tag > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Slim top bar (stack + rail modes replace the global header with this) ── */
+.game-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--cc-topbar-h);
+  padding: 0 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+}
+
+.game-topbar__status {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ── Card dock / rail (stack + rail modes) ────────────────── */
+.game-dock {
+  grid-area: dock;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid rgba(128, 128, 128, 0.18);
+  padding-bottom: var(--cc-safe-b);
+}
+
+/* ── Desktop sidebar (side mode) ──────────────────────────── */
 .game-sidebar {
+  grid-area: panel;
   width: var(--cc-sidebar-w);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.game-resizer {
+  grid-area: handle;
+  width: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 10;
 }
 
 .game-sidebar-scroll {
@@ -2798,40 +2896,101 @@ html {
   flex-wrap: wrap;
 }
 
-/* ── Responsive: mobile-first ─────────────────────────────── */
-
-/* Mobile: board + bottom panel stacked */
-.game-main-mobile {
+/* ── Responsive game layout ───────────────────────────────── */
+/* ONE grid, three modes. Query strings are mirrored in src/hooks/useLayoutMode.ts - keep in sync.
+     stack = portrait            -> board above, dock below
+     rail  = landscape, small    -> board left, narrow card rail right
+     side  = landscape, roomy    -> board left, resizable panel right                              */
+.game-main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   min-height: 0;
+  display: grid;
   overflow: hidden;
+  /* default = stack */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "board" "dock";
+  --cc-board-pad: 4px;
+  --cc-board-padding: 8px;
 }
 
-/* Desktop: board + sidebar side by side */
-.game-main-desktop {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  min-height: 0;
-  overflow: hidden;
-}
-
-@media (max-width: 767px) {
-  .game-main-desktop {
-    display: none !important;
+/* Small portrait screens (foldable cover 280px, small phones): squeeze the margins */
+@media (max-width: 400px) {
+  .game-main {
+    --cc-board-padding: 6px;
+    --cc-board-pad: 3px;
   }
+}
 
+/* rail: landscape (phones, short windows) */
+@media (orientation: landscape) {
+  .game-main {
+    grid-template-columns: minmax(0, 1fr) var(--cc-rail-w);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "board dock";
+  }
+  .game-dock {
+    border-top: none;
+    border-left: 1px solid rgba(128, 128, 128, 0.18);
+    padding-bottom: var(--cc-safe-b);
+  }
   :root {
-    --cc-bottom-panel-h: 188px;
-    --cc-board-padding: 8px;
+    --cc-topbar-h: 38px;
+    --cc-tags-h: 68px;
   }
 }
 
-@media (min-width: 768px) {
-  .game-main-mobile {
-    display: none !important;
+/* side: landscape and roomy */
+@media (orientation: landscape) and (min-width: 900px) and (min-height: 500px) {
+  .game-main {
+    grid-template-columns: minmax(0, 1fr) auto var(--cc-sidebar-w);
+    grid-template-areas: "board handle panel";
+    --cc-board-pad: 8px;
+    --cc-board-padding: 12px;
+  }
+  :root {
+    --cc-tags-h: 72px;
+  }
+}
+
+/* big screens: allow a bigger board, still always height-fitted */
+@media (min-width: 1600px) and (min-height: 900px) {
+  :root {
+    --cc-board-max: 960px;
+  }
+}
+
+/* Dual-screen / foldable spanned across a hinge (Chromium): board on one screen, controls on the other */
+@media (horizontal-viewport-segments: 2) {
+  .game-main {
+    grid-template-columns:
+      env(viewport-segment-width 0 0, 50%)
+      env(viewport-segment-left 1 0, 0px)
+      minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "board . dock";
+  }
+  .game-dock,
+  .game-sidebar {
+    grid-area: dock;
+    width: auto;
+    border-left: none;
+  }
+  .game-resizer {
+    display: none;
+  }
+}
+
+@keyframes cc-timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-shell * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -2867,6 +3026,29 @@ button,
 [role="button"],
 a {
   min-height: 32px;
+}
+
+/* ── Small-screen safety nets ─────────────────────────────── */
+/* Never let one wide element make the whole page scroll sideways (clip, unlike hidden, keeps sticky working) */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* iOS Safari zooms the page when a focused field is smaller than 16px */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Never exceed the screen when a dialog is taller than it */
+.cc-gameover-card {
+  max-height: 92dvh;
+  overflow-y: auto;
 }
 
 @media (max-width: 767px) {

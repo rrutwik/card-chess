@@ -150,7 +150,7 @@ export function ChessBoard({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "8px",
+        padding: "var(--cc-board-pad, 8px)",
       }}
     >
       <div
@@ -160,7 +160,7 @@ export function ChessBoard({
           background: isDark ? "#1e293b" : "#374151",
           borderRadius: "16px",
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-          padding: "8px",
+          padding: "var(--cc-board-pad, 8px)",
           width: "100%",
           height: "100%",
           display: "flex",

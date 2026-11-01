@@ -112,7 +112,7 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
 
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
                   gap: '12px'
                 }}>
                   {[...moveHistory].reverse().map((move, index) => (
@@ -253,7 +253,8 @@ export function MoveHistoryFooter({ moveHistory }: MoveHistoryFooterProps) {
         <div style={{
           background: isDark ? '#1f2937' : 'white',
           borderTop: `2px solid ${isDark ? '#374151' : '#d1d5db'}`,
-          boxShadow: '0 -10px 15px -3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 -10px 15px -3px rgba(0, 0, 0, 0.1)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)'
         }}>
           <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
             <button

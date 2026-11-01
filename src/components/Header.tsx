@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { LogOut, User, Sun, Moon, Monitor, BookOpen } from 'lucide-react';
+import { LogOut, User, Sun, Moon, Monitor, BookOpen, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppStore } from '../stores/appStore';
@@ -22,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { showRules, setShowRules } = useAppStore();
   const navigate = useNavigate();
   const isDark = actualTheme === 'dark';
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -59,6 +60,21 @@ export const Header: React.FC<HeaderProps> = ({
       transition: 'all 0.3s ease',
       boxShadow: isDark ? '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 2px 4px rgba(0, 0, 0, 0.05)'
     }}>
+      <style>{`
+        /* Touch screens: icon buttons get a 44px target */
+        @media (pointer: coarse) {
+          .hdr-btn { min-width: 44px; min-height: 44px; }
+        }
+        /* Narrow phones / foldable cover screens: drop the wordmark, tighten spacing */
+        @media (max-width: 400px) {
+          .hdr-title { display: none !important; }
+          .hdr-right { gap: 2px !important; }
+        }
+        /* The page links live in the menu below 768px (the desktop nav takes over above it) */
+        @media (min-width: 768px) {
+          .hdr-menu-btn, .hdr-menu { display: none !important; }
+        }
+      `}</style>
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
@@ -80,6 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
           }}>
             {showBackButton && (
               <button
+                className="hdr-btn"
                 onClick={() => navigate(backTo)}
                 style={{
                   padding: '8px',
@@ -134,6 +151,7 @@ export const Header: React.FC<HeaderProps> = ({
               </motion.span>
               <Link
                 to="/"
+                className="hdr-title"
                 style={{
                   fontSize: '20px',
                   fontWeight: '700',
@@ -192,13 +210,35 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Right section - Controls and user info */}
-          <div style={{
+          <div className="hdr-right" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
+            {/* Menu button (below 768px, where the nav links are hidden) */}
+            <button
+              className="hdr-btn hdr-menu-btn"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              style={{
+                padding: '8px',
+                color: isDark ? '#9ca3af' : '#6b7280',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {menuOpen ? <X style={{ width: '20px', height: '20px' }} /> : <Menu style={{ width: '20px', height: '20px' }} />}
+            </button>
+
             {/* Rules button */}
             <button
+                className="hdr-btn"
                 onClick={showRules ? () => setShowRules(false) : () => setShowRules(true)}
                 style={{
                   padding: '8px',
@@ -228,6 +268,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Theme toggle */}
             <button
+              className="hdr-btn"
               onClick={toggleTheme}
               style={{
                 padding: '8px',
@@ -330,6 +371,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {/* Logout button */}
                 <button
+                  className="hdr-btn"
                   onClick={handleLogout}
                   style={{
                     padding: '8px',
@@ -397,6 +439,56 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Dropdown menu for phones / small tablets */}
+      {menuOpen && (
+        <>
+          <div
+            onClick={() => setMenuOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: -1 }}
+          />
+          <nav
+            className="hdr-menu"
+            aria-label="Main menu"
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              padding: '8px 16px 12px',
+              background: isDark ? '#1e1e2e' : '#ffffff',
+              borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb'}`,
+              boxShadow: '0 12px 24px rgba(0, 0, 0, 0.18)',
+              maxHeight: '70dvh',
+              overflowY: 'auto'
+            }}
+          >
+            {([['/', 'Home'], ['/play', 'Play'], ['/games', 'Games'], ['/history', 'History']] as const).map(([to, label]) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  minHeight: '48px',
+                  padding: '0 12px',
+                  borderRadius: '10px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  color: isDark ? '#f9fafb' : '#1f2937'
+                }}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </>
+      )}
     </header>
   );
 };

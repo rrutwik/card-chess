@@ -372,7 +372,7 @@ export const PlayPage: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          height: "calc(100vh - 64px)",
+          height: "calc(100dvh - 64px)",
           overflowY: "auto",
         }}
       >
@@ -467,7 +467,7 @@ export const PlayPage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))",
               gap: "24px",
               justifyItems: "stretch",
             }}

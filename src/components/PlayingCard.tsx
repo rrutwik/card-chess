@@ -11,6 +11,10 @@ interface PlayingCardProps {
   onClick?: () => void;
   isDark?: boolean;
   variant?: "normal" | "mini";
+  /** Card width in px. When set, height/fonts/padding scale from it (used by the responsive dock). */
+  size?: number;
+  /** Show the "moves this piece" caption under the card (the dock shows it in its hint line instead). */
+  showMeaning?: boolean;
 }
 
 export function PlayingCard({
@@ -20,18 +24,23 @@ export function PlayingCard({
   isMobile = false,
   onClick,
   isDark = true,
-  variant = "normal"
+  variant = "normal",
+  size,
+  showMeaning = true,
 }: PlayingCardProps) {
   const suitSymbol = SUIT_SYMBOLS[card.suit];
   const isRed = card.color === "red";
   const cardColor = isRed ? "#dc2626" : "#111827";
   
-  const width = variant === "mini" ? 48 : isMobile ? 78 : 110;
-  const height = variant === "mini" ? 68 : isMobile ? 110 : 154;
-  
-  const fontSizeCornerValue = variant === "mini" ? "10px" : isMobile ? "14px" : "20px";
-  const fontSizeCornerSuit = variant === "mini" ? "10px" : isMobile ? "16px" : "24px";
-  const fontSizeCenter = variant === "mini" ? "18px" : isMobile ? "30px" : "48px";
+  const scaled = typeof size === "number";
+  const width = scaled ? size : variant === "mini" ? 48 : isMobile ? 78 : 110;
+  const height = scaled ? Math.round(size * 1.4) : variant === "mini" ? 68 : isMobile ? 110 : 154;
+
+  const fontSizeCornerValue = scaled ? `${Math.max(9, Math.round(size * 0.19))}px` : variant === "mini" ? "10px" : isMobile ? "14px" : "20px";
+  const fontSizeCornerSuit = scaled ? `${Math.max(9, Math.round(size * 0.21))}px` : variant === "mini" ? "10px" : isMobile ? "16px" : "24px";
+  const fontSizeCenter = scaled ? `${Math.max(14, Math.round(size * 0.4))}px` : variant === "mini" ? "18px" : isMobile ? "30px" : "48px";
+  const cardPadding = scaled ? `${Math.max(3, Math.round(size * 0.08))}px` : variant === "mini" ? "4px" : isMobile ? "7px" : "10px";
+  const cornerInset = scaled ? `${Math.max(2, Math.round(size * 0.05))}px` : variant === "mini" ? "3px" : "6px";
   
   const meaningFontSize = variant === "mini" ? "8px" : "11px";
 
@@ -46,6 +55,8 @@ export function PlayingCard({
         cursor: isActive && onClick ? "pointer" : "default",
         userSelect: "none",
         flexShrink: 0,
+        touchAction: "manipulation",
+        WebkitTapHighlightColor: "transparent",
       }}
       onClick={isActive ? onClick : undefined}
     >
@@ -60,7 +71,7 @@ export function PlayingCard({
             style={{
               position: "absolute",
               top: -4, left: -4, right: -4,
-              bottom: variant === "mini" ? 20 : 28,
+              bottom: !showMeaning ? -4 : variant === "mini" ? 20 : 28,
               borderRadius: 16,
               background: "linear-gradient(135deg, rgba(16,185,129,0.85), rgba(255,255,255,0.75), rgba(16,185,129,0.85))",
               filter: "blur(5px)",
@@ -81,8 +92,9 @@ export function PlayingCard({
           boxShadow: isSelected
             ? `0 0 0 3px ${isRed ? "#ef4444" : "#111827"}, 0 8px 20px rgba(0,0,0,0.3)`
             : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-          padding: variant === "mini" ? "4px" : isMobile ? "7px" : "10px",
-          border: `${variant === "mini" ? 2 : 3}px solid ${cardColor}`,
+          padding: cardPadding,
+          border: `${variant === "mini" || (scaled && size < 70) ? 2 : 3}px solid ${cardColor}`,
+          boxSizing: "border-box",
           width: width,
           height: height,
           aspectRatio: "2.5/3.5",
@@ -98,8 +110,8 @@ export function PlayingCard({
         <div
           style={{
             position: "absolute",
-            top: variant === "mini" ? "3px" : "6px",
-            left: variant === "mini" ? "3px" : "6px",
+            top: cornerInset,
+            left: cornerInset,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -129,8 +141,8 @@ export function PlayingCard({
         <div
           style={{
             position: "absolute",
-            bottom: variant === "mini" ? "3px" : "6px",
-            right: variant === "mini" ? "3px" : "6px",
+            bottom: cornerInset,
+            right: cornerInset,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -145,7 +157,7 @@ export function PlayingCard({
       </div>
 
       {/* Card meaning below */}
-      <div
+      {showMeaning && <div
         style={{
           fontSize: meaningFontSize,
           fontWeight: "600",
@@ -161,7 +173,7 @@ export function PlayingCard({
         }}
       >
         {CARD_MEANINGS[String(card.value).toUpperCase()] || ""}
-      </div>
+      </div>}
     </div>
   );
 }

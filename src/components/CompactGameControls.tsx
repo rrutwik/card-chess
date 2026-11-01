@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Trophy,
@@ -12,6 +12,7 @@ import { SUIT_SYMBOLS, CARD_MEANINGS } from "../constants/chess";
 import { MAX_CHECK_ATTEMPTS } from "../hooks/useCardChess";
 import { useTheme } from "../contexts/ThemeContext";
 import { PlayingCard as PlayingCardComponent } from "./PlayingCard";
+import { CardStackIcon } from "./CardStackIcon";
 
 export interface CompactGameControlsProps {
   currentCards: PlayingCard[];
@@ -28,8 +29,15 @@ export interface CompactGameControlsProps {
   winner: PieceColor | "draw" | null;
   selectedCardIndex: number | null;
   onCardSelect: (index: number | null) => void;
-  isMobile?: boolean;
+  /**
+   * "panel"      - full side panel (laptop / desktop).
+   * "dock-stack" - compact dock under the board (portrait phones, foldables, tablets).
+   * "dock-rail"  - compact dock in a narrow column beside the board (landscape phones, small windows).
+   */
+  layout?: "panel" | "dock-stack" | "dock-rail";
   onOpenSettings: () => void;
+  /** After the game ends: reopen the result card (rematch / new game). Shown in place of the draw button. */
+  onShowResult?: () => void;
 }
 
 function getCardMeaning(card: PlayingCard): string {
@@ -51,14 +59,30 @@ export function CompactGameControls({
   winner,
   selectedCardIndex,
   onCardSelect,
-  isMobile = false,
+  layout = "panel",
   onOpenSettings,
+  onShowResult,
 }: CompactGameControlsProps) {
+  const isDock = layout !== "panel";
+  const isMobile = isDock; // PlayingCard still takes the old flag when it is not given an explicit size
   const { actualTheme } = useTheme();
   const isDark = actualTheme === "dark";
   const attemptsRemaining = MAX_CHECK_ATTEMPTS - checkAttempts;
   const isMyTurn = userColor === currentPlayer;
   const isActive = isMyTurn && !gameOver && currentCards.length > 0;
+
+  // The dock sizes its cards from the space it really has (any screen), instead of fixed pixel sizes.
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = dockRef.current;
+    if (!isDock || !el) return;
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isDock]);
 
   const handleCardClick = (index: number) => {
     if (!isActive) return;
@@ -132,21 +156,54 @@ export function CompactGameControls({
     </motion.div>
   );
 
-  // ── MOBILE layout ──────────────────────────────────────────────────
-  if (isMobile) {
+  // ── DOCK layout (stack + rail) ─────────────────────────────────────
+  if (isDock) {
+    const isRail = layout === "dock-rail";
+    const n = currentCards.length;
+    const gap = 8;
+    const padX = 12;
+    const showCheck = isInCheck && !gameOver;
+    const availW = Math.max(0, box.w - padX * 2);
+    const byWidth = n > 0 ? Math.floor((availW - gap * (n - 1)) / n) : 0;
+    // rail: the dock fills the column height, so fit cards to it. stack: the dock is content-sized,
+    // so cap the card height to a share of the viewport instead (keeps the board big).
+    const reserved = (showCheck ? 38 : 0) + 20 + 48 + gap * 3 + 16;
+    const viewportH = typeof window !== "undefined" ? window.innerHeight : 800;
+    const byHeight = isRail ? Math.floor((box.h - reserved - 8) / 1.4) : Math.floor((viewportH * 0.17) / 1.4);
+    const cardSize = Math.max(40, Math.min(byWidth > 0 ? byWidth : 96, byHeight > 0 ? byHeight : 96, 96));
+    const selected = selectedCardIndex !== null ? currentCards[selectedCardIndex] : undefined;
+
+    let hint = "";
+    const resultAction = gameOver && !!onShowResult;
+    if (gameOver) hint = "Game over - review the board or start another";
+    else if (!isMyTurn) hint = "Waiting for your opponent…";
+    else if (selected) hint = `${selected.value}${SUIT_SYMBOLS[selected.suit] || ""}  ·  ${getCardMeaning(selected)}`;
+    else if (currentCards.length > 0) hint = noValidCard ? "No legal move with these cards" : "Tap a card, or tap a piece to move";
+    else hint = "Draw to get your cards";
+
+    let label: React.ReactNode;
+    if (gameOver) label = resultAction ? "Rematch / new game" : "Game over";
+    else if (!isMyTurn) label = "Opponent's turn…";
+    else if (canDrawCard) label = (<><Play style={{ width: 16, height: 16 }} /> Draw {cardsToDrawCount > 1 ? `${cardsToDrawCount} cards` : "card"}</>);
+    else label = "Pick a card, then a piece";
+
     return (
       <div
+        ref={dockRef}
         style={{
           display: "flex",
           flexDirection: "column",
-          height: "100%",
-          gap: "8px",
-          padding: "8px 12px 6px",
+          gap,
+          padding: `${gap}px ${padX}px`,
+          flex: 1,
+          minHeight: 0,
+          width: "100%",
+          boxSizing: "border-box",
+          justifyContent: isRail ? "center" : "flex-start",
         }}
       >
-        {/* Check warning (compact) */}
         <AnimatePresence>
-          {isInCheck && !gameOver && (
+          {showCheck && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -155,49 +212,61 @@ export function CompactGameControls({
             >
               <div
                 style={{
-                  borderRadius: "10px",
-                  padding: "8px 12px",
+                  borderRadius: 10,
+                  padding: "6px 10px",
                   border: `2px solid ${attemptsRemaining <= 2 ? "#ef4444" : "#f97316"}`,
-                  background: attemptsRemaining <= 2
-                    ? "linear-gradient(135deg, rgba(127,29,29,0.3), rgba(124,45,18,0.3))"
-                    : "linear-gradient(135deg, rgba(124,45,18,0.3), rgba(113,63,18,0.3))",
+                  background: attemptsRemaining <= 2 ? "rgba(127,29,29,0.3)" : "rgba(124,45,18,0.3)",
                   display: "flex",
                   alignItems: "center",
-                  gap: "8px",
+                  gap: 8,
                 }}
               >
                 <AlertTriangle style={{ width: 14, height: 14, color: attemptsRemaining <= 2 ? "#ef4444" : "#f97316", flexShrink: 0 }} />
-                <span style={{ fontSize: "12px", fontWeight: "600", color: "#fca5a5", flex: 1 }}>
-                  King in Check! {attemptsRemaining}/{MAX_CHECK_ATTEMPTS} left
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#fca5a5", flex: 1 }}>
+                  King in check! {attemptsRemaining}/{MAX_CHECK_ATTEMPTS} tries left
                 </span>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Cards row */}
+        {/* Card tray: fits the cards to the width; scrolls (snap) only if they cannot fit */}
         <div
           style={{
-            flex: 1,
             display: "flex",
-            gap: "10px",
+            gap,
             overflowX: "auto",
+            justifyContent: "safe center",
             alignItems: "center",
-            justifyContent: "center",
-            paddingBottom: "4px",
+            minHeight: Math.round(cardSize * 1.4) + 8,
+            scrollSnapType: "x proximity",
+            WebkitOverflowScrolling: "touch",
+            paddingTop: 6,
           }}
         >
           <AnimatePresence mode="wait">
-            {currentCards.length > 0 ? (
+            {n > 0 ? (
               <motion.div
                 key="cards"
                 initial={{ rotateY: 90, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 exit={{ rotateY: -90, opacity: 0 }}
                 transition={{ duration: 0.28 }}
-                style={{ display: "flex", gap: "10px", alignItems: "flex-start", justifyContent: "center", margin: "0 auto" }}
+                style={{ display: "flex", gap, alignItems: "flex-start", margin: "0 auto" }}
               >
-                {currentCards.map((card, i) => renderCard(card, i))}
+                {currentCards.map((card, i) => (
+                  <div key={i} style={{ scrollSnapAlign: "center" }}>
+                    <PlayingCardComponent
+                      card={card}
+                      isSelected={selectedCardIndex === i}
+                      isActive={isActive}
+                      onClick={() => handleCardClick(i)}
+                      isDark={isDark}
+                      size={cardSize}
+                      showMeaning={false}
+                    />
+                  </div>
+                ))}
               </motion.div>
             ) : (
               <motion.div
@@ -205,88 +274,87 @@ export function CompactGameControls({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 style={{
-                  flex: 1,
+                  width: "100%",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: "4px",
+                  gap: 10,
                   color: isDark ? "#6b7280" : "#9ca3af",
                 }}
               >
-                <span style={{ fontSize: "28px" }}>🎴</span>
-                <span style={{ fontSize: "12px", fontWeight: "600" }}>
-                  {isMyTurn ? "Draw a card!" : "Opponent's turn"}
-                </span>
+                <CardStackIcon size={Math.max(36, Math.round(cardSize * 0.9))} />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{isMyTurn && !gameOver ? "Your turn - draw" : "No cards yet"}</span>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Action row */}
-        <div style={{ display: "flex", gap: "7px", flexShrink: 0 }}>
-          {/* Draw button */}
+        {/* One-line hint */}
+        <div
+          style={{
+            minHeight: 20,
+            fontSize: 12,
+            fontWeight: 600,
+            textAlign: "center",
+            color: isDark ? "#9ca3af" : "#4b5563",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {hint}
+        </div>
+
+        {/* Primary action + deck count */}
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
           <button
-            onClick={canDrawCard ? onDrawCard : undefined}
-            disabled={!canDrawCard}
+            onClick={resultAction ? onShowResult : canDrawCard ? onDrawCard : undefined}
+            disabled={!canDrawCard && !resultAction}
+            aria-label={typeof label === "string" ? label : "Draw cards"}
             style={{
               flex: 1,
-              padding: "10px 8px",
-              borderRadius: "12px",
+              minHeight: 48,
+              padding: "0 12px",
+              borderRadius: 14,
               border: "none",
-              fontWeight: "700",
-              fontSize: "12px",
-              cursor: canDrawCard ? "pointer" : "not-allowed",
-              background: canDrawCard
-                ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
-                : isDark ? "rgba(107,114,128,0.3)" : "#d1d5db",
-              color: canDrawCard ? "white" : isDark ? "#6b7280" : "#4b5563",
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: canDrawCard || resultAction ? "pointer" : "not-allowed",
+              background: resultAction
+                ? "linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)"
+                : canDrawCard
+                  ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+                  : isDark ? "rgba(107,114,128,0.3)" : "#d1d5db",
+              color: canDrawCard || resultAction ? "white" : isDark ? "#9ca3af" : "#4b5563",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "5px",
-              boxShadow: canDrawCard ? "0 4px 12px rgba(16,185,129,0.35)" : "none",
+              gap: 6,
+              boxShadow: resultAction ? "0 4px 12px rgba(99,102,241,0.35)" : canDrawCard ? "0 4px 12px rgba(16,185,129,0.35)" : "none",
               transition: "all 0.2s",
+              touchAction: "manipulation",
             }}
           >
-            {isMyTurn ? (
-              canDrawCard ? (
-                <><Play style={{ width: 13, height: 13 }} /> Draw {cardsToDrawCount > 1 ? `${cardsToDrawCount} Cards` : "Card"}</>
-              ) : "Make Your Move"
-            ) : "Opponent's Turn"}
+            {label}
           </button>
-
-          {/* Deck count */}
-          <div style={{
-            padding: "0 10px",
-            borderRadius: "12px",
-            background: "rgba(139,92,246,0.14)",
-            border: "1px solid rgba(139,92,246,0.28)",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            flexShrink: 0, minWidth: 46,
-          }}>
-            <span style={{ fontSize: 15, fontWeight: 900, color: "#a78bfa", lineHeight: 1 }}>{cardsRemaining}</span>
-            <span style={{ fontSize: 7, color: "rgba(167,139,250,0.65)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>DECK</span>
-          </div>
-
-          {/* Settings */}
-          <button
-            onClick={onOpenSettings}
+          <div
+            title="Cards left in the draw pile"
             style={{
-              padding: "0 9px", borderRadius: "12px", border: "1px solid",
-              borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.15)",
-              background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-              color: isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.6)",
-              cursor: "pointer", display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              gap: 2, flexShrink: 0, minWidth: 48,
-              transition: "all 0.2s"
+              minWidth: 52,
+              minHeight: 48,
+              borderRadius: 14,
+              background: "rgba(139,92,246,0.14)",
+              border: "1px solid rgba(139,92,246,0.28)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
             }}
           >
-            <Settings style={{ width: 14, height: 14 }} />
-            <span style={{ fontSize: 7, fontWeight: 700 }}>OPTIONS</span>
-          </button>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#a78bfa", lineHeight: 1 }}>{cardsRemaining}</span>
+            <span style={{ fontSize: 9, color: "rgba(167,139,250,0.75)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>DECK</span>
+          </div>
         </div>
       </div>
     );
@@ -315,6 +383,26 @@ export function CompactGameControls({
           overflow: "hidden",
         }}
       >
+        {gameOver && onShowResult && (
+          <button
+            onClick={onShowResult}
+            style={{
+              flexShrink: 0,
+              minHeight: 44,
+              borderRadius: 12,
+              border: "none",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "white",
+              cursor: "pointer",
+              background: "linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)",
+              boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
+            }}
+          >
+            Game over · Rematch / new game
+          </button>
+        )}
+
         {/* Current Turn Indicator */}
         <div
           style={{

@@ -49,6 +49,10 @@ export interface ChessGame {
   createdAt?: string;
   updatedAt?: string;
   completed_at?: string;
+  /** Active games only: when the idle timeout ends the game for the player to move (ISO, server clock). */
+  turn_deadline_at?: string;
+  /** Server clock when this payload was built (ISO); used to correct a wrong device clock. */
+  server_now?: string;
 }
 
 export interface CreateGameRequest {

@@ -32,6 +32,7 @@ export function CollapsibleRulesSidebar({ isOpen, onClose }: CollapsibleRulesSid
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed left-0 top-0 h-full w-80 bg-white shadow-2xl z-50 overflow-y-auto"
+            style={{ maxWidth: '92vw' }}
           >
 
             <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex items-center justify-between">
