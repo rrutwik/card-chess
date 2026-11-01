@@ -400,6 +400,7 @@ export const GamePage: React.FC = () => {
     onCardSelect: setSelectedCardIndex,
     onOpenSettings: () => setShowSettingsModal(true),
     onShowResult: () => setResultDismissed(false),
+    isBotGame,
   };
 
   // Escape closes the result card (same as "View board")

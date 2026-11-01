@@ -38,6 +38,8 @@ export interface CompactGameControlsProps {
   onOpenSettings: () => void;
   /** After the game ends: reopen the result card (rematch / new game). Shown in place of the draw button. */
   onShowResult?: () => void;
+  /** Playing against the bot: on its turn say "Bot is thinking" instead of "waiting for your opponent". */
+  isBotGame?: boolean;
 }
 
 function getCardMeaning(card: PlayingCard): string {
@@ -62,6 +64,7 @@ export function CompactGameControls({
   layout = "panel",
   onOpenSettings,
   onShowResult,
+  isBotGame = false,
 }: CompactGameControlsProps) {
   const isDock = layout !== "panel";
   const isMobile = isDock; // PlayingCard still takes the old flag when it is not given an explicit size
@@ -176,14 +179,14 @@ export function CompactGameControls({
     let hint = "";
     const resultAction = gameOver && !!onShowResult;
     if (gameOver) hint = "Game over - review the board or start another";
-    else if (!isMyTurn) hint = "Waiting for your opponent…";
+    else if (!isMyTurn) hint = isBotGame ? "Bot is thinking…" : "Waiting for your opponent…";
     else if (selected) hint = `${selected.value}${SUIT_SYMBOLS[selected.suit] || ""}  ·  ${getCardMeaning(selected)}`;
     else if (currentCards.length > 0) hint = noValidCard ? "No legal move with these cards" : "Tap a card, or tap a piece to move";
     else hint = "Draw to get your cards";
 
     let label: React.ReactNode;
     if (gameOver) label = resultAction ? "Rematch / new game" : "Game over";
-    else if (!isMyTurn) label = "Opponent's turn…";
+    else if (!isMyTurn) label = isBotGame ? "Bot's turn…" : "Opponent's turn…";
     else if (canDrawCard) label = (<><Play style={{ width: 16, height: 16 }} /> Draw {cardsToDrawCount > 1 ? `${cardsToDrawCount} cards` : "card"}</>);
     else label = "Pick a card, then a piece";
 
