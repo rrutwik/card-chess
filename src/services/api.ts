@@ -3,7 +3,7 @@ import type { User } from '../contexts/AuthContext';
 import { useAppStore } from '../stores/appStore';
 import { MoveHistory, PlayingCard } from '../types/game';
 import { logger } from '../utils/logger';
-import { getGuestToken, GUEST_TOKEN_STORAGE_KEY, GUEST_USER_ID } from '../utils/sessionIdentity';
+import { getGuestSession, getGuestToken, saveGuestSession, type GuestSession } from '../utils/sessionIdentity';
 
 export interface LoginResponse {
   sessionToken: string;
@@ -95,8 +95,27 @@ export class ApiError extends Error {
 declare module 'axios' {
   interface AxiosRequestConfig {
     retryCount?: number;
+    /** Set once a request has been replayed after a token refresh, so it is never replayed twice. */
+    authRetried?: boolean;
   }
 }
+
+const clearStoredSession = () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('userData');
+};
+
+// Concurrent 401s share one refresh: each refresh creates a new session on the server.
+let refreshInFlight: Promise<unknown> | null = null;
+const refreshSessionOnce = (storedRefreshToken: string) => {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshToken(storedRefreshToken).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+};
 
 // Retry configuration
 const RETRY_CONFIG = {
@@ -174,36 +193,43 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // Handle unauthorized access - redirect to login or clear token
     if (status === 401) {
+      const isRefreshCall = config.url?.includes('/auth/refresh_token');
+      // Only a request that carried a user token can be fixed by refreshing it. Guests (and requests
+      // with no credentials at all) have nothing to refresh.
+      const hadUserToken = !!localStorage.getItem('authToken');
 
-      if (!config.url?.includes('/auth/refresh_token')) {
-        logger.info('Token expired, attempting refresh');
-        const localStorageRefreshToken = localStorage.getItem('refreshToken');
+      const expireSession = () => {
+        clearStoredSession();
+        useAppStore.getState().addNotification({
+          type: 'error',
+          title: 'Authentication Error',
+          message: 'Your session has expired. Please log in again.',
+          duration: 5000,
+        });
+      };
 
-        if (!localStorageRefreshToken) {
-          logger.warn('Refresh token not found in localStorage');
-          return Promise.reject(error);
+      if (isRefreshCall) {
+        logger.warn('Refresh token rejected, clearing session');
+        expireSession();
+      } else if (hadUserToken && !config.authRetried) {
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (storedRefreshToken) {
+          logger.info('Session token rejected, attempting refresh');
+          try {
+            await refreshSessionOnce(storedRefreshToken);
+            config.authRetried = true;
+            return api(config);
+          } catch {
+            // The refresh call already cleared the session; fall through to report the original 401.
+          }
+        } else {
+          logger.warn('Session token rejected and no refresh token is stored, clearing session');
+          expireSession();
         }
-
-        await refreshToken(localStorageRefreshToken);
-        return api(config);
+      } else if (!hadUserToken) {
+        logger.warn(`Unauthorized request to ${config.url} with no user token`, { hasGuestToken: !!getGuestToken() });
       }
-
-      logger.warn('Refresh token failed or unauthorized, clearing session');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-
-      // Show notification about authentication error
-      const appStore = useAppStore.getState();
-      appStore.addNotification({
-        type: 'error',
-        title: 'Authentication Error',
-        message: 'Your session has expired. Please log in again.',
-        duration: 5000,
-      });
-
-      console.warn('Unauthorized access - token cleared');
     }
 
     // Convert to custom ApiError
@@ -259,40 +285,23 @@ export const loginWithGoogle = async (data: GoogleLoginRequest): Promise<AxiosRe
   }
 };
 
-const GUEST_DISPLAY_NAME_KEY = "guest_display_name";
-
-export async function getOrCreateGuest(data: any): Promise<{
-  _id: string;
-  token: string;
-  display_name: string;
-}> {
+export async function getOrCreateGuest(data: any): Promise<GuestSession> {
   if (typeof window === "undefined") return {
     _id: '',
     token: '',
     display_name: '',
   };
 
-  const existingToken = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
-  const existingUserId = sessionStorage.getItem(GUEST_USER_ID);
-  const existingName = sessionStorage.getItem(GUEST_DISPLAY_NAME_KEY) || '';
-  if (existingToken && existingUserId) {
-    return {
-      _id: existingUserId,
-      token: existingToken,
-      display_name: existingName,
-    };
-  }
+  const existing = getGuestSession();
+  if (existing) return existing;
+
   try {
     const response = await api.post("/guest-session", data);
-    const displayName = response.data.display_name || '';
-    sessionStorage.setItem(GUEST_TOKEN_STORAGE_KEY, response.data.token);
-    sessionStorage.setItem(GUEST_USER_ID, response.data._id);
-    sessionStorage.setItem(GUEST_DISPLAY_NAME_KEY, displayName);
-    return {
+    return saveGuestSession({
       _id: response.data._id,
       token: response.data.token,
-      display_name: displayName,
-    };
+      display_name: response.data.display_name || '',
+    });
   } catch (error) {
     logger.error('Failed to create guest token:', error);
     throw error;

@@ -106,6 +106,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("userData");
     setUser(null);
     setUpdateTrigger((prev) => prev + 1); // Force re-render
+    // Back to guest mode. Without a guest identity, /chess requests would carry no credentials
+    // and fail with 401 until the page is reloaded.
+    getSessionIdentity(null)
+      .then(setSessionIdentity)
+      .catch((error) => logger.error("AuthContext: Failed to create guest identity after logout", error));
     logger.info("✅ AuthContext: User logged out");
   };
 
