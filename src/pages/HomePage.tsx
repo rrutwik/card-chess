@@ -7,6 +7,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { logger } from '../utils/logger';
 import { CollapsibleRulesSidebar } from '../components/CollapsibleRulesSidebar';
 import { useAppStore } from '../stores/appStore';
+import { SiteFooter } from '../components/SiteFooter';
+import { HOW_TO_PLAY_FAQS } from '../seo/faqs';
 
 export const HomePage: React.FC = () => {
   const { actualTheme } = useTheme();
@@ -258,6 +260,9 @@ export const HomePage: React.FC = () => {
         </motion.div>
 
         {/* Action cards */}
+        <h2 style={{ textAlign: 'center', fontSize: 14, fontWeight: 600, margin: '0 0 12px', color: isDark ? '#9ca3af' : '#6b7280' }}>
+          Choose how to play
+        </h2>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -334,7 +339,60 @@ export const HomePage: React.FC = () => {
             Challenge yourself and compete with players worldwide
           </p>
         </motion.div>
+
+        {/* Crawlable explanation of the game (what people search for) */}
+        <section
+          aria-label="About Card Chess"
+          style={{
+            maxWidth: 800, width: '100%', margin: '40px auto 0', boxSizing: 'border-box',
+            color: isDark ? '#d1d5db' : '#4b5563', fontSize: 15, lineHeight: 1.7,
+          }}
+        >
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px', color: isDark ? '#f9fafb' : '#1f2937' }}>
+            What is Card Chess?
+          </h2>
+          <p style={{ margin: '0 0 12px' }}>
+            Card Chess is a free online chess variant where playing cards decide which piece you can move. You use the
+            normal chess board, pieces and move rules, but instead of choosing any piece you like, you draw a card and
+            move the piece it allows. It keeps the strategy of chess and adds the surprise of a card game, so it is
+            fun for beginners and experienced players alike.
+          </p>
+
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: '28px 0 8px', color: isDark ? '#f9fafb' : '#1f2937' }}>
+            How Card Chess works
+          </h2>
+          <ol style={{ margin: '0 0 12px', paddingLeft: 22 }}>
+            <li>Draw a card (or several) at the start of your turn.</li>
+            <li>The card tells you which piece you may move: 2–9 for the pawns on files a–h, A for a rook, 10 for a knight, J for a bishop, Q for the queen, K for the king, and a Joker for any piece.</li>
+            <li>Make a legal chess move with that piece, then your opponent draws.</li>
+            <li>Checkmate the enemy king to win.</li>
+          </ol>
+          <p style={{ margin: '0 0 12px' }}>
+            Want every detail? Read the full{' '}
+            <Link to="/how-to-play" style={{ color: isDark ? '#c7d2fe' : '#4f46e5', fontWeight: 600 }}>
+              Card Chess rules and strategy guide
+            </Link>
+            , or jump straight into a{' '}
+            <Link to="/play" style={{ color: isDark ? '#c7d2fe' : '#4f46e5', fontWeight: 600 }}>
+              free game against the bot
+            </Link>
+            .
+          </p>
+
+          <h2 style={{ fontSize: 22, fontWeight: 700, margin: '28px 0 8px', color: isDark ? '#f9fafb' : '#1f2937' }}>
+            Card Chess FAQ
+          </h2>
+          {HOW_TO_PLAY_FAQS.map((faq) => (
+            <div key={faq.question} style={{ marginBottom: 12 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 2px', color: isDark ? '#f9fafb' : '#1f2937' }}>
+                {faq.question}
+              </h3>
+              <p style={{ margin: 0 }}>{faq.answer}</p>
+            </div>
+          ))}
+        </section>
       </main>
+      <SiteFooter />
     </div>
   );
 };

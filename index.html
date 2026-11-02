@@ -18,8 +18,6 @@
   <title>Card Chess — Chess Meets Cards | Free Online Strategy Game</title>
   <meta name="description"
     content="Card Chess is a free online strategy game that combines chess with playing cards. Draw cards to decide which piece you can move. Play vs a bot or challenge a friend. Perfect for chess beginners and pros alike!" />
-  <meta name="keywords"
-    content="card chess, chess card game, online chess game, chess with cards, chess variant, free chess game, multiplayer chess, chess for beginners, strategy board game, chess learning game" />
   <meta name="author" content="Card Chess" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#0f172a" />
@@ -30,12 +28,13 @@
   <!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Card Chess" />
+  <meta property="og:locale" content="en_US" />
   <meta property="og:title" content="Card Chess — Chess Meets Cards" />
   <meta property="og:description"
     content="Draw cards to decide which chess piece you can move. Free, no download — play vs bot or with a friend online!" />
-  <meta property="og:image" content="/og-image.png" />
-  <meta property="og:image:width" content="1024" />
-  <meta property="og:image:height" content="1024" />
+  <meta property="og:image" content="https://cardchess.techkarmic.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="Card Chess — Chess Meets Cards game preview" />
   <meta property="og:url" content="https://cardchess.techkarmic.com/" />
 
@@ -44,11 +43,14 @@
   <meta name="twitter:title" content="Card Chess — Chess Meets Cards" />
   <meta name="twitter:description"
     content="Draw cards to decide which chess piece you can move. Free, no download — play vs bot or friend online!" />
-  <meta name="twitter:image" content="/og-image.png" />
+  <meta name="twitter:image" content="https://cardchess.techkarmic.com/og-image.png" />
+  <meta name="twitter:image:alt" content="Card Chess — Chess Meets Cards game preview" />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/favicon.ico" />
+  <!-- Favicon / app icons -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" type="image/png" href="/favicon-96.png" sizes="96x96" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
 
   <!-- Structured Data (JSON-LD) -->
   <script type="application/ld+json">
@@ -66,18 +68,27 @@
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "42"
       }
+    }
+    </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Card Chess",
+      "alternateName": ["CardChess", "Card Chess Online"],
+      "url": "https://cardchess.techkarmic.com/"
     }
     </script>
 </head>
 
 <body>
   <div id="root"></div>
+  <noscript>
+    <h1>Card Chess — Chess Meets Cards</h1>
+    <p>Card Chess is a free online chess variant where playing cards decide which piece you can move. Play against a bot or challenge a friend. JavaScript is required to play.</p>
+    <p><a href="/how-to-play">How to play Card Chess</a> · <a href="/play">Play Card Chess</a> · <a href="/privacy-policy">Privacy policy</a></p>
+  </noscript>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

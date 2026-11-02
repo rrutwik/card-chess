@@ -5,6 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Shield } from 'lucide-react';
 import { CollapsibleRulesSidebar } from '../components/CollapsibleRulesSidebar';
 import { useAppStore } from '../stores/appStore';
+import { SiteFooter } from '../components/SiteFooter';
 
 export const PrivacyPolicyPage: React.FC = () => {
   const { actualTheme } = useTheme();
@@ -108,6 +109,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           </div>
         </motion.div>
       </main>
+      <SiteFooter />
     </div>
   );
 };

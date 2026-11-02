@@ -1,0 +1,13 @@
+{
+  "name": "Card Chess",
+  "short_name": "Card Chess",
+  "description": "Free online chess variant where playing cards decide which piece you can move.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
